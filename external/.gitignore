@@ -1,0 +1,7 @@
+NVML/*
+!NVML/README.txt
+level-zero-build
+OpenCL-Headers-build
+OpenCL-Headers-install
+OpenCL-ICD-Loader-build
+OpenCL-ICD-Loader-install

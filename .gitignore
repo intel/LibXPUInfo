@@ -1,0 +1,8 @@
+﻿.vs
+TestLibXPUInfo/x64
+TestXPUInfoIPC/TestXPUInfoIPC_Shared/x64
+TestXPUInfoIPC/x64
+x64
+*.bak
+BuildExternalDeps/NVML
+BuildExternalDeps/NVML.zip
