@@ -1,3 +1,6 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
 /* IPC Test - XPUInfo initialized on server, client checks success
 * 
 * There are 2 paths here - pipe and shared-memory.  The pipe path is simpler and preferred.
