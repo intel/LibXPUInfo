@@ -12,6 +12,7 @@ LibXPUInfo coalesces multiple APIs to provide multi-vendor, cross-platform devic
 
 ## Build Instructions
 * Prerequisites:
+  * LibXPUInfo targets C++14 or greater build environments. 
   * Install CMake with it in your path.
   * Using the Visual Studio Installer, if not already present, add component "C++ x64/x86 Spectre-mitigated libs" for the version of the compiler you are using (i.e. "MSVC v143 - VS 2022")
     * Or, remove lines from external/level-zero/CmakeLists.txt that add /Qspectre.  Try external\l0_removeSpectre.bat to perform this patch.
