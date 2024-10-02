@@ -229,7 +229,7 @@ TelemetryTracker::TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod
 	}
 
 #ifdef XPUINFO_USE_IGCL
-    if (m_Device->getCurrentAPIs() & API_TYPE_IGCL)
+    if ((m_Device->getCurrentAPIs() & (API_TYPE_IGCL|API_TYPE_IGCL_L0)) == (API_TYPE_IGCL|API_TYPE_IGCL_L0))
 	{
 		InitIGCL();
 	}

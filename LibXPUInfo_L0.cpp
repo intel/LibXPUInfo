@@ -139,6 +139,9 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 				m_props.PCIAddress.device = pci_props.address.device;
 				m_props.PCIAddress.function = pci_props.address.function;
 			}
+			updateIfDstNotSet(m_props.PCIDeviceGen, pci_props.maxSpeed.gen);
+			updateIfDstNotSet(m_props.PCIDeviceWidth, pci_props.maxSpeed.width);
+			updateIfDstNotSet(m_props.PCIDeviceMaxBandwidth, pci_props.maxSpeed.maxBandwidth);
 		}
 
 		uint32_t domain_count = 0;
@@ -245,21 +248,77 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 		}
 #endif
 
-#if 0 // Done in IGCL - skip this
 		zes_pci_state_t pci_state{ ZES_STRUCTURE_TYPE_PCI_STATE, };
-		//zes_pci_stats_t
 		zRes = zesDevicePciGetState(m_L0Device, &pci_state);
 		if (ZE_RESULT_SUCCESS == zRes)
 		{
-			// See https://hsdes.intel.com/appstore/article/#/14018523690
-			if (pci_state.speed.maxBandwidth != UI64(-1))
+			DebugStream dStr(XPUINFO_L0_VERBOSE);
+			// Sanity-check result as some drivers mis-report on certain iGfx parts
+			// Current PCIe gen is 4, max width is 16.  Limit to 8 and 64
+			if (pci_state.speed.gen != -1)
 			{
-				DebugStream dStr(XPUINFO_L0_VERBOSE);
-				dStr << "NOTE: zesDevicePciGetState returned maxBandwidth = " << pci_state.speed.maxBandwidth / double(1024 * 1024 * 1024) << std::endl;
-				//bUpdate = true;
+				if ((pci_state.speed.gen > 0) &&
+					(pci_state.speed.gen <= 8))
+				{
+					updateIfDstNotSet(m_props.PCICurrentGen, pci_state.speed.gen);
+				}
+				else
+				{
+					dStr << "Invalid data from L0: pci_state.speed.gen = " << pci_state.speed.gen << std::endl;
+				}
+			}
+
+			if (pci_state.speed.width != -1)
+			{
+				if ((pci_state.speed.width > 0) &&
+					(pci_state.speed.width <= 64))
+				{
+					updateIfDstNotSet(m_props.PCICurrentWidth, pci_state.speed.width);
+				}
+				else
+				{
+					dStr << "Invalid data from L0: pci_state.speed.width = " << pci_state.speed.width << std::endl;
+				}
+			}
+
+			double bwDev = m_props.PCIDeviceGen * m_props.PCIDeviceWidth;
+			double bwScale = (bwDev > 0.) ? ((m_props.PCICurrentGen * m_props.PCICurrentWidth) / bwDev) : 0.;
+			if ((bwScale > 0.) && (m_props.PCIDeviceMaxBandwidth > 0))
+			{
+				updateIfDstNotSet(m_props.PCICurrentMaxBandwidth, I64(bwScale * m_props.PCIDeviceMaxBandwidth));
 			}
 		}
-#endif
+
+		//zesDeviceEnumMemoryModules, zesMemoryGetBandwidth
+		uint32_t numMem = 0;
+		zRet = zesDeviceEnumMemoryModules(m_L0Device, &numMem, nullptr);
+		if ((ZE_RESULT_SUCCESS == zRet) && (numMem>0))
+		{
+			std::vector<zes_mem_handle_t> memHandles(numMem);
+			zRet = zesDeviceEnumMemoryModules(m_L0Device, &numMem, memHandles.data());
+			if ((ZE_RESULT_SUCCESS == zRet) && (numMem > 0))
+			{
+				for (auto mh : memHandles)
+				{
+					zes_mem_properties_t zmp{};
+					zRet = zesMemoryGetProperties(mh, &zmp);
+					if (ZE_RESULT_SUCCESS == zRet)
+					{
+						if (zmp.location != ZES_MEM_LOC_DEVICE)
+						{
+							continue;
+						}
+					}
+
+					zes_mem_bandwidth_t zmb{};
+					zRet = zesMemoryGetBandwidth(mh, &zmb);
+					if (ZE_RESULT_SUCCESS == zRet)
+					{
+						updateIfDstNotSet(m_props.MemoryBandWidthMax, (I64)zmb.maxBandwidth);
+					}
+				}
+			}
+		}
 
 #if 0
 		// Try zesDeviceEnumPowerDomains, zesDeviceGetCardPowerDomain
@@ -547,7 +606,7 @@ void TelemetryTracker::InitL0()
 					if (domain_props.type == ZES_FREQ_DOMAIN_GPU)
 					{
 						//std::cout << "L0 GPU" << std::endl;
-						if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL) && m_freqHandlesL0.size())
+						if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL_L0) && m_freqHandlesL0.size())
 						{
 							m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY);
 						}
