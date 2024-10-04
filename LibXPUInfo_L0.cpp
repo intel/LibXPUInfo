@@ -486,11 +486,13 @@ void XPUInfo::initL0()
 		if (ZE_RESULT_SUCCESS == zRes)
 		{
 			zRes = zeDriverGetExtensionProperties(l0enum.driver, &numExts, driverExts.data());
-			XPUINFO_DEBUG_REQUIRE(ZE_RESULT_SUCCESS == zRes);
-			// See https://spec.oneapi.io/level-zero/latest/core/EXT.html
-			pLuidExt = driverExts.find("ZE_extension_device_luid");
-			pDevIPExt = driverExts.find("ZE_extension_device_ip_version");
-			// ZE_extension_eu_count
+			if (ZE_RESULT_SUCCESS == zRes)
+			{
+				// See https://spec.oneapi.io/level-zero/latest/core/EXT.html
+				pLuidExt = driverExts.find("ZE_extension_device_luid");
+				pDevIPExt = driverExts.find("ZE_extension_device_ip_version");
+				// ZE_extension_eu_count
+			}
 		}
 
 		for (auto l0device : l0enum.devices)

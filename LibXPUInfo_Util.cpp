@@ -98,7 +98,8 @@ std::optional<RuntimeVersion> GetDllVersion(const std::string& filePath) {
 		versionInfo.build = HIWORD(fileInfo->dwProductVersionLS);
 	}
 
-	if (VerQueryValueA(buffer.data(), "\\StringFileInfo\\040904E4\\ProductVersion", &verInfo, &verInfoSize)) {
+	if ((verInfoSize >= sizeof(VS_FIXEDFILEINFO)) && 
+		VerQueryValueA(buffer.data(), "\\StringFileInfo\\040904E4\\ProductVersion", &verInfo, &verInfoSize)) {
 		versionInfo.productVersion = std::string(static_cast<char*>(verInfo), verInfoSize - 1);
 	}
 
