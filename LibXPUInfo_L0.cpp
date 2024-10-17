@@ -558,7 +558,6 @@ void XPUInfo::initL0()
 
 			if (ZE_RESULT_SUCCESS == zRes)
 			{
-				// See https://hsdes.intel.com/appstore/article/#/14018468731 - [DG2][ADL] Level Zero device_luid_ext_properties_t always giving NULL LUID
 				UI64 l0luid = LuidToUI64(&device_luid_ext_properties.luid.id[0]);
 				bool bFound = false;
 				if (pLuidExt && l0luid)
