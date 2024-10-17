@@ -31,9 +31,10 @@ LibXPUInfo coalesces multiple APIs to provide multi-vendor, cross-platform devic
 * Windows
   * If you want to use nVidia NVML and accept [NVML license](https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvml_dev/LICENSE.txt), run external\getNVMLDep.bat
     * If you do not want to use NVML, remove XPUINFO_USE_NVML from preprocessor arguments for LibXPUInfo.vcxproj
-  * If you want to use OpenCL and accept related Apache-2.0 licenses, run external/buildExternalDeps_OCL.bat
-  * If you want to use Level Zero and accept related MIT license, run external/buildExternalDeps_L0.bat
+  * If you want to use OpenCL and accept related Apache-2.0 licenses, run **external/buildExternalDeps_OCL.bat**
+  * If you want to use Level Zero and accept related MIT license, run **external/buildExternalDeps_L0.bat**
     * See above note regarding Spectre-mitigated libs
   * Open LibXPUInfo.sln and build
-    * Note: Modify XPUINFO_USE_* preprocessor flags as desired 
+    * Note: Modify XPUINFO_USE_* preprocessor flags as desired
+    * **Note:** If you pull changes that update the Level Zero or OpenCL submodules, run the correspondig buildExternalDeps_*.bat again before building LibXPUInfo.
  * MacOS/Linux - Not currently supported. No build config files provided. Use at your own risk - information provided may be incorrect.
