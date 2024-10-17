@@ -100,16 +100,69 @@ namespace XI
 		UI32 release : 8;
 		UI32 architecture : 10;
 	};
+	union ipvUnion
+	{
+		UI32 ipVersion = 0; // From OpenCL, L0, or IGCL
+		ipvParts ipv;
+	};
 	struct GenName {
 		UI32 gen; // From Intel Device Information
 		const char* name; 
 		const char* infName=nullptr; // Part before first '_'
-		union
-		{
-			UI32 ipVersion = 0; // From OpenCL, L0, or IGCL
-			ipvParts ipv;
-		};
+		ipvUnion ipvu;
 	};
+
+	enum class IntelGfxFamily : UI32
+	{
+		Unknown,
+		GenericGen9,
+		GenericGen11,
+		GenericGen12LP,
+		DG2,
+		MeteorLake,
+		ArrowLake,
+		GenericXe2,
+		LunarLake,
+		BattleMage,
+		GenericXe3
+	};
+
+#define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::##x, #x}
+	static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
+		MAKE_FAMILY_NAME_PAIR(GenericGen9),
+		MAKE_FAMILY_NAME_PAIR(GenericGen11),
+		MAKE_FAMILY_NAME_PAIR(GenericGen12LP),
+		MAKE_FAMILY_NAME_PAIR(DG2),
+		MAKE_FAMILY_NAME_PAIR(MeteorLake),
+		MAKE_FAMILY_NAME_PAIR(ArrowLake),
+		MAKE_FAMILY_NAME_PAIR(GenericXe2),
+		MAKE_FAMILY_NAME_PAIR(LunarLake),
+		MAKE_FAMILY_NAME_PAIR(BattleMage),
+		MAKE_FAMILY_NAME_PAIR(GenericXe3)
+	};
+
+	IntelGfxFamily getIntelGfxFamily(ipvParts ipv)
+	{
+		IntelGfxFamily outFamily = IntelGfxFamily::Unknown;
+		switch (ipv.architecture)
+		{
+		case 9:  outFamily = IntelGfxFamily::GenericGen9; break;
+		case 11: outFamily = IntelGfxFamily::GenericGen11; break;
+		case 12:
+			outFamily = IntelGfxFamily::GenericGen12LP;
+			if (ipv.release > 50 && ipv.release <= 59)
+				outFamily = IntelGfxFamily::DG2;
+			else if (ipv.release >= 70 && ipv.release <= 71)
+				outFamily = IntelGfxFamily::MeteorLake;
+			else if (ipv.release >= 73 && ipv.release <= 74)
+				outFamily = IntelGfxFamily::ArrowLake;
+			break;
+		case 20: outFamily = IntelGfxFamily::GenericXe2; break;
+		case 30: outFamily = IntelGfxFamily::GenericXe3; break;
+		default: outFamily = IntelGfxFamily::Unknown; break;
+		}
+		return outFamily;
+	}
 
 	/* This table is purposefully internal to LibXPUInfo. 
 	*  Design goal is to expose information without creating end-user dependency.
@@ -125,8 +178,8 @@ namespace XI
 		{0x23, "Rocket Lake", "iRKLD", 0x3004000},
 		{0x24, "Raptor Lake S", "iRPLSD", 0x3008000}, {0x24, "Alder Lake S", "iADLSD", 0x3008000}, // Same gen value
 		{0x25, "Raptor Lake P", "iRPLPD", 0x3008000}, {0x25, "Alder Lake P", "iADLPD", 0x3008000}, // Same gen value
-		{0x4ba, "DG1"}, 
-		{0x4f6, "DG2", "iDG2D", 0x30dc008},
+		{1210, "DG1"}, 
+		{1270, "DG2", "iDG2D", 0x30dc008},
 		{1272, "Meteor Lake", "iMTL", 0x311c004},
 		{1272, "Meteor Lake", "MTL_IAG", 0x311c004}, // Inf name first seen with 101.5445
 		{1273, "Arrow Lake",  "iARL", 0x3118004},
@@ -785,7 +838,7 @@ const char* DeviceProperties::getDeviceGenerationName() const
 	{
 		for (int i = S_numGenNames - 1; i >= 0; --i)
 		{
-			if (S_GenNameMap[i].ipVersion == (UI32)DeviceGenerationID)
+			if (S_GenNameMap[i].ipvu.ipVersion == (UI32)DeviceGenerationID)
 			{
 				return S_GenNameMap[i].name;
 			}
@@ -1348,9 +1401,9 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 			{
 				if (S_GenNameMap[i].gen == (UI32)devProps.DeviceGenerationID)
 				{
-					if (S_GenNameMap[i].ipVersion)
+					if (S_GenNameMap[i].ipvu.ipVersion)
 					{
-						ostr << std::hex << "0x" << S_GenNameMap[i].ipVersion << std::dec;
+						ostr << std::hex << "0x" << S_GenNameMap[i].ipvu.ipVersion << std::dec;
 						if (genName)
 						{
 							ostr << ", ";
@@ -1374,11 +1427,17 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 		}
 		if (xiDev.IsVendor(kVendorId_Intel))
 		{
-			auto ipVer = xiDev.getProperties().DeviceIPVersion;
-			if (ipVer)
+			ipvUnion ipvu;
+			ipvu.ipVersion = xiDev.getProperties().DeviceIPVersion;
+			if (ipvu.ipVersion)
 			{
-				ipvParts ipvp = *reinterpret_cast<ipvParts*>(&ipVer);
-				ostr << ", Architecture: " << ipvp.architecture << ", Release: " << ipvp.release << ", Revision: " << ipvp.revision;
+				//ostr << ", Architecture: " << ipvu.ipv.architecture << ", Release: " << ipvu.ipv.release << ", Revision: " << ipvu.ipv.revision;
+				auto ipFamily = getIntelGfxFamily(ipvu.ipv);
+				auto ipfIter = S_IntelGfxFamilyNameMap.find(ipFamily);
+				if (ipfIter != S_IntelGfxFamilyNameMap.end())
+				{
+					ostr << ", " << ipfIter->second;
+				}
 			}
 		}
 		ostr << std::endl;
