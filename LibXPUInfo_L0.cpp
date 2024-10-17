@@ -125,27 +125,44 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 			}
 		}
 
-		zes_pci_bar_properties_1_2_t pci_props_1_2{ ZES_STRUCTURE_TYPE_PCI_BAR_PROPERTIES_1_2, };
-		zes_pci_properties_t pci_props{ ZES_STRUCTURE_TYPE_PCI_PROPERTIES, };
-		pci_props.pNext = &pci_props_1_2;
-		ze_result_t zRet = zesDevicePciGetProperties(m_L0Device, &pci_props);
+		ze_result_t zRet;
+
+		uint32_t pciBarCount = 0;
+		zRet = zesDevicePciGetBars(m_L0Device, &pciBarCount, nullptr);
+		// zesDeviceGetProperties?
 		if (ZE_RESULT_SUCCESS == zRet)
 		{
-			if (!m_props.PCIReBAR.valid)
+			std::vector<zes_pci_bar_properties_t> barPropsVec(pciBarCount);
+			std::vector <zes_pci_bar_properties_1_2_t> pci_bar_props_1_2(pciBarCount);
+			for (uint32_t i = 0; i < pciBarCount; ++i)
 			{
-				m_props.PCIReBAR.valid = pci_props_1_2.resizableBarSupported ||
-					(!pci_props_1_2.resizableBarSupported && !pci_props_1_2.resizableBarEnabled);
-				m_props.PCIReBAR.supported = pci_props_1_2.resizableBarSupported;
-				m_props.PCIReBAR.enabled = pci_props_1_2.resizableBarEnabled;
+				barPropsVec[i].stype = ZES_STRUCTURE_TYPE_PCI_BAR_PROPERTIES;
+				barPropsVec[i].pNext = &(pci_bar_props_1_2[i]);
+				pci_bar_props_1_2[i].stype = ZES_STRUCTURE_TYPE_PCI_BAR_PROPERTIES_1_2;
+			}
+
+			zRet = zesDevicePciGetBars(m_L0Device, &pciBarCount, (zes_pci_bar_properties_t*)barPropsVec.data());
+			if (ZE_RESULT_SUCCESS == zRet)
+			{
+				for (uint32_t i = 0; i < pciBarCount; ++i)
+				{
+					if (ZES_PCI_BAR_TYPE_MMIO == barPropsVec[i].type)
+					{
+						if (!m_props.PCIReBAR.valid)
+						{
+							m_props.PCIReBAR.valid = pci_bar_props_1_2[i].resizableBarSupported ||
+								(!pci_bar_props_1_2[i].resizableBarSupported && !pci_bar_props_1_2[i].resizableBarEnabled);
+							m_props.PCIReBAR.supported = pci_bar_props_1_2[i].resizableBarSupported;
+							m_props.PCIReBAR.enabled = pci_bar_props_1_2[i].resizableBarEnabled;
+						}
+						break;
+					}
+				}
 			}
 		}
-		else
-		{
-			// Try again without zes_pci_bar_properties_1_2_t
-			pci_props.pNext = nullptr;
-			zRet = zesDevicePciGetProperties(m_L0Device, &pci_props);
-		}
 
+		zes_pci_properties_t pci_props{ ZES_STRUCTURE_TYPE_PCI_PROPERTIES, };
+		zRet = zesDevicePciGetProperties(m_L0Device, &pci_props);
 		if (ZE_RESULT_SUCCESS == zRet)
 		{
 			DebugStreamW dStr(XPUINFO_L0_VERBOSE);
@@ -497,6 +514,9 @@ void XPUInfo::initL0()
 	for (auto l0enum : L0Drivers)
 	{
 		ze_result_t zRes;
+		ze_api_version_t zeVersion{};
+		zRes = zeDriverGetApiVersion(l0enum.driver, &zeVersion);
+
 		uint32_t numExts = 0;
 		zRes = zeDriverGetExtensionProperties(l0enum.driver, &numExts, nullptr);
 		L0_Extensions driverExts(numExts);
