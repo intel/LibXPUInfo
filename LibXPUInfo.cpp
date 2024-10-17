@@ -133,6 +133,7 @@ namespace XI
 		{1275, "Lunar Lake", "LNL_", 0x5010004}, // TODO: Remove one of these when no longer needed
 		// Devices with no "Intel Device Information" value have negative values
 		{0x80000000, "NPU2.7", "mtl_w" },
+		{0x80000000, "NPU2.7", "NPU2_7" },
 		{0x80000002, "NPU4", "NPU4" }
 	};
 	static const int S_numGenNames = sizeof(S_GenNameMap)/sizeof(GenName);
