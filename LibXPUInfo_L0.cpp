@@ -125,8 +125,27 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 			}
 		}
 
+		zes_pci_bar_properties_1_2_t pci_props_1_2{ ZES_STRUCTURE_TYPE_PCI_BAR_PROPERTIES_1_2, };
 		zes_pci_properties_t pci_props{ ZES_STRUCTURE_TYPE_PCI_PROPERTIES, };
+		pci_props.pNext = &pci_props_1_2;
 		ze_result_t zRet = zesDevicePciGetProperties(m_L0Device, &pci_props);
+		if (ZE_RESULT_SUCCESS == zRet)
+		{
+			if (!m_props.PCIReBAR.valid)
+			{
+				m_props.PCIReBAR.valid = pci_props_1_2.resizableBarSupported ||
+					(!pci_props_1_2.resizableBarSupported && !pci_props_1_2.resizableBarEnabled);
+				m_props.PCIReBAR.supported = pci_props_1_2.resizableBarSupported;
+				m_props.PCIReBAR.enabled = pci_props_1_2.resizableBarEnabled;
+			}
+		}
+		else
+		{
+			// Try again without zes_pci_bar_properties_1_2_t
+			pci_props.pNext = nullptr;
+			zRet = zesDevicePciGetProperties(m_L0Device, &pci_props);
+		}
+
 		if (ZE_RESULT_SUCCESS == zRet)
 		{
 			DebugStreamW dStr(XPUINFO_L0_VERBOSE);
