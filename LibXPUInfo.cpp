@@ -92,11 +92,13 @@ namespace XI
 #endif
 	}
 
+	// See https://github.com/oneapi-src/oneDNN/blob/0bbadfe56184c197e2b343f821deab6199f310dd/src/gpu/intel/jit/ngen/npack/neo_packager.hpp#L275
 	struct ipvParts
 	{
-		U8 ipVersionRevision;
-		U8 ipVersionMinor;
-		UI16 ipVersionMajor;
+		UI32 revision : 6;
+		UI32 reserved : 8;
+		UI32 release : 8;
+		UI32 architecture : 10;
 	};
 	struct GenName {
 		UI32 gen; // From Intel Device Information
@@ -1366,8 +1368,20 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	}
 	if (devProps.DeviceIPVersion != 0)
 	{
-		SaveRestoreIOSFlags sr(ostr);
-		ostr << "\tIP Version: 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << devProps.DeviceIPVersion << std::endl;
+		{
+			SaveRestoreIOSFlags sr(ostr);
+			ostr << "\tIP Version: 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << devProps.DeviceIPVersion;
+		}
+		if (xiDev.IsVendor(kVendorId_Intel))
+		{
+			auto ipVer = xiDev.getProperties().DeviceIPVersion;
+			if (ipVer)
+			{
+				ipvParts ipvp = *reinterpret_cast<ipvParts*>(&ipVer);
+				ostr << ", Architecture: " << ipvp.architecture << ", Release: " << ipvp.release << ", Revision: " << ipvp.revision;
+			}
+		}
+		ostr << std::endl;
 	}
 	if (xiDev.IsVendor(kVendorId_Intel) && (devProps.VendorFlags.IntelFeatureFlags.FLAG_DP4A | devProps.VendorFlags.IntelFeatureFlags.FLAG_DPAS))
 	{
