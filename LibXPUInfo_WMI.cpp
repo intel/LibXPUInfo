@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Some parts of this are actually cross-platform, despite "WMI" name
-#if defined(XPUINFO_USE_WMI)
+#if defined(XPUINFO_USE_WMI) || defined(__APPLE__)
 #define _WIN32_DCOM
 #ifndef NOMINMAX
 #define NOMINMAX
