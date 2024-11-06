@@ -14,20 +14,24 @@
 #ifdef _WIN32
 #include <Windows.h>
 #endif
+
+#pragma warning(push)
+#pragma warning(disable : 4251)
+
 namespace XI
 {
 #ifdef _WIN32
 namespace Win
 {
     // Wrapper for use with CreateProcess
-    class ProcessInformation : public PROCESS_INFORMATION, NoCopyAssign
+    class XPUINFO_EXPORT ProcessInformation : public PROCESS_INFORMATION, NoCopyAssign
     {
     public:
         ProcessInformation() : PROCESS_INFORMATION{} {} // zero-initialize
         ~ProcessInformation(); // Close non-zero handles
     };
 
-    class NamedEvent: public NoCopyAssign
+    class XPUINFO_EXPORT NamedEvent: public NoCopyAssign
     {
     public:
         NamedEvent(const char* sharedName);
@@ -51,7 +55,7 @@ namespace Win
         HANDLE m_hEvent;
     };
 
-    class NamedMutex : public NoCopyAssign
+    class XPUINFO_EXPORT NamedMutex : public NoCopyAssign
     {
     public:
         NamedMutex(const char* sharedName);
@@ -86,7 +90,7 @@ namespace Win
         UI32 m_CreateError;
     };
 
-    class NamedSemaphore : public NoCopyAssign
+    class XPUINFO_EXPORT NamedSemaphore : public NoCopyAssign
     {
     public:
         NamedSemaphore(const char* name, const I32 initialCount);
@@ -113,7 +117,7 @@ namespace Win
         UI32 m_CreateError;
     };
 
-    class NamedSharedMemory : public NoCopyAssign
+    class XPUINFO_EXPORT NamedSharedMemory : public NoCopyAssign
     {
     public:
         NamedSharedMemory(size_t size, const char* sharedName, bool bReadOnlyAccess = false);
@@ -135,7 +139,7 @@ namespace Win
         UI32 m_Status = UI32(-1);
     };
 
-    class NamedPipe : public NoCopyAssign
+    class XPUINFO_EXPORT NamedPipe : public NoCopyAssign
     {
     public:
         NamedPipe(const String& pipeName, // Must have format "\\\\.\\pipe\\Name"
@@ -205,4 +209,7 @@ namespace Win
 } // Win
 #endif // _WIN32
 } // XI
+
+#pragma warning(pop)
+
 #endif // XPUINFO_USE_IPC
