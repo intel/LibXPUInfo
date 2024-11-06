@@ -76,14 +76,14 @@ typedef UI64 TimerDuration;
 			(addr.function != -1);
 	}
 
-	std::string convert(const std::wstring& inWStr);
-	std::wstring convert(const std::string& str);
-	std::string toLower(const std::string& s);
-	std::wstring toLower(const std::wstring& s);
+    XPUINFO_EXPORT std::string convert(const std::wstring& inWStr);
+    XPUINFO_EXPORT std::wstring convert(const std::string& str);
+    XPUINFO_EXPORT std::string toLower(const std::string& s);
+    XPUINFO_EXPORT std::wstring toLower(const std::wstring& s);
 
     typedef TimerTickValueType TimerTick;
 
-    class TimeInterval
+    class XPUINFO_EXPORT TimeInterval
     {
     public:
         TimeInterval() : tStart{}, tEnd{} {}
@@ -93,7 +93,7 @@ typedef UI64 TimerDuration;
         TimerDuration operator()() const { return tEnd - tStart; }
     };
 
-    class Timer
+    class XPUINFO_EXPORT Timer
     {
     public:
         static TimerTick GetNow()
@@ -191,9 +191,9 @@ typedef UI64 TimerDuration;
 #ifdef _WIN32
 namespace Win
 {
-    String GetLastErrorStr(DWORD dwErr);
-    bool GetVersionFromFile(const String& filePath, RuntimeVersion& fileVer);
-    std::string getDateString(const FILETIME& ft);
+    XPUINFO_EXPORT String GetLastErrorStr(DWORD dwErr);
+    XPUINFO_EXPORT bool GetVersionFromFile(const String& filePath, RuntimeVersion& fileVer);
+    XPUINFO_EXPORT std::string getDateString(const FILETIME& ft);
 }
 #endif // _WIN32
 

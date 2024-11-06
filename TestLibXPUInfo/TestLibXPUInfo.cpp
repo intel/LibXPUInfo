@@ -24,9 +24,8 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
     {
         rapidjson::Document doc;
         doc.SetObject();
-        auto& a = doc.GetAllocator();
 
-        if (pXI->serialize(doc, a))
+        if (pXI->serialize(doc))
         {
             rapidjson::OStreamWrapper out(ostr);
             rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(out);
@@ -169,10 +168,14 @@ int printXPUInfo(int argc, char* argv[])
         if (!testIndividual)
         {
             XI::Timer timer;
+#ifdef _WIN32
             APIType apis = APIType((XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
                 | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
                 | XI::API_TYPE_LEVELZERO \
                 | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML) | API_TYPE_WMI);
+#else
+            APIType apis = XI::API_TYPE_METAL;
+#endif
             apis |= additionalAPIs;
             timer.Start();
             std::cout << "Initializing XPUInfo with APIType = " << apis << "...\n";

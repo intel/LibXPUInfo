@@ -32,6 +32,10 @@
 
 #ifdef _WIN32
     #define HYBRIDDETECT_OS_WIN 1
+    // To disable use of CallNtPowerInformation, set to 0 externally
+    #ifndef HYBRIDDETECT_USE_PROCESSOR_POWER_INFO
+        #define HYBRIDDETECT_USE_PROCESSOR_POWER_INFO 1
+    #endif
 #if defined(_M_X64) || __x86_64__
     #define HYBRIDDETECT_CPU_X86_64 1
 #else
@@ -57,7 +61,10 @@
 
 #ifdef HYBRIDDETECT_OS_WIN
 #include <Windows.h>
+#if HYBRIDDETECT_USE_PROCESSOR_POWER_INFO
 #include <powrprof.h>
+#pragma comment(lib, "Powrprof.lib")
+#endif
 #include <VersionHelpers.h>
 #include <intrin.h>
 #include <malloc.h>
@@ -73,7 +80,6 @@
 	#pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #endif
 
-#pragma comment(lib, "Powrprof.lib")
 #else
 typedef unsigned long ULONG;
 typedef unsigned long long ULONG64;
@@ -788,7 +794,7 @@ inline bool GetLogicalProcessorsEx(PROCESSOR_INFO& procInfo)
 
 inline void UpdateProcessorInfo(PROCESSOR_INFO& procInfo)
 {
-#ifdef HYBRIDDETECT_OS_WIN
+#if defined(HYBRIDDETECT_OS_WIN) && (HYBRIDDETECT_USE_PROCESSOR_POWER_INFO)
 	// TODO: Not sure how this works with processor groups
 	// Query Current Frequency for each Logical Processor using CallNTPowerInformation
 	// https://docs.microsoft.com/en-us/windows/win32/api/powerbase/nf-powerbase-callntpowerinformation
@@ -956,11 +962,13 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 	{
 		HYBRID_DETECT_TRACE(5, "=== procInfo.numLogicalCores = %d, procInfo.numGroups = %d", procInfo.numLogicalCores, procInfo.numGroups);
 
+#if HYBRIDDETECT_USE_PROCESSOR_POWER_INFO
 		// Query Current Frequency for each Logical Processor using CallNTPowerInformation
 		// https://docs.microsoft.com/en-us/windows/win32/api/powerbase/nf-powerbase-callntpowerinformation
 		std::vector<LOGICAL_PROCESSOR_POWER_INFORMATION> pwrInfo(procInfo.numLogicalCores);
 		DWORD size = sizeof(LOGICAL_PROCESSOR_POWER_INFORMATION) * procInfo.numLogicalCores;
 		CallNtPowerInformation(ProcessorInformation, nullptr, 0, &pwrInfo[0], size);
+#endif
 
 		for (unsigned group = 0; group < procInfo.numGroups; group++)
 		{
@@ -1046,15 +1054,23 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 					logicalCore.busFrequency = cpuInfo[CPUID_ECX];
 
 					// Fall-back to ProcessorPowerInfo for older CPUs
-					if (logicalCore.baseFrequency == 0)
+					if ((logicalCore.baseFrequency == 0) || (logicalCore.maximumFrequency==0))
 					{
+						// Set to zero to indicate unknown/invalid state
+						logicalCore.baseFrequency = 0;
+						logicalCore.maximumFrequency = 0;
+						logicalCore.busFrequency = 0;
+#if HYBRIDDETECT_USE_PROCESSOR_POWER_INFO
 						// Not accurate enough, not always mapped to correct core?
-						//logicalCore.baseFrequency = pwrInfo[core].mhzLimit;
-						//logicalCore.maximumFrequency = pwrInfo[core].maxMhz;
+						logicalCore.baseFrequency = pwrInfo[core].mhzLimit;
+						logicalCore.maximumFrequency = pwrInfo[core].maxMhz;
+#endif
 					}
 
+#if HYBRIDDETECT_USE_PROCESSOR_POWER_INFO
 					logicalCore.currentFrequency = pwrInfo[core].currentMhz;
 					logicalCore.powerInformation = pwrInfo[core];
+#endif
 				}
 
 				// Hybrid Information Sub - leaf(EAX = 1AH, ECX = 0)

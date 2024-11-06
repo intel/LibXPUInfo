@@ -20,20 +20,37 @@
 */
 
 #pragma once
+#ifdef XPUINFO_BUILD_SHARED
+    #ifdef XPUINFO_BUILD_INTERNAL
+        #ifdef _WIN32
+            #define XPUINFO_EXPORT __declspec(dllexport)
+        #else
+            #define XPUINFO_EXPORT __attribute__((visibility("default")))
+        #endif
+    #else
+        #ifdef _WIN32
+            #define XPUINFO_EXPORT __declspec(dllimport)
+        #else
+            #define XPUINFO_EXPORT
+        #endif
+    #endif
+#else
+    #define XPUINFO_EXPORT
+#endif
 #ifdef _WIN32
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS // for wcsncpy, strncpy
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN
-#endif
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-#endif
-#include <dxgi1_4.h>
+    #ifndef _CRT_SECURE_NO_WARNINGS
+        #define _CRT_SECURE_NO_WARNINGS // for wcsncpy, strncpy
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #ifndef VC_EXTRALEAN
+        #define VC_EXTRALEAN
+    #endif
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
+    #endif
+    #include <dxgi1_4.h>
 #endif // _WIN32
 #include <string>
 #include <vector>
@@ -46,10 +63,15 @@
 #include <functional>
 #include <sstream>
 
+#ifdef _WIN32
+#pragma warning(push)
+#pragma warning(disable : 4251)
+#endif
+
 namespace XI {
     typedef void(*ErrorHandlerType)(const std::string& message, const char* fileName, const int lineNumber);
-    ErrorHandlerType getErrorHandlerFunc();
-    ErrorHandlerType setErrorHandlerFunc(ErrorHandlerType f);
+    XPUINFO_EXPORT ErrorHandlerType getErrorHandlerFunc();
+    XPUINFO_EXPORT ErrorHandlerType setErrorHandlerFunc(ErrorHandlerType f);
 }
 #define ENABLE_PER_LOGICAL_CPUID_ISA_DETECTION 0
 #define XPUINFO_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, __FILE__, __LINE__)
@@ -150,6 +172,13 @@ struct DXCoreAdapterMemoryBudget
 
 namespace XI
 {
+#ifdef XPUINFO_USE_RAPIDJSON
+    namespace JSON
+    {
+        using AllocatorType = decltype(std::declval<rapidjson::Document>().GetAllocator());
+    }
+#endif
+
     using String = std::string;
     using WString = std::wstring;
     using UI64 = std::uint64_t;
@@ -166,7 +195,7 @@ namespace XI
     template <typename T>
     using SharedPtr = std::shared_ptr<T>;
 
-    struct NoCopyAssign
+    struct XPUINFO_EXPORT NoCopyAssign
     {
         NoCopyAssign() {};
         NoCopyAssign(const NoCopyAssign&) = delete;
@@ -221,7 +250,7 @@ namespace XI
     {
         return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
     }
-    std::ostream& operator<<(std::ostream& s, APIType t);
+    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
 
     enum UMAType : UI32
     {
@@ -245,7 +274,7 @@ namespace XI
     typedef SharedPtr<IGCLPciProperties> IGCLPciPropertiesPtr;
 
     // Helper class to get driver version with given adapter luid.
-    class DeviceDriverVersion
+    class XPUINFO_EXPORT DeviceDriverVersion
     {
     public:
         using VersionRange = std::pair<DeviceDriverVersion, DeviceDriverVersion>;
@@ -285,14 +314,14 @@ namespace XI
         return LuidToUI64(const_cast<LUID*>(&luid));
     }
 
-    struct ResizableBARStatus
+    struct XPUINFO_EXPORT ResizableBARStatus
     {
         bool valid = false;
         bool supported = false;
         bool enabled = false;
     };
 
-    struct PCIAddressType
+    struct XPUINFO_EXPORT PCIAddressType
     {
         UI32 domain;
         UI32 bus;
@@ -303,15 +332,13 @@ namespace XI
         bool valid() const;
         bool GetFromWStr(const WString& inStr);
 #ifdef XPUINFO_USE_RAPIDJSON
-        template <typename rjDocOrVal>
-        PCIAddressType(const rjDocOrVal& val); // deserialize
-        template <typename Alloc>
-        rapidjson::Value serialize(Alloc& a) const;
+        PCIAddressType(const rapidjson::Value& val); // deserialize
+        rapidjson::Value serialize(JSON::AllocatorType& a) const;
 #endif
         bool operator==(const PCIAddressType& inRHS) const;
     };
 
-    struct DriverInfo
+    struct XPUINFO_EXPORT DriverInfo
     {
         LUID DeviceLUID = {};
         WString DriverDesc;
@@ -334,7 +361,7 @@ namespace XI
     const UINT kVendorId_nVidia = 0x10de;
 
     // Properties that are frequently used or common to most devices
-    struct DeviceProperties
+    struct XPUINFO_EXPORT DeviceProperties
     {
         DXGI_ADAPTER_DESC1 dxgiDesc;
         DriverInfoPtr pDriverInfo;
@@ -401,7 +428,7 @@ namespace XI
         bool operator==(const DeviceProperties& props) const;
     };
 
-    class DeviceBase
+    class XPUINFO_EXPORT DeviceBase
     {
     public:
         DeviceBase(UI32 inIndex, DeviceType inType=DEVICE_TYPE_UNKNOWN) : m_adapterIndex(inIndex), m_type(inType) {}
@@ -420,7 +447,7 @@ namespace XI
         DeviceType m_type;
     };
 
-    class DeviceCPU : public DeviceBase
+    class XPUINFO_EXPORT DeviceCPU : public DeviceBase
     {
     public:
         DeviceCPU();
@@ -436,8 +463,7 @@ namespace XI
         UI32 compareCurrentToInitialMXCSR() const { return m_initialMXCSR ^ getcsr(); }
 
 #ifdef XPUINFO_USE_RAPIDJSON
-        template <typename rjDocOrVal>
-        DeviceCPU(const rjDocOrVal& val);
+        DeviceCPU(const rapidjson::Value& val);
 #endif
 
     protected:
@@ -449,7 +475,7 @@ namespace XI
     class Device;
     typedef std::shared_ptr<Device> DevicePtr;
 
-    class Device : public DeviceBase
+    class XPUINFO_EXPORT Device : public DeviceBase
     {
     public:
         Device(UI32 inIndex, DXGI_ADAPTER_DESC1* pDesc, 
@@ -478,8 +504,7 @@ namespace XI
         DXCoreAdapterMemoryBudget getMemUsage() const;
 
 #ifdef XPUINFO_USE_RAPIDJSON
-        template <typename Alloc>
-        rapidjson::Value serialize(Alloc& a);
+        rapidjson::Value serialize(JSON::AllocatorType& a);
         static DevicePtr deserialize(const rapidjson::Value& val);
 #endif
         bool operator==(const Device& dev) const;
@@ -523,23 +548,23 @@ namespace XI
         nvmlDevice_t m_nvmlDevice = nullptr;
 #endif
     };
-    std::ostream& operator<<(std::ostream& ostr, const Device& xi);
-    std::ostream& operator<<(std::ostream& ostr, const DevicePtr& xi);
+    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const Device& xi);
+    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const DevicePtr& xi);
 
-    class ConstDevicePtrVec : public std::vector<DevicePtr>
+    class XPUINFO_EXPORT ConstDevicePtrVec : public std::vector<DevicePtr>
     {
     public:
         ConstDevicePtrVec(const std::string& label = "Preferred Devices") : m_label(label) {}
         const std::string& getLabel() const { return m_label; }
         void setLabel(const std::string& label) { m_label = label; }
-        friend std::ostream& operator<<(std::ostream& ostr, const ConstDevicePtrVec& devPtrs);
+        friend XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const ConstDevicePtrVec& devPtrs);
 
     protected:
         std::string m_label;
     };
 
 #ifdef XPUINFO_USE_TELEMETRYTRACKER
-    class TelemetryTracker : public NoCopyAssign
+    class XPUINFO_EXPORT TelemetryTracker : public NoCopyAssign
     {
     public:
         friend class Device;
@@ -667,7 +692,7 @@ namespace XI
         ctl_freq_handle_t m_IGCL_MemFreqHandle = nullptr;
     };
 
-    class TelemetryTrackerWithScopedLog : public TelemetryTracker
+    class XPUINFO_EXPORT TelemetryTrackerWithScopedLog : public TelemetryTracker
     {
     public:
         TelemetryTrackerWithScopedLog(const DevicePtr& deviceToTrack, UI32 msPeriod, 
@@ -710,7 +735,7 @@ namespace XI
         typedef ctl_device_adapter_handle_t API_handle_type;
     };
     
-    class SetupDeviceInfo
+    class XPUINFO_EXPORT SetupDeviceInfo
     {
     public:
         SetupDeviceInfo();
@@ -724,15 +749,13 @@ namespace XI
         std::vector<DriverInfoPtr> m_DevInfoPtrs;
     };
 
-    class SystemInfo
+    class XPUINFO_EXPORT SystemInfo
     {
     public:
         SystemInfo();
 #ifdef XPUINFO_USE_RAPIDJSON
-        template <typename rjDocOrVal>
-        SystemInfo(const rjDocOrVal& val);
-        template <typename Alloc>
-        rapidjson::Value serialize(Alloc& a) const;
+        SystemInfo(const rapidjson::Value& val);
+        rapidjson::Value serialize(JSON::AllocatorType& a) const;
 #endif
 
         // Win32_ComputerSystem
@@ -822,13 +845,13 @@ namespace XI
         };
         std::vector<VideoControllerInfo> VideoControllers;
 
-        friend std::ostream& operator<<(std::ostream& os, const SystemInfo& si);
+        friend XPUINFO_EXPORT std::ostream& operator<<(std::ostream& os, const SystemInfo& si);
 
     protected:
         std::map<MemoryDeviceInfo, int> m_mapMemSize; // {info, device_count}
     };
 
-    struct RuntimeVersion
+    struct XPUINFO_EXPORT RuntimeVersion
     {
         UI32 major, minor, build;
         String productVersion;
@@ -843,13 +866,12 @@ namespace XI
 
 #ifdef XPUINFO_USE_SYSTEMEMORYINFO
     // Basic OS-provided memory information
-    class SystemMemoryInfo
+    class XPUINFO_EXPORT SystemMemoryInfo
     {
     public:
         SystemMemoryInfo(const std::shared_ptr<SystemInfo> pSysInfo = nullptr);
 #ifdef XPUINFO_USE_RAPIDJSON
-        template <typename rjDocOrVal>
-        SystemMemoryInfo(const rjDocOrVal& val);
+        SystemMemoryInfo(const rapidjson::Value& val);
 #endif
 
         static size_t getCurrentAvailablePhysicalMemory();
@@ -873,7 +895,7 @@ namespace XI
     class XPUInfo;
     typedef std::shared_ptr<XPUInfo> XPUInfoPtr;
 
-    class XPUInfo
+    class XPUINFO_EXPORT XPUInfo
     {
     public:
         // Constructor compares class size of client to that of lib to help verify that 
@@ -915,11 +937,8 @@ namespace XI
 #ifdef XPUINFO_USE_RAPIDJSON
         // Serialize to top-level rapidjson::Document or rapidjson::Value
         // Not all fields serialized
-        template <typename rjDocOrVal, typename Alloc>
-        bool serialize(rjDocOrVal& val, Alloc& a);
-        // Full deserialize not implemented - see Device::deserialize
-        template <typename rjDocOrVal>
-        static XPUInfoPtr deserialize(const rjDocOrVal& val);
+        bool serialize(rapidjson::Document& doc);
+        static XPUInfoPtr deserialize(const rapidjson::Document& val);
 #endif
         APIType getUsedAPIs() const { return m_UsedAPIs; }
 
@@ -959,10 +978,10 @@ namespace XI
         RuntimeVersionInfoMap m_RuntimeVersions;
 #endif
     };
-    std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi);
+    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi);
 
     // ScopedRegisterNotification inteded to work as no-op when DXCORE is not available
-    class ScopedRegisterNotification : public NoCopyAssign
+    class XPUINFO_EXPORT ScopedRegisterNotification : public NoCopyAssign
     {
     public:
         enum TypeFlags
@@ -1010,3 +1029,6 @@ namespace XI
 
 
 }; // XI
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
