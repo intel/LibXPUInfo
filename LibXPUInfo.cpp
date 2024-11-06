@@ -114,20 +114,20 @@ namespace XI
 
 	enum class IntelGfxFamily : UI32
 	{
-		Unknown,
-		GenericGen9,
-		GenericGen11,
-		GenericGen12LP,
-		DG2,
-		MeteorLake,
-		ArrowLake,
-		GenericXe2,
-		LunarLake,
-		BattleMage,
-		GenericXe3
+		iUnknown,
+        iGenericGen9,
+        iGenericGen11,
+        iGenericGen12LP,
+        iDG2,
+        iMeteorLake,
+        iArrowLake,
+        iGenericXe2,
+        iLunarLake,
+        iBattleMage,
+        iGenericXe3
 	};
 
-#define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::##x, #x}
+#define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::i##x, #x}
 	static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
 		MAKE_FAMILY_NAME_PAIR(GenericGen9),
 		MAKE_FAMILY_NAME_PAIR(GenericGen11),
@@ -143,23 +143,23 @@ namespace XI
 
 	IntelGfxFamily getIntelGfxFamily(ipvParts ipv)
 	{
-		IntelGfxFamily outFamily = IntelGfxFamily::Unknown;
+		IntelGfxFamily outFamily = IntelGfxFamily::iUnknown;
 		switch (ipv.architecture)
 		{
-		case 9:  outFamily = IntelGfxFamily::GenericGen9; break;
-		case 11: outFamily = IntelGfxFamily::GenericGen11; break;
+		case 9:  outFamily = IntelGfxFamily::iGenericGen9; break;
+		case 11: outFamily = IntelGfxFamily::iGenericGen11; break;
 		case 12:
-			outFamily = IntelGfxFamily::GenericGen12LP;
+			outFamily = IntelGfxFamily::iGenericGen12LP;
 			if (ipv.release > 50 && ipv.release <= 59)
-				outFamily = IntelGfxFamily::DG2;
+				outFamily = IntelGfxFamily::iDG2;
 			else if (ipv.release >= 70 && ipv.release <= 71)
-				outFamily = IntelGfxFamily::MeteorLake;
+				outFamily = IntelGfxFamily::iMeteorLake;
 			else if (ipv.release >= 73 && ipv.release <= 74)
-				outFamily = IntelGfxFamily::ArrowLake;
+				outFamily = IntelGfxFamily::iArrowLake;
 			break;
-		case 20: outFamily = IntelGfxFamily::GenericXe2; break;
-		case 30: outFamily = IntelGfxFamily::GenericXe3; break;
-		default: outFamily = IntelGfxFamily::Unknown; break;
+		case 20: outFamily = IntelGfxFamily::iGenericXe2; break;
+		case 30: outFamily = IntelGfxFamily::iGenericXe3; break;
+		default: outFamily = IntelGfxFamily::iUnknown; break;
 		}
 		return outFamily;
 	}
