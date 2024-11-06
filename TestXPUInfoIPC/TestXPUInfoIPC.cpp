@@ -22,6 +22,7 @@
 #include <fstream>
 
 #ifdef TESTXPUINFOIPC_SHARED
+#if TESTXPUINFOIPC_SUPPORT_PIPE
 int XPUInfoIPC_Client_Pipe(const char* serverCommandString, PROCESS_INFORMATION& pi)
 {
     // This event is used for our handshake/protocol
@@ -159,8 +160,9 @@ int XPUInfo_IPC_Server_Pipe()
         return -1;
     }
 }
+#endif // TESTXPUINFOIPC_SUPPORT_PIPE
 
-
+#if TESTXPUINFOIPC_SUPPORT_SHAREDMEM
 int XPUInfoIPC_Client(const char* serverCommandString, PROCESS_INFORMATION& pi)
 {
     // This event is used for our handshake/protocol
@@ -259,7 +261,8 @@ int XPUInfo_IPC_Server()
         return -1;
     }
 }
-#else
+#endif // TESTXPUINFOIPC_SUPPORT_SHAREDMEM
+#else // TESTXPUINFOIPC_SHARED
 
 #ifdef XPUINFO_USE_RAPIDJSON
 bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
@@ -268,9 +271,8 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
     {
         rapidjson::Document doc;
         doc.SetObject();
-        auto& a = doc.GetAllocator();
 
-        if (pXI->serialize(doc, a))
+        if (pXI->serialize(doc))
         {
             rapidjson::OStreamWrapper out(ostr);
             rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(out);
@@ -290,7 +292,7 @@ int writeXPUInfoJSON(const char* jsonPath)
     std::ofstream outFile(jsonPath);
     return (!getXPUInfoJSON(outFile, pXI));
 }
-#endif
+#endif // XPUINFO_USE_RAPIDJSON
 
 int main(int argc, char* argv[])
 {
@@ -328,9 +330,27 @@ int main(int argc, char* argv[])
         }
     }
 
+    XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
+        "Must build with TESTXPUINFOIPC_SUPPORT_PIPE or TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
+#if TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM
     if (isServer)
     {
-        procRetVal = usePipe ? XPUInfo_IPC_Server_Pipe() : XPUInfo_IPC_Server();
+        if (usePipe)
+        {
+            XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_PIPE,
+                "Must build with TESTXPUINFOIPC_SUPPORT_PIPE");
+#if TESTXPUINFOIPC_SUPPORT_PIPE
+            procRetVal = XPUInfo_IPC_Server_Pipe();
+#endif
+        }
+        else
+        {
+            XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
+                "Must build with TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
+#if TESTXPUINFOIPC_SUPPORT_SHAREDMEM
+            procRetVal = XPUInfo_IPC_Server();
+#endif
+        }
     }
     else
     {
@@ -346,14 +366,24 @@ int main(int argc, char* argv[])
             args.reserve(32767); // See CreateProcess docs - unclear if this is required
             args = szFileName;
             args += " -server";
+            XI::Win::ProcessInformation pi;
             if (!usePipe)
             {
+                XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
+                    "Must build with TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
                 args += " -sharedmem";
+#if TESTXPUINFOIPC_SUPPORT_SHAREDMEM
+                procRetVal = XPUInfoIPC_Client(args.c_str(), pi);
+#endif
             }
-
-            XI::Win::ProcessInformation pi;
-            procRetVal = usePipe ? XPUInfoIPC_Client_Pipe(args.c_str(), pi) : 
-                XPUInfoIPC_Client(args.c_str(), pi);
+            else
+            {
+                XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_PIPE,
+                    "Must build with TESTXPUINFOIPC_SUPPORT_PIPE");
+#if TESTXPUINFOIPC_SUPPORT_PIPE
+                procRetVal = XPUInfoIPC_Client_Pipe(args.c_str(), pi);
+#endif
+            }
         }
         else
         {
@@ -361,6 +391,7 @@ int main(int argc, char* argv[])
         }
     } // End Client
     std::cout << (isServer ? "[SERVER] " : "[CLIENT] ") << "Exiting with code " << procRetVal << std::endl;
+#endif // TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM
 #endif // _WIN32
     return procRetVal;
 }

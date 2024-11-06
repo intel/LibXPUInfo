@@ -1,15 +1,30 @@
+// Copyright (C) 2024 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
 #pragma once
 
-#define BUFSIZE 4096
-#define SHARED_MEM_NAME "XPUINFO_IPC_SHAREDMEM"
-#define EVENT_NAME "XPUINFO_IPC_EVENT"
-#define MUTEX_NAME "XPUINFO_IPC_MUTEX"
-#define SEMAPHORE_NAME "XPUINFO_IPC_SEMAPHORE"
-#define PIPE_NAME "\\\\.\\pipe\\XPUINFO_IPC"
+#ifndef TESTXPUINFOIPC_SUPPORT_PIPE
+    #define TESTXPUINFOIPC_SUPPORT_PIPE 0
+#endif
+#ifndef TESTXPUINFOIPC_SUPPORT_SHAREDMEM
+    #define TESTXPUINFOIPC_SUPPORT_SHAREDMEM 0
+#endif
+
+#if TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM
+    #define BUFSIZE 4096
+    #define SHARED_MEM_NAME "XPUINFO_IPC_SHAREDMEM"
+    #define EVENT_NAME "XPUINFO_IPC_EVENT"
+    #define MUTEX_NAME "XPUINFO_IPC_MUTEX"
+    #define SEMAPHORE_NAME "XPUINFO_IPC_SEMAPHORE"
+#endif
 
 #ifdef _WIN32
-int XPUInfoIPC_Client_Pipe(const char* serverCommandString, PROCESS_INFORMATION& pi);
-int XPUInfoIPC_Client(const char* serverCommandString, PROCESS_INFORMATION& pi);
-int XPUInfo_IPC_Server_Pipe();
-int XPUInfo_IPC_Server();
+#if TESTXPUINFOIPC_SUPPORT_PIPE
+    #define PIPE_NAME "\\\\.\\pipe\\XPUINFO_IPC"
+    int XPUInfoIPC_Client_Pipe(const char* serverCommandString, PROCESS_INFORMATION& pi);
+    int XPUInfo_IPC_Server_Pipe();
+#endif // TESTXPUINFOIPC_SUPPORT_PIPE
+#if TESTXPUINFOIPC_SUPPORT_SHAREDMEM
+    int XPUInfoIPC_Client(const char* serverCommandString, PROCESS_INFORMATION& pi);
+    int XPUInfo_IPC_Server();
+#endif // TESTXPUINFOIPC_SUPPORT_SHAREDMEM
 #endif // _WIN32
