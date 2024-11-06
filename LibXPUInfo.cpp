@@ -738,7 +738,7 @@ Device::Device(UI32 inIndex, DXGI_ADAPTER_DESC1* pDesc, DeviceType inType, APITy
 		{
 			m_pDriverVersion.reset(new DeviceDriverVersion(rawDriverVerion));
 		}
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32) && defined(_DEBUG)
 		{
 			DebugStreamW dStr(false);
 			dStr << L"Device: " << name() << L", LUID = " << std::hex << getLUID() << std::dec << L", Version = " << m_pDriverVersion->GetAsWString() << std::endl;
@@ -1859,3 +1859,33 @@ SystemMemoryInfo::SystemMemoryInfo(const std::shared_ptr<SystemInfo> pSysInfo)
 #endif // XPUINFO_USE_SYSTEMEMORYINFO
 
 } // XI
+
+#if defined(_WIN32) && defined(XPUINFO_BUILD_SHARED)
+extern "C" BOOL WINAPI DllMain(
+	HINSTANCE const instance,  // handle to DLL module
+	DWORD     const reason,    // reason for calling function
+	LPVOID    const reserved)  // reserved
+{
+	// Perform actions based on the reason for calling.
+	switch (reason)
+	{
+	case DLL_PROCESS_ATTACH:
+		// Initialize once for each new process.
+		// Return FALSE to fail DLL load.
+		break;
+
+	case DLL_THREAD_ATTACH:
+		// Do thread-specific initialization.
+		break;
+
+	case DLL_THREAD_DETACH:
+		// Do thread-specific cleanup.
+		break;
+
+	case DLL_PROCESS_DETACH:
+		// Perform any necessary cleanup.
+		break;
+	}
+	return TRUE;  // Successful DLL_PROCESS_ATTACH.
+}
+#endif

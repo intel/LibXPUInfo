@@ -13,13 +13,13 @@
 
 namespace XI
 {
-	std::string convert(const std::wstring& wstr)
+	XPUINFO_EXPORT std::string convert(const std::wstring& wstr)
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.to_bytes(wstr);
 	}
 
-	std::wstring convert(const std::string& str)
+	XPUINFO_EXPORT std::wstring convert(const std::string& str)
 	{
 		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 		return converter.from_bytes(str);
@@ -117,7 +117,7 @@ bool GetVersionFromFile(const String& filePath, RuntimeVersion& fileVer)
     return false;
 }
 
-std::string getDateString(const FILETIME& ft)
+XPUINFO_EXPORT std::string getDateString(const FILETIME& ft)
 {
 	SYSTEMTIME stime;
 	FileTimeToSystemTime(&ft, &stime);

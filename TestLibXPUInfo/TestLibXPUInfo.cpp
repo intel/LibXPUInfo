@@ -24,9 +24,8 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
     {
         rapidjson::Document doc;
         doc.SetObject();
-        auto& a = doc.GetAllocator();
 
-        if (pXI->serialize(doc, a))
+        if (pXI->serialize(doc))
         {
             rapidjson::OStreamWrapper out(ostr);
             rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(out);

@@ -66,6 +66,7 @@ const ze_driver_extension_properties_t* L0_Extensions::find(const char* inExtNam
 	return nullptr;
 }
 
+// TODO: Refactor this long function
 void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_properties_t& device_properties, const L0_Extensions& exts)
 {
 	if (inL0Device)
@@ -514,8 +515,8 @@ void XPUInfo::initL0()
 	for (auto l0enum : L0Drivers)
 	{
 		ze_result_t zRes;
-		ze_api_version_t zeVersion{};
-		zRes = zeDriverGetApiVersion(l0enum.driver, &zeVersion);
+		//ze_api_version_t zeVersion{};
+		//zRes = zeDriverGetApiVersion(l0enum.driver, &zeVersion);
 
 		uint32_t numExts = 0;
 		zRes = zeDriverGetExtensionProperties(l0enum.driver, &numExts, nullptr);
