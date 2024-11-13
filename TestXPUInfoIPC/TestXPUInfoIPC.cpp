@@ -284,15 +284,30 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
     return false;
 }
 
-int writeXPUInfoJSON(const char* jsonPath)
+int writeXPUInfoJSON(const char* jsonPath, const XI::RuntimeNames& runtimes)
 {
     auto apis = XI::APIType(XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI);
-    XI::XPUInfoPtr pXI(new XI::XPUInfo(apis));
+    XI::XPUInfoPtr pXI(new XI::XPUInfo(apis, runtimes));
     
     std::ofstream outFile(jsonPath);
     return (!getXPUInfoJSON(outFile, pXI));
 }
 #endif // XPUINFO_USE_RAPIDJSON
+
+namespace // private
+{
+std::vector<std::string> parseCommaSeparatedList(const std::string& input) {
+    std::vector<std::string> result;
+    std::stringstream ss(input);
+    std::string item;
+
+    while (std::getline(ss, item, ',')) {
+        result.push_back(item);
+    }
+
+    return result;
+}
+} // private
 
 int main(int argc, char* argv[])
 {
@@ -311,6 +326,7 @@ int main(int argc, char* argv[])
     {
         bool isServer = false;
         bool usePipe = true;
+        XI::RuntimeNames runtimes;
         for (int a = 1; a < argc; ++a)
         {
             std::string arg(argv[a]);
@@ -318,18 +334,26 @@ int main(int argc, char* argv[])
             if (arg == "-write_json")
             {
                 XPUINFO_REQUIRE(a + 1 < argc);
-                return writeXPUInfoJSON(argv[++a]);
+                return writeXPUInfoJSON(argv[++a], runtimes);
             }
             else
 #endif
-                if (arg == "-server")
+            if (arg == "-runtimes")
+            {
+                // Read runtime names as comma-separated list
+                if ((a + 1) < argc)
                 {
-                    isServer = true;
+                    runtimes = parseCommaSeparatedList(argv[a + 1]);
                 }
-                else if (arg == "-sharedmem")
-                {
-                    usePipe = false;
-                }
+            }
+            else if (arg == "-server")
+            {
+                isServer = true;
+            }
+            else if (arg == "-sharedmem")
+            {
+                usePipe = false;
+            }
         }
 
         XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM,

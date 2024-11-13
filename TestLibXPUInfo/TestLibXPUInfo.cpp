@@ -163,7 +163,7 @@ int printXPUInfo(int argc, char* argv[])
 #endif
     }
 
-    static const XI::XPUInfo::RuntimeNames runtimes = {
+    static const XI::RuntimeNames runtimes = {
         "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
         "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
     };

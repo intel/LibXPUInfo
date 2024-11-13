@@ -899,7 +899,7 @@ namespace XI
 
     class XPUInfo;
     typedef std::shared_ptr<XPUInfo> XPUInfoPtr;
-    typedef std::vector<const char*> RuntimeNames; // Minimum lifetime needs to be at least during XPUInfo constructor
+    typedef std::vector<std::string> RuntimeNames;
 
     class XPUINFO_EXPORT XPUInfo
     {

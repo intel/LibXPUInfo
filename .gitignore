@@ -6,3 +6,4 @@ x64
 *.bak
 BuildExternalDeps/NVML
 BuildExternalDeps/NVML.zip
+*.vcxproj.user
