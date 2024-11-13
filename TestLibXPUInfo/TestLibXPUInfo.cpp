@@ -163,8 +163,14 @@ int printXPUInfo(int argc, char* argv[])
 #endif
     }
 
+    static const XI::XPUInfo::RuntimeNames runtimes = {
+        "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
+        "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
+    };
+
     try
     {
+
         if (!testIndividual)
         {
             XI::Timer timer;
@@ -179,7 +185,7 @@ int printXPUInfo(int argc, char* argv[])
             apis |= additionalAPIs;
             timer.Start();
             std::cout << "Initializing XPUInfo with APIType = " << apis << "...\n";
-            XI::XPUInfo xi(apis);
+            XI::XPUInfo xi(apis, runtimes);
             std::cout << xi << std::endl;
             timer.Stop();
             std::cout << "XPUInfo Time: " << timer.GetElapsedSecs() << " seconds\n";
@@ -206,7 +212,7 @@ int printXPUInfo(int argc, char* argv[])
                 std::cout << "Initializing XPUInfo with APIType = " << api << "...\n";
                 XI::Timer timer;
                 timer.Start();
-                XI::XPUInfo xi(api);
+                XI::XPUInfo xi(api, runtimes);
                 std::cout << xi << std::endl;
                 timer.Stop();
                 std::cout << "XPUInfo Time: " << timer.GetElapsedSecs() << " seconds\n";

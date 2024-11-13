@@ -861,7 +861,7 @@ UI64 DeviceProperties::getVideoMemorySize() const
 		dxgiDesc.DedicatedVideoMemory;
 }
 
-XPUInfo::XPUInfo(APIType initMask, size_t clientClassSize) : m_UsedAPIs(API_TYPE_UNKNOWN)
+XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize) : m_UsedAPIs(API_TYPE_UNKNOWN)
 {
 	// Verify class size matches between internal lib and clients
 	const size_t libClassSize = sizeof(XPUInfo);
@@ -1027,7 +1027,7 @@ XPUInfo::XPUInfo(APIType initMask, size_t clientClassSize) : m_UsedAPIs(API_TYPE
 #ifdef XPUINFO_USE_RUNTIMEVERSIONINFO
 	if (!(initMask & API_TYPE_DESERIALIZED))
 	{
-		getRuntimeVersions();
+		getRuntimeVersions(runtimeNamesToTrack);
 	}
 #endif
 
@@ -1049,18 +1049,11 @@ String RuntimeVersion::getAsString() const
 	return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(build);
 }
 
-void XPUInfo::getRuntimeVersions()
+void XPUInfo::getRuntimeVersions(const RuntimeNames& runtimeNames)
 {
 #ifdef _WIN32
 	RuntimeVersion ver;
-	static const std::vector<const char*> runtimes = {
-		"Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
-		"onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
-		"tbb12.dll", "tbb.dll", "tbb12_debug.dll", "tbb_debug.dll",
-		"libmmd.dll", "libmmdd.dll"
-		//, "kernel32.dll" // Indicates Windows version
-	};
-	for (const auto& file : runtimes)
+	for (const auto& file : runtimeNames)
 	{
 		if (Win::GetVersionFromFile(file, ver))
 		{

@@ -899,13 +899,14 @@ namespace XI
 
     class XPUInfo;
     typedef std::shared_ptr<XPUInfo> XPUInfoPtr;
+    typedef std::vector<const char*> RuntimeNames; // Minimum lifetime needs to be at least during XPUInfo constructor
 
     class XPUINFO_EXPORT XPUInfo
     {
     public:
         // Constructor compares class size of client to that of lib to help verify that 
         // preprocessor arguments are in agreement between different projects.
-        XPUInfo(APIType initMask, size_t classSize = sizeof(XPUInfo));
+        XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack = RuntimeNames(), size_t classSize = sizeof(XPUInfo));
         ~XPUInfo();
         size_t deviceCount() const { return m_Devices.size(); }
         template <APIType APITYPE>
@@ -979,7 +980,7 @@ namespace XI
         std::shared_ptr<DeviceCPU> m_pCPU;
 
 #ifdef XPUINFO_USE_RUNTIMEVERSIONINFO
-        void getRuntimeVersions();
+        void getRuntimeVersions(const RuntimeNames& runtimeNames);
         RuntimeVersionInfoMap m_RuntimeVersions;
 #endif
     };
