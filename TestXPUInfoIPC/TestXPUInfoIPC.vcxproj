@@ -24,6 +24,7 @@
     <ProjectGuid>{7c4fe0e5-0fe3-42c7-9147-2976b55d022c}</ProjectGuid>
     <RootNamespace>TestXPUInfoIPC</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>XPUInfoIPC</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
