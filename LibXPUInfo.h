@@ -75,6 +75,11 @@ namespace XI {
 }
 #define ENABLE_PER_LOGICAL_CPUID_ISA_DETECTION 0
 #define XPUINFO_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, __FILE__, __LINE__)
+#define XPUINFO_REQUIRE_CONSTEXPR_MSG(x, msg) if constexpr (!(x)) { \
+            std::ostringstream ostr; \
+            ostr << msg; \
+            XI::getErrorHandlerFunc()(ostr.str(), __FILE__, __LINE__); \
+        }
 #define XPUINFO_REQUIRE_MSG(x, msg) if (!(x)) { \
             std::ostringstream ostr; \
             ostr << msg; \

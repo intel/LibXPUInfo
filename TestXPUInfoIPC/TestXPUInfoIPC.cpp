@@ -332,14 +332,14 @@ int main(int argc, char* argv[])
                 }
         }
 
-        XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
+        XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
             "Must build with TESTXPUINFOIPC_SUPPORT_PIPE or TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
 #if TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM
         if (isServer)
         {
             if (usePipe)
             {
-                XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_PIPE,
+                XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_PIPE,
                     "Must build with TESTXPUINFOIPC_SUPPORT_PIPE");
 #if TESTXPUINFOIPC_SUPPORT_PIPE
                 procRetVal = XPUInfo_IPC_Server_Pipe();
@@ -347,7 +347,7 @@ int main(int argc, char* argv[])
             }
             else
             {
-                XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
+                XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
                     "Must build with TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
 #if TESTXPUINFOIPC_SUPPORT_SHAREDMEM
                 procRetVal = XPUInfo_IPC_Server();
@@ -371,7 +371,7 @@ int main(int argc, char* argv[])
                 XI::Win::ProcessInformation pi;
                 if (!usePipe)
                 {
-                    XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
+                    XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
                         "Must build with TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
                     args += " -sharedmem";
 #if TESTXPUINFOIPC_SUPPORT_SHAREDMEM
@@ -380,7 +380,7 @@ int main(int argc, char* argv[])
                 }
                 else
                 {
-                    XPUINFO_REQUIRE_MSG(TESTXPUINFOIPC_SUPPORT_PIPE,
+                    XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_PIPE,
                         "Must build with TESTXPUINFOIPC_SUPPORT_PIPE");
 #if TESTXPUINFOIPC_SUPPORT_PIPE
                     procRetVal = XPUInfoIPC_Client_Pipe(args.c_str(), pi);
