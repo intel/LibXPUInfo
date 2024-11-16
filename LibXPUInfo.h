@@ -75,6 +75,11 @@ namespace XI {
 }
 #define ENABLE_PER_LOGICAL_CPUID_ISA_DETECTION 0
 #define XPUINFO_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, __FILE__, __LINE__)
+#define XPUINFO_REQUIRE_CONSTEXPR_MSG(x, msg) if constexpr (!(x)) { \
+            std::ostringstream ostr; \
+            ostr << msg; \
+            XI::getErrorHandlerFunc()(ostr.str(), __FILE__, __LINE__); \
+        }
 #define XPUINFO_REQUIRE_MSG(x, msg) if (!(x)) { \
             std::ostringstream ostr; \
             ostr << msg; \
@@ -894,13 +899,14 @@ namespace XI
 
     class XPUInfo;
     typedef std::shared_ptr<XPUInfo> XPUInfoPtr;
+    typedef std::vector<std::string> RuntimeNames;
 
     class XPUINFO_EXPORT XPUInfo
     {
     public:
         // Constructor compares class size of client to that of lib to help verify that 
         // preprocessor arguments are in agreement between different projects.
-        XPUInfo(APIType initMask, size_t classSize = sizeof(XPUInfo));
+        XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack = RuntimeNames(), size_t classSize = sizeof(XPUInfo));
         ~XPUInfo();
         size_t deviceCount() const { return m_Devices.size(); }
         template <APIType APITYPE>
@@ -974,7 +980,7 @@ namespace XI
         std::shared_ptr<DeviceCPU> m_pCPU;
 
 #ifdef XPUINFO_USE_RUNTIMEVERSIONINFO
-        void getRuntimeVersions();
+        void getRuntimeVersions(const RuntimeNames& runtimeNames);
         RuntimeVersionInfoMap m_RuntimeVersions;
 #endif
     };
