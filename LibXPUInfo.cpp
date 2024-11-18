@@ -861,7 +861,8 @@ UI64 DeviceProperties::getVideoMemorySize() const
 		dxgiDesc.DedicatedVideoMemory;
 }
 
-XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize) : m_UsedAPIs(API_TYPE_UNKNOWN)
+XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize) : 
+	m_InitAPIs(initMask), m_UsedAPIs(API_TYPE_UNKNOWN)
 {
 	// Verify class size matches between internal lib and clients
 	const size_t libClassSize = sizeof(XPUInfo);
