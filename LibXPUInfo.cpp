@@ -233,39 +233,61 @@ namespace XI
 		{
 			switch (t & mask)
 			{
+#ifdef _WIN32
 			case API_TYPE_DXGI:
 				apiNames.push_back("DXGI");
 				break;
+#endif
+#ifdef XPUINFO_USE_DXCORE
 			case API_TYPE_DXCORE:
 				apiNames.push_back("DXCore");
 				break;
+#endif
+#ifdef _WIN32
 			case API_TYPE_DX11_INTEL_PERF_COUNTER:
 				apiNames.push_back("Intel Device Information");
 				break;
+#endif
+#ifdef XPUINFO_USE_IGCL
 			case API_TYPE_IGCL:
 				apiNames.push_back("IGCL");
 				break;
+#endif
+#ifdef XPUINFO_USE_LEVELZERO
 			case API_TYPE_LEVELZERO:
 				apiNames.push_back("Level Zero");
 				break;
+#endif
+#ifdef XPUINFO_USE_OPENCL
 			case API_TYPE_OPENCL:
 				apiNames.push_back("OpenCL");
 				break;
+#endif
+#ifdef XPUINFO_USE_SETUPAPI
 			case API_TYPE_SETUPAPI:
 				apiNames.push_back("SetupAPI");
 				break;
+#endif
+#ifdef XPUINFO_USE_NVML
 			case API_TYPE_NVML:
 				apiNames.push_back("NVML");
 				break;
+#endif
+#ifdef __APPLE__
             case API_TYPE_METAL:
                 apiNames.push_back("Metal");
                 break;
+#endif
+#ifdef XPUINFO_USE_WMI
 			case API_TYPE_WMI:
 				apiNames.push_back("WMI");
 				break;
-            case API_TYPE_IGCL_L0:
+#endif
+#ifdef XPUINFO_USE_IGCL
+			case API_TYPE_IGCL_L0:
                 apiNames.push_back("IGCL_L0");
                 break;
+#endif
 			case API_TYPE_DESERIALIZED:
 				apiNames.push_back("Deserialized");
 				break;
@@ -1748,6 +1770,15 @@ void XPUInfo::printInfo(std::ostream& ostr) const
 		}
 	}
 #endif // XPUINFO_USE_RUNTIMEVERSIONINFO
+
+#ifdef _WIN32 // Not interesting for other OSs
+	{
+		SaveRestoreIOSFlags srFlags(ostr);
+		ostr << std::endl;
+		ostr << std::left << std::setw(24) << "APIs requested at init:" << m_InitAPIs << std::endl;
+		ostr << std::left << std::setw(24) << "APIs initialized: " << m_InitAPIs << std::endl;
+	}
+#endif
 }
 
 std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi)
