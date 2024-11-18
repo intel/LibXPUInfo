@@ -1960,9 +1960,9 @@ SystemMemoryInfo::SystemMemoryInfo(const std::shared_ptr<SystemInfo> pSysInfo)
 
 #if defined(_WIN32) && defined(XPUINFO_BUILD_SHARED)
 extern "C" BOOL WINAPI DllMain(
-	HINSTANCE const instance,  // handle to DLL module
+	HINSTANCE const /*instance*/,  // handle to DLL module
 	DWORD     const reason,    // reason for calling function
-	LPVOID    const reserved)  // reserved
+	LPVOID    const )  // reserved
 {
 	// Perform actions based on the reason for calling.
 	switch (reason)
