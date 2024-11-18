@@ -364,7 +364,11 @@ bool PCIAddressType::GetFromWStr(const WString& inStr)
 
 // From https://github.com/GameTechDev/gpudetect/blob/master/GPUDetect.cpp#L448
 // Get driver version from LUID and registry
-DeviceDriverVersion::DeviceDriverVersion(LUID inLuid) : mRawVersion(0ULL)
+DeviceDriverVersion::DeviceDriverVersion(LUID 
+#if defined(_WIN32) && !defined(_M_ARM64)
+	inLuid
+#endif
+	) : mRawVersion(0ULL)
 {
 #if defined(_WIN32) && !defined(_M_ARM64)
 	HKEY dxKeyHandle = nullptr;
