@@ -115,30 +115,32 @@ namespace XI
 	enum class IntelGfxFamily : UI32
 	{
 		iUnknown,
-        iGenericGen9,
-        iGenericGen11,
-        iGenericGen12LP,
-        iDG2,
-        iMeteorLake,
-        iArrowLake,
-        iGenericXe2,
-        iLunarLake,
-        iBattleMage,
-        iGenericXe3
+        iGen9_Generic,
+        iGen11_Generic,
+        iGen12LP_Generic,
+        iGen12HP_DG2,
+		iXe_S, // MTL-U, ARL-S, ARL-U
+		iXe_L_MeteorLakeH,
+		iXe_L_ArrowLakeH,
+        iXe2_Generic,
+        iXe2_LunarLake,
+        iXe2_BattleMage,
+        iXe3_Generic
 	};
 
 #define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::i##x, #x}
 	static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
-		MAKE_FAMILY_NAME_PAIR(GenericGen9),
-		MAKE_FAMILY_NAME_PAIR(GenericGen11),
-		MAKE_FAMILY_NAME_PAIR(GenericGen12LP),
-		MAKE_FAMILY_NAME_PAIR(DG2),
-		MAKE_FAMILY_NAME_PAIR(MeteorLake),
-		MAKE_FAMILY_NAME_PAIR(ArrowLake),
-		MAKE_FAMILY_NAME_PAIR(GenericXe2),
-		MAKE_FAMILY_NAME_PAIR(LunarLake),
-		MAKE_FAMILY_NAME_PAIR(BattleMage),
-		MAKE_FAMILY_NAME_PAIR(GenericXe3)
+		MAKE_FAMILY_NAME_PAIR(Gen9_Generic),
+		MAKE_FAMILY_NAME_PAIR(Gen11_Generic),
+		MAKE_FAMILY_NAME_PAIR(Gen12LP_Generic),
+		MAKE_FAMILY_NAME_PAIR(Gen12HP_DG2),
+		MAKE_FAMILY_NAME_PAIR(Xe_S),
+		MAKE_FAMILY_NAME_PAIR(Xe_L_MeteorLakeH),
+		MAKE_FAMILY_NAME_PAIR(Xe_L_ArrowLakeH),
+		MAKE_FAMILY_NAME_PAIR(Xe2_Generic),
+		MAKE_FAMILY_NAME_PAIR(Xe2_LunarLake),
+		MAKE_FAMILY_NAME_PAIR(Xe2_BattleMage),
+		MAKE_FAMILY_NAME_PAIR(Xe3_Generic)
 	};
 
 	IntelGfxFamily getIntelGfxFamily(ipvParts ipv)
@@ -146,19 +148,21 @@ namespace XI
 		IntelGfxFamily outFamily = IntelGfxFamily::iUnknown;
 		switch (ipv.architecture)
 		{
-		case 9:  outFamily = IntelGfxFamily::iGenericGen9; break;
-		case 11: outFamily = IntelGfxFamily::iGenericGen11; break;
+		case 9:  outFamily = IntelGfxFamily::iGen9_Generic; break;
+		case 11: outFamily = IntelGfxFamily::iGen11_Generic; break;
 		case 12:
-			outFamily = IntelGfxFamily::iGenericGen12LP;
+			outFamily = IntelGfxFamily::iGen12LP_Generic;
 			if (ipv.release > 50 && ipv.release <= 59)
-				outFamily = IntelGfxFamily::iDG2;
-			else if (ipv.release >= 70 && ipv.release <= 71)
-				outFamily = IntelGfxFamily::iMeteorLake;
-			else if (ipv.release >= 73 && ipv.release <= 74)
-				outFamily = IntelGfxFamily::iArrowLake;
+				outFamily = IntelGfxFamily::iGen12HP_DG2;
+			else if (ipv.release == 70) // MTL-U, ARL-S, ARL-U
+				outFamily = IntelGfxFamily::iXe_S;
+			else if (ipv.release == 71)
+				outFamily = IntelGfxFamily::iXe_L_MeteorLakeH;
+			else if (ipv.release == 74)
+				outFamily = IntelGfxFamily::iXe_L_ArrowLakeH;
 			break;
-		case 20: outFamily = IntelGfxFamily::iGenericXe2; break;
-		case 30: outFamily = IntelGfxFamily::iGenericXe3; break;
+		case 20: outFamily = IntelGfxFamily::iXe2_Generic; break;
+		case 30: outFamily = IntelGfxFamily::iXe3_Generic; break;
 		default: outFamily = IntelGfxFamily::iUnknown; break;
 		}
 		return outFamily;
