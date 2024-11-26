@@ -114,14 +114,14 @@ namespace XI
 
 	enum class IntelGfxFamily : UI32
 	{
-		iUnknown,
+        iUnknown,
         iGen9_Generic,
         iGen11_Generic,
         iGen12LP_Generic,
         iGen12HP_DG2,
-		iXe_S, // MTL-U, ARL-S, ARL-U
-		iXe_L_MeteorLakeH,
-		iXe_L_ArrowLakeH,
+        iXe_S, // MTL-U, ARL-S, ARL-U
+        iXe_L_MeteorLakeH,
+        iXe_L_ArrowLakeH,
         iXe2_Generic,
         iXe2_LunarLake,
         iXe2_BattleMage,
