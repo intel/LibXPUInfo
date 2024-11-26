@@ -134,6 +134,7 @@ int printXPUInfo(int argc, char* argv[])
 {
     bool testIndividual = false;
     APIType additionalAPIs = APIType(0);
+    APIType apiMask = APIType(0);
     for (int a = 1; a < argc; ++a)
     {
         String arg(argv[a]);
@@ -146,6 +147,17 @@ int printXPUInfo(int argc, char* argv[])
         if (arg == "-igcl_l0_enable")
         {
             additionalAPIs |= XI::API_TYPE_IGCL_L0;
+        }
+        // If specified, this takes precedence over additionalAPIs
+        else if ((arg == "-apis") && (a+1 < argc))
+        {
+            std::underlying_type_t<APIType> inMask;
+            std::istringstream istr(argv[++a]);
+            istr >> std::hex >> inMask;
+            if (!istr.bad())
+            {
+                apiMask = static_cast<APIType>(inMask);
+            }
         }
 #ifdef XPUINFO_USE_RAPIDJSON
         if (arg == "-write_json")
@@ -183,6 +195,10 @@ int printXPUInfo(int argc, char* argv[])
             APIType apis = XI::API_TYPE_METAL;
 #endif
             apis |= additionalAPIs;
+            if (apiMask != XI::API_TYPE_UNKNOWN)
+            {
+                apis = apiMask;
+            }
             timer.Start();
             std::cout << "Initializing XPUInfo with APIType = " << apis << "...\n";
             XI::XPUInfo xi(apis, runtimes);

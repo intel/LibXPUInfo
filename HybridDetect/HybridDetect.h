@@ -112,7 +112,7 @@ namespace HybridDetect
 #else
 // This is just to get LibXPUInfo to compile for arm64. It should be a dead path otherwise.
 #define CPUID(registers, function) 0;
-#define CPUIDEX(registers, function, extFunction) 0;
+#define CPUIDEX(registers, function, extFunction) { (void)registers; (void)function; (void)extFunction; }
 #define XGETBV(xcrReg) 0;
 #endif
 #elif __APPLE__
@@ -863,7 +863,11 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 	memcpy(procInfo.vendorID + 4, &cpuInfo[CPUID_EDX], sizeof(cpuInfo[CPUID_EDX]));
 	memcpy(procInfo.vendorID + 8, &cpuInfo[CPUID_ECX], sizeof(cpuInfo[CPUID_ECX]));
 	procInfo.vendorID[12] = '\0';
-#else
+#elif defined(_M_ARM64)
+	static const char kVendorARM[] = "TBDWinARM64";
+	strcpy_s(procInfo.vendorID, kVendorARM);
+	procInfo.brandString[0] = 0;
+#elif defined(__APPLE__)
 	static const char kVendorApple[] = "Apple";
 	strcpy(procInfo.vendorID, kVendorApple);
 	procInfo.brandString[0] = 0;

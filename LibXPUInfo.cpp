@@ -114,31 +114,33 @@ namespace XI
 
 	enum class IntelGfxFamily : UI32
 	{
-		iUnknown,
-        iGenericGen9,
-        iGenericGen11,
-        iGenericGen12LP,
-        iDG2,
-        iMeteorLake,
-        iArrowLake,
-        iGenericXe2,
-        iLunarLake,
-        iBattleMage,
-        iGenericXe3
+        iUnknown,
+        iGen9_Generic,
+        iGen11_Generic,
+        iGen12LP_Generic,
+        iGen12HP_DG2,
+        iXe_S, // MTL-U, ARL-S, ARL-U
+        iXe_L_MeteorLakeH,
+        iXe_L_ArrowLakeH,
+        iXe2_Generic,
+        iXe2_LunarLake,
+        iXe2_BattleMage,
+        iXe3_Generic
 	};
 
 #define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::i##x, #x}
 	static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
-		MAKE_FAMILY_NAME_PAIR(GenericGen9),
-		MAKE_FAMILY_NAME_PAIR(GenericGen11),
-		MAKE_FAMILY_NAME_PAIR(GenericGen12LP),
-		MAKE_FAMILY_NAME_PAIR(DG2),
-		MAKE_FAMILY_NAME_PAIR(MeteorLake),
-		MAKE_FAMILY_NAME_PAIR(ArrowLake),
-		MAKE_FAMILY_NAME_PAIR(GenericXe2),
-		MAKE_FAMILY_NAME_PAIR(LunarLake),
-		MAKE_FAMILY_NAME_PAIR(BattleMage),
-		MAKE_FAMILY_NAME_PAIR(GenericXe3)
+		MAKE_FAMILY_NAME_PAIR(Gen9_Generic),
+		MAKE_FAMILY_NAME_PAIR(Gen11_Generic),
+		MAKE_FAMILY_NAME_PAIR(Gen12LP_Generic),
+		MAKE_FAMILY_NAME_PAIR(Gen12HP_DG2),
+		MAKE_FAMILY_NAME_PAIR(Xe_S),
+		MAKE_FAMILY_NAME_PAIR(Xe_L_MeteorLakeH),
+		MAKE_FAMILY_NAME_PAIR(Xe_L_ArrowLakeH),
+		MAKE_FAMILY_NAME_PAIR(Xe2_Generic),
+		MAKE_FAMILY_NAME_PAIR(Xe2_LunarLake),
+		MAKE_FAMILY_NAME_PAIR(Xe2_BattleMage),
+		MAKE_FAMILY_NAME_PAIR(Xe3_Generic)
 	};
 
 	IntelGfxFamily getIntelGfxFamily(ipvParts ipv)
@@ -146,19 +148,21 @@ namespace XI
 		IntelGfxFamily outFamily = IntelGfxFamily::iUnknown;
 		switch (ipv.architecture)
 		{
-		case 9:  outFamily = IntelGfxFamily::iGenericGen9; break;
-		case 11: outFamily = IntelGfxFamily::iGenericGen11; break;
+		case 9:  outFamily = IntelGfxFamily::iGen9_Generic; break;
+		case 11: outFamily = IntelGfxFamily::iGen11_Generic; break;
 		case 12:
-			outFamily = IntelGfxFamily::iGenericGen12LP;
+			outFamily = IntelGfxFamily::iGen12LP_Generic;
 			if (ipv.release > 50 && ipv.release <= 59)
-				outFamily = IntelGfxFamily::iDG2;
-			else if (ipv.release >= 70 && ipv.release <= 71)
-				outFamily = IntelGfxFamily::iMeteorLake;
-			else if (ipv.release >= 73 && ipv.release <= 74)
-				outFamily = IntelGfxFamily::iArrowLake;
+				outFamily = IntelGfxFamily::iGen12HP_DG2;
+			else if (ipv.release == 70) // MTL-U, ARL-S, ARL-U
+				outFamily = IntelGfxFamily::iXe_S;
+			else if (ipv.release == 71)
+				outFamily = IntelGfxFamily::iXe_L_MeteorLakeH;
+			else if (ipv.release == 74)
+				outFamily = IntelGfxFamily::iXe_L_ArrowLakeH;
 			break;
-		case 20: outFamily = IntelGfxFamily::iGenericXe2; break;
-		case 30: outFamily = IntelGfxFamily::iGenericXe3; break;
+		case 20: outFamily = IntelGfxFamily::iXe2_Generic; break;
+		case 30: outFamily = IntelGfxFamily::iXe3_Generic; break;
 		default: outFamily = IntelGfxFamily::iUnknown; break;
 		}
 		return outFamily;
@@ -233,39 +237,61 @@ namespace XI
 		{
 			switch (t & mask)
 			{
+#ifdef _WIN32
 			case API_TYPE_DXGI:
 				apiNames.push_back("DXGI");
 				break;
+#endif
+#ifdef XPUINFO_USE_DXCORE
 			case API_TYPE_DXCORE:
 				apiNames.push_back("DXCore");
 				break;
+#endif
+#ifdef _WIN32
 			case API_TYPE_DX11_INTEL_PERF_COUNTER:
 				apiNames.push_back("Intel Device Information");
 				break;
+#endif
+#ifdef XPUINFO_USE_IGCL
 			case API_TYPE_IGCL:
 				apiNames.push_back("IGCL");
 				break;
+#endif
+#ifdef XPUINFO_USE_LEVELZERO
 			case API_TYPE_LEVELZERO:
 				apiNames.push_back("Level Zero");
 				break;
+#endif
+#ifdef XPUINFO_USE_OPENCL
 			case API_TYPE_OPENCL:
 				apiNames.push_back("OpenCL");
 				break;
+#endif
+#ifdef XPUINFO_USE_SETUPAPI
 			case API_TYPE_SETUPAPI:
 				apiNames.push_back("SetupAPI");
 				break;
+#endif
+#ifdef XPUINFO_USE_NVML
 			case API_TYPE_NVML:
 				apiNames.push_back("NVML");
 				break;
+#endif
+#ifdef __APPLE__
             case API_TYPE_METAL:
                 apiNames.push_back("Metal");
                 break;
+#endif
+#ifdef XPUINFO_USE_WMI
 			case API_TYPE_WMI:
 				apiNames.push_back("WMI");
 				break;
-            case API_TYPE_IGCL_L0:
+#endif
+#ifdef XPUINFO_USE_IGCL
+			case API_TYPE_IGCL_L0:
                 apiNames.push_back("IGCL_L0");
                 break;
+#endif
 			case API_TYPE_DESERIALIZED:
 				apiNames.push_back("Deserialized");
 				break;
@@ -342,7 +368,11 @@ bool PCIAddressType::GetFromWStr(const WString& inStr)
 
 // From https://github.com/GameTechDev/gpudetect/blob/master/GPUDetect.cpp#L448
 // Get driver version from LUID and registry
-DeviceDriverVersion::DeviceDriverVersion(LUID inLuid) : mRawVersion(0ULL)
+DeviceDriverVersion::DeviceDriverVersion(LUID 
+#if defined(_WIN32) && !defined(_M_ARM64)
+	inLuid
+#endif
+	) : mRawVersion(0ULL)
 {
 #if defined(_WIN32) && !defined(_M_ARM64)
 	HKEY dxKeyHandle = nullptr;
@@ -861,7 +891,8 @@ UI64 DeviceProperties::getVideoMemorySize() const
 		dxgiDesc.DedicatedVideoMemory;
 }
 
-XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize) : m_UsedAPIs(API_TYPE_UNKNOWN)
+XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize) : 
+	m_InitAPIs(initMask), m_UsedAPIs(API_TYPE_UNKNOWN)
 {
 	// Verify class size matches between internal lib and clients
 	const size_t libClassSize = sizeof(XPUInfo);
@@ -1747,6 +1778,15 @@ void XPUInfo::printInfo(std::ostream& ostr) const
 		}
 	}
 #endif // XPUINFO_USE_RUNTIMEVERSIONINFO
+
+#ifdef _WIN32 // Not interesting for other OSs
+	{
+		SaveRestoreIOSFlags srFlags(ostr);
+		ostr << std::endl;
+		ostr << std::left << std::setw(24) << "APIs requested at init:" << m_InitAPIs << std::endl;
+		ostr << std::left << std::setw(24) << "APIs initialized: " << m_UsedAPIs << std::endl;
+	}
+#endif
 }
 
 std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi)
@@ -1928,9 +1968,9 @@ SystemMemoryInfo::SystemMemoryInfo(const std::shared_ptr<SystemInfo> pSysInfo)
 
 #if defined(_WIN32) && defined(XPUINFO_BUILD_SHARED)
 extern "C" BOOL WINAPI DllMain(
-	HINSTANCE const instance,  // handle to DLL module
+	HINSTANCE const /*instance*/,  // handle to DLL module
 	DWORD     const reason,    // reason for calling function
-	LPVOID    const reserved)  // reserved
+	LPVOID    const )  // reserved
 {
 	// Perform actions based on the reason for calling.
 	switch (reason)

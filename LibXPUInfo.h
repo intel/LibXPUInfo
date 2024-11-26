@@ -946,6 +946,9 @@ namespace XI
         bool serialize(rapidjson::Document& doc);
         static XPUInfoPtr deserialize(const rapidjson::Document& val);
 #endif
+        // APIs requested - may not have all been used
+        APIType getInitAPIs() const { return m_InitAPIs; }
+        // APIs used by at least one device
         APIType getUsedAPIs() const { return m_UsedAPIs; }
 
     private:
@@ -966,6 +969,8 @@ namespace XI
 #endif
         void finalInitDXGI();
         DeviceMap m_Devices;
+        const APIType m_InitAPIs;
+
         APIType m_UsedAPIs;
         std::shared_ptr<SystemInfo> m_pSystemInfo;
 #ifdef XPUINFO_USE_SYSTEMEMORYINFO
