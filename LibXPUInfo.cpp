@@ -689,8 +689,11 @@ void XPUInfo::initDXGI(APIType initMask)
 					{
 						newIt.first->second->initDXIntelPerfCounter(adapter.Get());
 
-						if (!(m_UsedAPIs & API_TYPE_DX11_INTEL_PERF_COUNTER))
+						if (!(m_UsedAPIs & API_TYPE_DX11_INTEL_PERF_COUNTER)
+							&& (newIt.first->second->getCurrentAPIs() & API_TYPE_DX11_INTEL_PERF_COUNTER))
+						{
 							m_UsedAPIs = m_UsedAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
+						}
 					}
 				}
             }
