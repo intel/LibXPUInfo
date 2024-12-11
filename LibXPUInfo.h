@@ -362,6 +362,23 @@ namespace XI
     };
     typedef std::shared_ptr<DriverInfo> DriverInfoPtr;
 
+    enum class IntelGfxFamily : UI32
+    {
+        iUnknown,
+        iGen9_Generic,
+        iGen11_Generic,
+        iGen12LP_Generic,
+        iGen12HP_DG2,
+        iXe_S, // MTL-U, ARL-S, ARL-U
+        iXe_L_MeteorLakeH,
+        iXe_L_ArrowLakeH,
+        iXe2_Generic,
+        iXe2_LunarLake,
+        iXe2_BattleMage,
+        iXe3_Generic
+    };
+    typedef std::pair<IntelGfxFamily, std::string> IntelGfxFamilyNamePair;
+
     const UINT kVendorId_Intel = 0x8086;
     const UINT kVendorId_nVidia = 0x10de;
 
@@ -431,6 +448,7 @@ namespace XI
         UI64 getTotalVideoMemorySize() const { return dxgiDesc.DedicatedVideoMemory + dxgiDesc.SharedSystemMemory; }
         UI64 getVideoMemorySize() const;
         bool operator==(const DeviceProperties& props) const;
+        bool IsVendor(const UINT inVendorId) const { return dxgiDesc.VendorId == inVendorId; }
     };
 
     class XPUINFO_EXPORT DeviceBase
@@ -504,7 +522,7 @@ namespace XI
         IDXCoreAdapter* const getHandle_DXCore() const { return m_pDXCoreAdapter.get(); }
 #endif
 
-        bool IsVendor(const UINT inVendorId) const { return m_props.dxgiDesc.VendorId == inVendorId; }
+        bool IsVendor(const UINT inVendorId) const { return m_props.IsVendor(inVendorId); }
 
         DXCoreAdapterMemoryBudget getMemUsage() const;
 
@@ -513,6 +531,7 @@ namespace XI
         static DevicePtr deserialize(const rapidjson::Value& val);
 #endif
         bool operator==(const Device& dev) const;
+        std::optional<IntelGfxFamilyNamePair> getIntelGfxFamilyName() const;
 
     protected:
         APIType validAPIs = API_TYPE_UNKNOWN;
