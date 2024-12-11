@@ -112,22 +112,6 @@ namespace XI
 		ipvUnion ipvu;
 	};
 
-	enum class IntelGfxFamily : UI32
-	{
-        iUnknown,
-        iGen9_Generic,
-        iGen11_Generic,
-        iGen12LP_Generic,
-        iGen12HP_DG2,
-        iXe_S, // MTL-U, ARL-S, ARL-U
-        iXe_L_MeteorLakeH,
-        iXe_L_ArrowLakeH,
-        iXe2_Generic,
-        iXe2_LunarLake,
-        iXe2_BattleMage,
-        iXe3_Generic
-	};
-
 #define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::i##x, #x}
 	static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
 		MAKE_FAMILY_NAME_PAIR(Gen9_Generic),
@@ -166,6 +150,25 @@ namespace XI
 		default: outFamily = IntelGfxFamily::iUnknown; break;
 		}
 		return outFamily;
+	}
+
+	std::optional<IntelGfxFamilyNamePair> Device::getIntelGfxFamilyName() const
+	{
+		if (IsVendor(kVendorId_Intel) && getType()==DEVICE_TYPE_GPU)
+		{
+			ipvUnion ipvu;
+			ipvu.ipVersion = m_props.DeviceIPVersion;
+			if (ipvu.ipVersion)
+			{
+				auto ipFamily = getIntelGfxFamily(ipvu.ipv);
+				auto ipfIter = S_IntelGfxFamilyNameMap.find(ipFamily);
+				if (ipfIter != S_IntelGfxFamilyNameMap.end())
+				{
+					return *ipfIter;
+				}
+			}
+		}
+		return std::nullopt;
 	}
 
 	/* This table is purposefully internal to LibXPUInfo. 
@@ -685,12 +688,16 @@ void XPUInfo::initDXGI(APIType initMask)
 					if (!(m_UsedAPIs & API_TYPE_DXGI))
 						m_UsedAPIs = m_UsedAPIs | API_TYPE_DXGI;
 
-					if (initMask & API_TYPE_DX11_INTEL_PERF_COUNTER)
+					if ((initMask & API_TYPE_DX11_INTEL_PERF_COUNTER) && 
+						newDevice->IsVendor(kVendorId_Intel)) // Early-out for non-Intel devices
 					{
 						newIt.first->second->initDXIntelPerfCounter(adapter.Get());
 
-						if (!(m_UsedAPIs & API_TYPE_DX11_INTEL_PERF_COUNTER))
+						if (!(m_UsedAPIs & API_TYPE_DX11_INTEL_PERF_COUNTER)
+							&& (newIt.first->second->getCurrentAPIs() & API_TYPE_DX11_INTEL_PERF_COUNTER))
+						{
 							m_UsedAPIs = m_UsedAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
+						}
 					}
 				}
             }
@@ -1449,20 +1456,10 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 			SaveRestoreIOSFlags sr(ostr);
 			ostr << "\tIP Version: 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << devProps.DeviceIPVersion;
 		}
-		if (xiDev.IsVendor(kVendorId_Intel))
+		auto IntelFamilyName = xiDev.getIntelGfxFamilyName();
+		if (IntelFamilyName.has_value())
 		{
-			ipvUnion ipvu;
-			ipvu.ipVersion = xiDev.getProperties().DeviceIPVersion;
-			if (ipvu.ipVersion)
-			{
-				//ostr << ", Architecture: " << ipvu.ipv.architecture << ", Release: " << ipvu.ipv.release << ", Revision: " << ipvu.ipv.revision;
-				auto ipFamily = getIntelGfxFamily(ipvu.ipv);
-				auto ipfIter = S_IntelGfxFamilyNameMap.find(ipFamily);
-				if (ipfIter != S_IntelGfxFamilyNameMap.end())
-				{
-					ostr << ", " << ipfIter->second;
-				}
-			}
+			ostr << ", " << IntelFamilyName->second;
 		}
 		ostr << std::endl;
 	}
