@@ -607,18 +607,20 @@ namespace XI
         enum TelemetryItem : UI32
         {
             TELEMETRYITEM_UNKNOWN = 0,
-            TELEMETRYITEM_FREQUENCY =   1 << 0,
-            TELEMETRYITEM_READ_BW =     1 << 1,
-            TELEMETRYITEM_WRITE_BW =    1 << 2,
-            TELEMETRYITEM_GLOBAL_ACTIVITY =         1 << 3,
+            TELEMETRYITEM_FREQUENCY = 1 << 0,
+            TELEMETRYITEM_READ_BW = 1 << 1,
+            TELEMETRYITEM_WRITE_BW = 1 << 2,
+            TELEMETRYITEM_GLOBAL_ACTIVITY = 1 << 3,
             TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY = 1 << 4,
-            TELEMETRYITEM_MEDIA_ACTIVITY =          1 << 5,
+            TELEMETRYITEM_MEDIA_ACTIVITY = 1 << 5,
 
-            TELEMETRYITEM_MEMORY_USAGE =            1 << 6,
-            TELEMETRYITEM_TIMESTAMP_DOUBLE =        1 << 7, // Use double (i.e. from IGCL), else use UI64 from CPU
+            TELEMETRYITEM_MEMORY_USAGE = 1 << 6,
+            TELEMETRYITEM_TIMESTAMP_DOUBLE = 1 << 7, // Use double (i.e. from IGCL), else use UI64 from CPU
 
-            TELEMETRYITEM_FREQUENCY_MEDIA =         1 << 8,
-            TELEMETRYITEM_FREQUENCY_MEMORY =        1 << 9,
+            TELEMETRYITEM_FREQUENCY_MEDIA = 1 << 8,
+            TELEMETRYITEM_FREQUENCY_MEMORY = 1 << 9,
+
+            TELEMETRYITEM_SYSTEMMEMORY = 1 << 10,
 
             // TODO: PCI bandwidth?  Neither IGCL nor L0 working now.  Can derive from micro+mem_bw, though.
         };
@@ -649,6 +651,11 @@ namespace XI
 
             double pctCPU;
             double cpu_freq;
+
+            // System memory
+            //UI64 systemMemoryPhysicalTotal;
+            UI64 systemMemoryPhysicalAvailable;
+            UI64 systemMemoryCommitTotal;
         };
         typedef std::vector<TimedRecord> TimedRecords;
 

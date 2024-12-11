@@ -5,6 +5,7 @@
 #include "LibXPUInfo.h"
 #include "LibXPUInfo_Util.h"
 #ifdef _WIN32
+#include <Psapi.h>
 #include <Pdh.h>
 #include <PdhMsg.h>
 #pragma comment(lib, "pdh")
@@ -40,6 +41,9 @@ void TelemetryTracker::printRecordHeader(std::ostream& ostr) const
 		ostr << ",Media Freq (MHz)";
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY_MEMORY)
 		ostr << ",Memory Freq (GT/s)";
+	if (m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY)
+		ostr << ",Physical System Memory Available (GB), Commit Total (GB)";
+
 	ostr << std::endl;
 }
 
@@ -169,6 +173,11 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY_MEMORY)
 	{
 		ostr << "," << std::setprecision(3) << (rec.freq_memory / 1000.0) << std::setprecision(default_precision);
+	}
+	if (m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY)
+	{
+		ostr << "," << std::setprecision(5) << (rec.systemMemoryPhysicalAvailable / (1024.0 * 1024 * 1024))
+			<< "," << (rec.systemMemoryCommitTotal / (1024.0 * 1024 * 1024));
 	}
 
 	ostr << std::endl;
@@ -325,6 +334,24 @@ bool TelemetryTracker::RecordCPUTimestamp(TimedRecord& rec)
 
 bool TelemetryTracker::RecordMemoryUsage(TimedRecord& rec)
 {
+#ifdef _WIN32
+	//  GetProcessMemoryInfo /PROCESS_MEMORY_COUNTERS_EX2 -- See https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes?redirectedfrom=MSDN
+	//  GlobalMemoryStatusEx, GetPerformanceInfo->PhysicalAvailable*PageSize
+
+	PERFORMANCE_INFORMATION pi;
+	if (GetPerformanceInfo(&pi, sizeof(pi)))
+	{
+		// TODO: Should this be PhysicalAvailable, or should function name be getTotalPhysicalMemorySizeInGB?
+		rec.systemMemoryPhysicalAvailable = pi.PhysicalAvailable * pi.PageSize;
+		rec.systemMemoryCommitTotal = pi.CommitTotal * pi.PageSize;
+
+		if (!(m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY))
+		{
+			m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_SYSTEMMEMORY);
+		}
+	}
+#endif
+
 	auto memusage = m_Device->getMemUsage();
 	if (memusage.currentUsage)
 	{

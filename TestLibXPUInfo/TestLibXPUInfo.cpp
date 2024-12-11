@@ -126,6 +126,37 @@ bool testReadJSON(const std::filesystem::path jsonPath)
 }
 #endif
 
+static const XI::RuntimeNames runtimes = {
+    "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
+    "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
+};
+
+#ifdef XPUINFO_USE_TELEMETRYTRACKER
+int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx)
+{
+    // Find desired GPU, then start running
+    APIType apis = APIType(XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
+        | XI::API_TYPE_DX11_INTEL_PERF_COUNTER \
+        | XI::API_TYPE_LEVELZERO \
+        | XI::API_TYPE_IGCL_L0 | XI::API_TYPE_IGCL \
+        | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML);
+
+    XI::XPUInfo xi(apis, runtimes);
+
+    auto telemDevice = xi.getDeviceByIndex(telem_gpu_idx);
+    {
+        XI::TelemetryTrackerWithScopedLog tt(telemDevice, telemInterval_ms, std::cout);
+        std::cout << "Telemetry started on device " << XI::convert(telemDevice->name()) << " with " << telemInterval_ms << " ms interval.\n";
+        std::cout << "Press any key to stop...\n";
+        tt.start();
+        auto c = getchar();
+        (void)c;
+    }
+    std::cout << std::endl << xi << std::endl;
+    return 0;
+}
+#endif
+
 #if TESTLIBXPUINFO_STANDALONE
 int main(int argc, char* argv[])
 #else
@@ -133,6 +164,9 @@ int printXPUInfo(int argc, char* argv[])
 #endif
 {
     bool testIndividual = false;
+    bool bRunTelemetry = false;
+    XI::UI32 telemInterval_ms = 0;
+    XI::UI32 telem_gpu_idx = 0;
     APIType additionalAPIs = APIType(0);
     APIType apiMask = APIType(0);
     for (int a = 1; a < argc; ++a)
@@ -144,6 +178,30 @@ int printXPUInfo(int argc, char* argv[])
             testIndividual = true;
         }
 #endif
+        if (arg == "-telemetry") // -telemetry <ms> [<gpuIndex>]
+        {
+            if ((a + 1 < argc))
+            {
+                std::istringstream istr(argv[++a]);
+                XI::UI32 msInterval = 0;
+                istr >> msInterval;
+                if (!istr.bad())
+                {
+                    telemInterval_ms = msInterval;
+                    bRunTelemetry = true;
+                }
+            }
+            if ((a + 1 < argc) && (strlen(argv[a+1]) > 0) && (argv[a+1][0] != '-'))
+            {
+                std::istringstream istr(argv[++a]);
+                XI::UI32 gpuIdx;
+                istr >> gpuIdx;
+                if (!istr.bad())
+                {
+                    telem_gpu_idx = gpuIdx;
+                }
+            }
+        }
         if (arg == "-igcl_l0_enable")
         {
             additionalAPIs |= XI::API_TYPE_IGCL_L0;
@@ -175,14 +233,13 @@ int printXPUInfo(int argc, char* argv[])
 #endif
     }
 
-    static const XI::RuntimeNames runtimes = {
-        "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
-        "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
-    };
-
     try
     {
-
+        if (bRunTelemetry)
+        {
+            return runTelemetry(telemInterval_ms, telem_gpu_idx);
+        }
+        else 
         if (!testIndividual)
         {
             XI::Timer timer;
