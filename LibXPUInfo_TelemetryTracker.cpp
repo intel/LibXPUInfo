@@ -20,7 +20,7 @@ void TelemetryTracker::printRecordHeader(std::ostream& ostr) const
 {
 	ostr << "Time(s)";
 #if defined(_WIN32) && !defined(_M_ARM64)
-	ostr << ", %CPU, CPU Freq (MHz)";
+	ostr << ", %CPU, CPU Freq (MHz), GPU Mem Used (GB)";
 #endif
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY)
 		ostr << ", Freq(MHz)";
@@ -90,6 +90,7 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 
 #if defined(_WIN32) && !defined(_M_ARM64)
 	ostr << "," << rec.pctCPU << "," << rec.cpu_freq / (100.0);
+	ostr << "," << rec.gpu_mem / (1024.0 * 1024 * 1024);
 #endif
 
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY)
@@ -444,6 +445,16 @@ void TelemetryTracker::InitPDH()
 	static const char counterCPU_Utility[] = "\\Processor Information(_Total)\\% Processor Utility"; // Matches Win10 task manager CPU %Utilization
 	static const char counterCPU_Freq[] = "\\Processor Information(_Total)\\Processor Frequency";
 	static const char counterCPU_PctPerf[] = "\\Processor Information(_Total)\\% Processor Performance";
+	//"\\GPU Adapter Memory(luid_0x00000000_0x00013E1A_phys_0)\Total Committed"
+	static const char* counterGPU_Memory[] = { "\\GPU Local Adapter Memory(luid_0x", "*)\\Local Usage" };
+
+	std::string gpuMemoryCounterPath;
+	{
+		std::ostringstream luidStream;
+		luidStream << counterGPU_Memory[0] << std::hex << std::setw(8) << std::setfill('0') << std::uppercase << getDevice()->getLUIDAsStruct().HighPart <<
+			"_0x" << std::setw(8) << std::setfill('0') << getDevice()->getLUIDAsStruct().LowPart << counterGPU_Memory[1];
+		gpuMemoryCounterPath = luidStream.str();
+	}
 
 	PDH_STATUS pdhs = PdhOpenQueryA(nullptr, 0, &m_pdhQuery);
 	if (pdhs == ERROR_SUCCESS)
@@ -456,6 +467,9 @@ void TelemetryTracker::InitPDH()
 		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
 
 		pdhs = PdhAddCounterA(m_pdhQuery, counterCPU_PctPerf, 0, &m_pdhCtrCPUPctPerf);
+		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
+		
+		pdhs = PdhAddCounterA(m_pdhQuery, gpuMemoryCounterPath.c_str(), 0, &m_pdhCtrGPUMem);
 		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
 		
 		// The first query does not return valid data, so do it here.
@@ -502,6 +516,16 @@ bool TelemetryTracker::RecordCPU_PDH(TimedRecord& rec)
 			return false;
 		}
 		rec.cpu_freq *= DisplayValue.doubleValue;
+
+		pdhs = PdhGetFormattedCounterValue(m_pdhCtrGPUMem,
+			PDH_FMT_DOUBLE,
+			&CounterType,
+			&DisplayValue);
+		if (ERROR_SUCCESS != pdhs)
+		{
+			return false;
+		}
+		rec.gpu_mem = DisplayValue.doubleValue;
 
 		return true;
 	}

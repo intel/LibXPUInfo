@@ -187,7 +187,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>RAPIDJSON_HAS_STDSTRING=1;XPUINFO_USE_SYSTEMEMORYINFO;XPUINFO_USE_RUNTIMEVERSIONINFO;XPUINFO_USE_RAPIDJSON;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>RAPIDJSON_HAS_STDSTRING=1;XPUINFO_USE_SYSTEMEMORYINFO;XPUINFO_USE_RUNTIMEVERSIONINFO;XPUINFO_USE_RAPIDJSON;XPUINFO_USE_TELEMETRYTRACKER;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)external\OpenCL-Headers;$(SolutionDir)external\rapidjson\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>

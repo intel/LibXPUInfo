@@ -641,7 +641,7 @@ namespace XI
             UI64 bw_write;
 
             // Resource usage
-            UI64 deviceMemoryUsedBytes;
+            UI64 deviceMemoryUsedBytes; // Current process
             UI64 deviceMemoryBudgetBytes;
 
             // Engine activity
@@ -651,6 +651,7 @@ namespace XI
 
             double pctCPU;
             double cpu_freq;
+            double gpu_mem;
 
             // System memory
             //UI64 systemMemoryPhysicalTotal;
@@ -687,6 +688,7 @@ namespace XI
         PDH_HCOUNTER m_pdhCtrCPU = nullptr;
         PDH_HCOUNTER m_pdhCtrCPUFreq = nullptr;
         PDH_HCOUNTER m_pdhCtrCPUPctPerf = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUMem = nullptr;
         bool RecordCPU_PDH(TimedRecord& rec);
         void InitPDH();
 #endif
