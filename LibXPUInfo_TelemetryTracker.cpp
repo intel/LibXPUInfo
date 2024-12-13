@@ -20,7 +20,7 @@ void TelemetryTracker::printRecordHeader(std::ostream& ostr) const
 {
 	ostr << "Time(s)";
 #if defined(_WIN32) && !defined(_M_ARM64)
-	ostr << ", %CPU, CPU Freq (MHz), GPU Mem Used (GB)";
+	ostr << ", %CPU, CPU Freq (MHz), GPU Local Mem Used (GB), GPU Shared Mem (GB), GPU Dedicated Mem (GB), GPU Total Mem (GB)";
 #endif
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY)
 		ostr << ", Freq(MHz)";
@@ -42,7 +42,7 @@ void TelemetryTracker::printRecordHeader(std::ostream& ostr) const
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY_MEMORY)
 		ostr << ",Memory Freq (GT/s)";
 	if (m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY)
-		ostr << ",Physical System Memory Available (GB), Commit Total (GB)";
+		ostr << ",Physical System Memory Available (GB),Commit Total (GB),Commit Limit (GB),Commit Peak (GB)";
 
 	ostr << std::endl;
 }
@@ -90,7 +90,10 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 
 #if defined(_WIN32) && !defined(_M_ARM64)
 	ostr << "," << rec.pctCPU << "," << rec.cpu_freq / (100.0);
-	ostr << "," << rec.gpu_mem / (1024.0 * 1024 * 1024);
+	ostr << "," << rec.gpu_mem_Local / (1024.0 * 1024 * 1024);
+	ostr << "," << rec.gpu_mem_Adapter_Shared / (1024.0 * 1024 * 1024);
+	ostr << "," << rec.gpu_mem_Adapter_Dedicated / (1024.0 * 1024 * 1024);
+	ostr << "," << rec.gpu_mem_Adapter_Total / (1024.0 * 1024 * 1024);
 #endif
 
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY)
@@ -178,7 +181,10 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 	if (m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY)
 	{
 		ostr << "," << std::setprecision(5) << (rec.systemMemoryPhysicalAvailable / (1024.0 * 1024 * 1024))
-			<< "," << (rec.systemMemoryCommitTotal / (1024.0 * 1024 * 1024));
+			<< "," << (rec.systemMemoryCommitTotal / (1024.0 * 1024 * 1024))
+			<< "," << (rec.systemMemoryCommitLimit / (1024.0 * 1024 * 1024))
+			<< "," << (rec.systemMemoryCommitPeak / (1024.0 * 1024 * 1024))
+			;
 	}
 
 	ostr << std::endl;
@@ -336,15 +342,17 @@ bool TelemetryTracker::RecordCPUTimestamp(TimedRecord& rec)
 bool TelemetryTracker::RecordMemoryUsage(TimedRecord& rec)
 {
 #ifdef _WIN32
+	// Note: If we want process-specific info, see these APIs:
 	//  GetProcessMemoryInfo /PROCESS_MEMORY_COUNTERS_EX2 -- See https://learn.microsoft.com/en-us/windows/win32/psapi/enumerating-all-processes?redirectedfrom=MSDN
-	//  GlobalMemoryStatusEx, GetPerformanceInfo->PhysicalAvailable*PageSize
+	//  GlobalMemoryStatusEx
 
 	PERFORMANCE_INFORMATION pi;
 	if (GetPerformanceInfo(&pi, sizeof(pi)))
 	{
-		// TODO: Should this be PhysicalAvailable, or should function name be getTotalPhysicalMemorySizeInGB?
 		rec.systemMemoryPhysicalAvailable = pi.PhysicalAvailable * pi.PageSize;
 		rec.systemMemoryCommitTotal = pi.CommitTotal * pi.PageSize;
+		rec.systemMemoryCommitLimit = pi.CommitLimit * pi.PageSize;
+		rec.systemMemoryCommitPeak = pi.CommitPeak * pi.PageSize;
 
 		if (!(m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY))
 		{
@@ -434,11 +442,19 @@ void TelemetryTracker::RecordNow()
 }
 
 #if defined(_WIN32) && !defined(_M_ARM64)
+static std::string getLuidStringForPDH(const LUID& luid)
+{
+	std::ostringstream luidStream;
+	luidStream << std::hex << std::setw(8) << std::setfill('0') << std::uppercase << luid.HighPart <<
+		"_0x" << std::setw(8) << std::setfill('0') << luid.LowPart;
+	return luidStream.str();
+}
+
 void TelemetryTracker::InitPDH()
 {
 	static const char counterCPU_T[] = "\\Processor(_Total)\\% Processor Time";
-	/* Processor Utility is the amount of work a processor is completing, 
-	   as a percentage of the amount of work the processor could complete 
+	/* Processor Utility is the amount of work a processor is completing,
+	   as a percentage of the amount of work the processor could complete
 	   if it were running at its nominal performanceand never idle.
 	   On some processors, Processor Utility may exceed 100 % .
 	*/
@@ -446,15 +462,17 @@ void TelemetryTracker::InitPDH()
 	static const char counterCPU_Freq[] = "\\Processor Information(_Total)\\Processor Frequency";
 	static const char counterCPU_PctPerf[] = "\\Processor Information(_Total)\\% Processor Performance";
 	//"\\GPU Adapter Memory(luid_0x00000000_0x00013E1A_phys_0)\Total Committed"
-	static const char* counterGPU_Memory[] = { "\\GPU Local Adapter Memory(luid_0x", "*)\\Local Usage" };
+	static const char* counterGPU_Memory = "\\GPU Adapter Memory(luid_0x";
+	static const char* counterGPU_Memory_Shared = "*)\\Shared Usage";
+	static const char* counterGPU_Memory_Dedicated = "*)\\Dedicated Usage";
+	static const char* counterGPU_Memory_Total = "*)\\Total Committed";
+	static const char* counterGPULocal_Memory[] = { "\\GPU Local Adapter Memory(luid_0x", "*)\\Local Usage" };
 
-	std::string gpuMemoryCounterPath;
-	{
-		std::ostringstream luidStream;
-		luidStream << counterGPU_Memory[0] << std::hex << std::setw(8) << std::setfill('0') << std::uppercase << getDevice()->getLUIDAsStruct().HighPart <<
-			"_0x" << std::setw(8) << std::setfill('0') << getDevice()->getLUIDAsStruct().LowPart << counterGPU_Memory[1];
-		gpuMemoryCounterPath = luidStream.str();
-	}
+	std::string luidPdhStr(getLuidStringForPDH(getDevice()->getLUIDAsStruct()));
+	std::string gpuMemoryLocalCounterPath = counterGPULocal_Memory[0] + luidPdhStr + counterGPULocal_Memory[1];
+	std::string gpuMemSharedCounterPath = counterGPU_Memory + luidPdhStr + counterGPU_Memory_Shared;
+	std::string gpuMemDedicatedCounterPath = counterGPU_Memory + luidPdhStr + counterGPU_Memory_Dedicated;
+	std::string gpuMemTotalCounterPath = counterGPU_Memory + luidPdhStr + counterGPU_Memory_Total;
 
 	PDH_STATUS pdhs = PdhOpenQueryA(nullptr, 0, &m_pdhQuery);
 	if (pdhs == ERROR_SUCCESS)
@@ -469,9 +487,18 @@ void TelemetryTracker::InitPDH()
 		pdhs = PdhAddCounterA(m_pdhQuery, counterCPU_PctPerf, 0, &m_pdhCtrCPUPctPerf);
 		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
 		
-		pdhs = PdhAddCounterA(m_pdhQuery, gpuMemoryCounterPath.c_str(), 0, &m_pdhCtrGPUMem);
+		pdhs = PdhAddCounterA(m_pdhQuery, gpuMemoryLocalCounterPath.c_str(), 0, &m_pdhCtrGPUMemLocal);
 		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
-		
+
+		pdhs = PdhAddCounterA(m_pdhQuery, gpuMemSharedCounterPath.c_str(), 0, &m_pdhCtrGPUAdapterMemShared);
+		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
+
+		pdhs = PdhAddCounterA(m_pdhQuery, gpuMemDedicatedCounterPath.c_str(), 0, &m_pdhCtrGPUAdapterMemDedicated);
+		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
+
+		pdhs = PdhAddCounterA(m_pdhQuery, gpuMemTotalCounterPath.c_str(), 0, &m_pdhCtrGPUAdapterMemTotal);
+		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
+
 		// The first query does not return valid data, so do it here.
 		pdhs = PdhCollectQueryData(m_pdhQuery);
 		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
@@ -517,7 +544,7 @@ bool TelemetryTracker::RecordCPU_PDH(TimedRecord& rec)
 		}
 		rec.cpu_freq *= DisplayValue.doubleValue;
 
-		pdhs = PdhGetFormattedCounterValue(m_pdhCtrGPUMem,
+		pdhs = PdhGetFormattedCounterValue(m_pdhCtrGPUMemLocal,
 			PDH_FMT_DOUBLE,
 			&CounterType,
 			&DisplayValue);
@@ -525,7 +552,37 @@ bool TelemetryTracker::RecordCPU_PDH(TimedRecord& rec)
 		{
 			return false;
 		}
-		rec.gpu_mem = DisplayValue.doubleValue;
+		rec.gpu_mem_Local = DisplayValue.doubleValue;
+
+		pdhs = PdhGetFormattedCounterValue(m_pdhCtrGPUAdapterMemTotal,
+			PDH_FMT_DOUBLE,
+			&CounterType,
+			&DisplayValue);
+		if (ERROR_SUCCESS != pdhs)
+		{
+			return false;
+		}
+		rec.gpu_mem_Adapter_Total = DisplayValue.doubleValue;
+
+		pdhs = PdhGetFormattedCounterValue(m_pdhCtrGPUAdapterMemShared,
+			PDH_FMT_DOUBLE,
+			&CounterType,
+			&DisplayValue);
+		if (ERROR_SUCCESS != pdhs)
+		{
+			return false;
+		}
+		rec.gpu_mem_Adapter_Shared = DisplayValue.doubleValue;
+
+		pdhs = PdhGetFormattedCounterValue(m_pdhCtrGPUAdapterMemDedicated,
+			PDH_FMT_DOUBLE,
+			&CounterType,
+			&DisplayValue);
+		if (ERROR_SUCCESS != pdhs)
+		{
+			return false;
+		}
+		rec.gpu_mem_Adapter_Dedicated = DisplayValue.doubleValue;
 
 		return true;
 	}

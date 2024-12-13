@@ -651,12 +651,16 @@ namespace XI
 
             double pctCPU;
             double cpu_freq;
-            double gpu_mem;
+            double gpu_mem_Local;
+            double gpu_mem_Adapter_Total;
+            double gpu_mem_Adapter_Shared;
+            double gpu_mem_Adapter_Dedicated;
 
             // System memory
-            //UI64 systemMemoryPhysicalTotal;
             UI64 systemMemoryPhysicalAvailable;
             UI64 systemMemoryCommitTotal;
+            UI64 systemMemoryCommitLimit;
+            UI64 systemMemoryCommitPeak;
         };
         typedef std::vector<TimedRecord> TimedRecords;
 
@@ -688,8 +692,11 @@ namespace XI
         PDH_HCOUNTER m_pdhCtrCPU = nullptr;
         PDH_HCOUNTER m_pdhCtrCPUFreq = nullptr;
         PDH_HCOUNTER m_pdhCtrCPUPctPerf = nullptr;
-        PDH_HCOUNTER m_pdhCtrGPUMem = nullptr;
-        bool RecordCPU_PDH(TimedRecord& rec);
+        PDH_HCOUNTER m_pdhCtrGPUMemLocal = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUAdapterMemTotal = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUAdapterMemShared = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUAdapterMemDedicated = nullptr;
+            bool RecordCPU_PDH(TimedRecord& rec);
         void InitPDH();
 #endif
 
