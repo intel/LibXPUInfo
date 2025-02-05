@@ -696,7 +696,7 @@ namespace XI
         PDH_HCOUNTER m_pdhCtrGPUAdapterMemTotal = nullptr;
         PDH_HCOUNTER m_pdhCtrGPUAdapterMemShared = nullptr;
         PDH_HCOUNTER m_pdhCtrGPUAdapterMemDedicated = nullptr;
-            bool RecordCPU_PDH(TimedRecord& rec);
+        bool RecordCPU_PDH(TimedRecord& rec);
         void InitPDH();
 #endif
 
