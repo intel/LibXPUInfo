@@ -79,6 +79,7 @@ bool testVerifyJSON()
                 return false;
             }
             XI::XPUInfoPtr pXID(XI::XPUInfo::deserialize(doc));
+#ifdef _WIN32
             pXID->initDXCore(true);
             for (const auto& [luid, pDev] :pXID->getDeviceMap())
             {
@@ -87,6 +88,7 @@ bool testVerifyJSON()
                     XPUINFO_REQUIRE(pDev->getHandle_DXCore());
                 }
             }
+#endif
             bool xiEqual = JSON::compareXI(pXI, pXID);
             if (!xiEqual)
             {
