@@ -156,6 +156,44 @@ static const XI::RuntimeNames runtimes = {
     "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
     "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
 };
+
+int testInflateGPUMem(double sizeInGB, const std::string& devName)
+{
+    try
+    {
+        XPUInfo xi(XPUINFO_INIT_ALL_APIS, runtimes);
+        auto xiDev = xi.getDevice(devName.c_str());
+        if (xiDev)
+        {
+            std::cout << xi << std::endl << std::endl;
+            std::cout << "Allocating " << sizeInGB << " GB on " << XI::convert(xiDev->name()) << std::endl;
+            auto devHandle = xiDev->getHandle_DXCore();
+            XPUINFO_REQUIRE(devHandle);
+            try
+            {
+                ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
+                std::cout << "Press any key to continue...\n";
+                getchar();
+            }
+            catch (const std::exception& e)
+            {
+                std::cout << "Exception near ScopedD3D12MemoryAllocation: " << e.what() << std::endl;
+                return -1;
+            }
+        }
+        else
+        {
+            std::cout << "Device not found: " << devName << std::endl;
+            return -1;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "Exception attempting inflate_gpu_mem: " << e.what() << std::endl;
+        return -1;
+    }
+    return 0;
+}
 #else
 static const XI::RuntimeNames runtimes; // empty for now
 #endif
@@ -257,30 +295,7 @@ int printXPUInfo(int argc, char* argv[])
             istr >> sizeInGB;
             if (!istr.fail())
             {
-                XI::XPUInfo xi(XPUINFO_INIT_ALL_APIS, runtimes);
-                auto xiDev = xi.getDevice(devName.c_str());
-                if (xiDev)
-                {
-                    std::cout << xi << std::endl << std::endl;
-                    std::cout << "Allocating " << sizeInGB << " GB on " << XI::convert(xiDev->name()) << std::endl;
-                    auto devHandle = xiDev->getHandle_DXCore();
-                    XPUINFO_REQUIRE(devHandle);
-                    try
-                    {
-                        ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
-                        std::cout << "Press any key to continue...\n";
-                        getchar();
-                    }
-                    catch (const std::exception& e)
-                    {
-                        std::cout << "Exception: " << e.what() << std::endl;
-                    }
-                }
-                else
-                {
-                    std::cout << "Device not found: " << devName << std::endl;
-                }
-                return 0;
+                return testInflateGPUMem(sizeInGB, devName);
             }
             else
             {
