@@ -173,7 +173,7 @@ int testInflateGPUMem(double sizeInGB, const std::string& devName)
             {
                 ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
                 std::cout << "Press any key to continue...\n";
-                getchar();
+                int c = getchar(); (void)c;
             }
             catch (const std::exception& e)
             {
