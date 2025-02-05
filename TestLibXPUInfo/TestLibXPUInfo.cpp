@@ -79,6 +79,14 @@ bool testVerifyJSON()
                 return false;
             }
             XI::XPUInfoPtr pXID(XI::XPUInfo::deserialize(doc));
+            pXID->initDXCore(true);
+            for (const auto& [luid, pDev] :pXID->getDeviceMap())
+            {
+                if (pDev->getCurrentAPIs() & API_TYPE_DXCORE)
+                {
+                    XPUINFO_REQUIRE(pDev->getHandle_DXCore());
+                }
+            }
             bool xiEqual = JSON::compareXI(pXI, pXID);
             if (!xiEqual)
             {
@@ -216,15 +224,15 @@ int printXPUInfo(int argc, char* argv[])
         }
 #endif
 #ifdef XPUINFO_USE_RAPIDJSON
-        if (arg == "-write_json")
+        if ((arg == "-write_json") && (a + 1 < argc))
         {
             testWriteJSON(argv[++a]);
         }
-        if (arg == "-verify_json")
+        else if (arg == "-verify_json")
         {
             testVerifyJSON();
         }
-        if (arg == "-from_json")
+        else if ((arg == "-from_json") && (a + 1 < argc))
         {
             testReadJSON(argv[++a]);
         }
