@@ -607,18 +607,20 @@ namespace XI
         enum TelemetryItem : UI32
         {
             TELEMETRYITEM_UNKNOWN = 0,
-            TELEMETRYITEM_FREQUENCY =   1 << 0,
-            TELEMETRYITEM_READ_BW =     1 << 1,
-            TELEMETRYITEM_WRITE_BW =    1 << 2,
-            TELEMETRYITEM_GLOBAL_ACTIVITY =         1 << 3,
+            TELEMETRYITEM_FREQUENCY = 1 << 0,
+            TELEMETRYITEM_READ_BW = 1 << 1,
+            TELEMETRYITEM_WRITE_BW = 1 << 2,
+            TELEMETRYITEM_GLOBAL_ACTIVITY = 1 << 3,
             TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY = 1 << 4,
-            TELEMETRYITEM_MEDIA_ACTIVITY =          1 << 5,
+            TELEMETRYITEM_MEDIA_ACTIVITY = 1 << 5,
 
-            TELEMETRYITEM_MEMORY_USAGE =            1 << 6,
-            TELEMETRYITEM_TIMESTAMP_DOUBLE =        1 << 7, // Use double (i.e. from IGCL), else use UI64 from CPU
+            TELEMETRYITEM_MEMORY_USAGE = 1 << 6,
+            TELEMETRYITEM_TIMESTAMP_DOUBLE = 1 << 7, // Use double (i.e. from IGCL), else use UI64 from CPU
 
-            TELEMETRYITEM_FREQUENCY_MEDIA =         1 << 8,
-            TELEMETRYITEM_FREQUENCY_MEMORY =        1 << 9,
+            TELEMETRYITEM_FREQUENCY_MEDIA = 1 << 8,
+            TELEMETRYITEM_FREQUENCY_MEMORY = 1 << 9,
+
+            TELEMETRYITEM_SYSTEMMEMORY = 1 << 10,
 
             // TODO: PCI bandwidth?  Neither IGCL nor L0 working now.  Can derive from micro+mem_bw, though.
         };
@@ -639,7 +641,7 @@ namespace XI
             UI64 bw_write;
 
             // Resource usage
-            UI64 deviceMemoryUsedBytes;
+            UI64 deviceMemoryUsedBytes; // Current process
             UI64 deviceMemoryBudgetBytes;
 
             // Engine activity
@@ -649,6 +651,16 @@ namespace XI
 
             double pctCPU;
             double cpu_freq;
+            double gpu_mem_Local;
+            double gpu_mem_Adapter_Total;
+            double gpu_mem_Adapter_Shared;
+            double gpu_mem_Adapter_Dedicated;
+
+            // System memory
+            UI64 systemMemoryPhysicalAvailable;
+            UI64 systemMemoryCommitTotal;
+            UI64 systemMemoryCommitLimit;
+            UI64 systemMemoryCommitPeak;
         };
         typedef std::vector<TimedRecord> TimedRecords;
 
@@ -680,6 +692,10 @@ namespace XI
         PDH_HCOUNTER m_pdhCtrCPU = nullptr;
         PDH_HCOUNTER m_pdhCtrCPUFreq = nullptr;
         PDH_HCOUNTER m_pdhCtrCPUPctPerf = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUMemLocal = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUAdapterMemTotal = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUAdapterMemShared = nullptr;
+        PDH_HCOUNTER m_pdhCtrGPUAdapterMemDedicated = nullptr;
         bool RecordCPU_PDH(TimedRecord& rec);
         void InitPDH();
 #endif

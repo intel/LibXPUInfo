@@ -1,7 +1,10 @@
+// Copyright (C) 2025 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
 #ifdef _WIN32
 
-#include "LibXPUInfo_D3D12Utility.h"
 #include "LibXPUInfo.h"
+#include "LibXPUInfo_D3D12Utility.h"
 #include <stdexcept>
 #include <iostream>
 #include <dxcore.h>

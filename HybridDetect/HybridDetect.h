@@ -475,6 +475,7 @@ class EnumLogicalProcessorInformation
 {
 	// Based On: https://devblogs.microsoft.com/oldnewthing/20131028-00/?p=2823
 public:
+    EnumLogicalProcessorInformation(const EnumLogicalProcessorInformation&) = delete;
 	EnumLogicalProcessorInformation(LOGICAL_PROCESSOR_RELATIONSHIP Relationship)
 		: m_pinfoBase(nullptr), m_pinfoCurrent(nullptr), m_cbRemaining(0)
 	{

@@ -10,7 +10,7 @@
 #include "LibXPUInfo.h"
 #include "LibXPUInfo_Util.h"
 #include "LibXPUInfo_JSON.h"
-#include "LibXPUInfo_D3D12Utility.h"
+#include "utility/LibXPUInfo_D3D12Utility.h"
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -151,6 +151,77 @@ public:
 protected:
     std::list<Microsoft::WRL::ComPtr<ID3D12Resource>> m_gpuMem;
 };
+
+static const XI::RuntimeNames runtimes = {
+    "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
+    "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
+};
+
+int testInflateGPUMem(double sizeInGB, const std::string& devName)
+{
+    try
+    {
+        XPUInfo xi(XPUINFO_INIT_ALL_APIS, runtimes);
+        auto xiDev = xi.getDevice(devName.c_str());
+        if (xiDev)
+        {
+            std::cout << xi << std::endl << std::endl;
+            std::cout << "Allocating " << sizeInGB << " GB on " << XI::convert(xiDev->name()) << std::endl;
+            auto devHandle = xiDev->getHandle_DXCore();
+            XPUINFO_REQUIRE(devHandle);
+            try
+            {
+                ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
+                std::cout << "Press any key to continue...\n";
+                int c = getchar(); (void)c;
+            }
+            catch (const std::exception& e)
+            {
+                std::cout << "Exception near ScopedD3D12MemoryAllocation: " << e.what() << std::endl;
+                return -1;
+            }
+        }
+        else
+        {
+            std::cout << "Device not found: " << devName << std::endl;
+            return -1;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "Exception attempting inflate_gpu_mem: " << e.what() << std::endl;
+        return -1;
+    }
+    return 0;
+}
+#else
+static const XI::RuntimeNames runtimes; // empty for now
+#endif
+
+#ifdef XPUINFO_USE_TELEMETRYTRACKER
+int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx)
+{
+    // Find desired GPU, then start running
+    APIType apis = APIType(XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
+        | XI::API_TYPE_DX11_INTEL_PERF_COUNTER \
+        | XI::API_TYPE_LEVELZERO \
+        | XI::API_TYPE_IGCL_L0 | XI::API_TYPE_IGCL \
+        | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML);
+
+    XI::XPUInfo xi(apis, runtimes);
+
+    auto telemDevice = xi.getDeviceByIndex(telem_gpu_idx);
+    {
+        XI::TelemetryTrackerWithScopedLog tt(telemDevice, telemInterval_ms, std::cout);
+        std::cout << "Telemetry started on device " << XI::convert(telemDevice->name()) << " with " << telemInterval_ms << " ms interval.\n";
+        std::cout << "Press any key to stop...\n";
+        tt.start();
+        auto c = getchar();
+        (void)c;
+    }
+    std::cout << std::endl << xi << std::endl;
+    return 0;
+}
 #endif
 
 #if TESTLIBXPUINFO_STANDALONE
@@ -160,13 +231,11 @@ int printXPUInfo(int argc, char* argv[])
 #endif
 {
     bool testIndividual = false;
+    bool bRunTelemetry = false;
+    XI::UI32 telemInterval_ms = 0;
+    XI::UI32 telem_gpu_idx = 0;
     APIType additionalAPIs = APIType(0);
     APIType apiMask = APIType(0);
-
-    static const XI::RuntimeNames runtimes = {
-        "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
-        "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
-    };
 
     for (int a = 1; a < argc; ++a)
     {
@@ -177,6 +246,30 @@ int printXPUInfo(int argc, char* argv[])
             testIndividual = true;
         }
 #endif
+        if (arg == "-telemetry") // -telemetry <ms> [<gpuIndex>]
+        {
+            if ((a + 1 < argc))
+            {
+                std::istringstream istr(argv[++a]);
+                XI::UI32 msInterval = 0;
+                istr >> msInterval;
+                if (!istr.bad())
+                {
+                    telemInterval_ms = msInterval;
+                    bRunTelemetry = true;
+                }
+            }
+            if ((a + 1 < argc) && (strlen(argv[a+1]) > 0) && (argv[a+1][0] != '-'))
+            {
+                std::istringstream istr(argv[++a]);
+                XI::UI32 gpuIdx;
+                istr >> gpuIdx;
+                if (!istr.bad())
+                {
+                    telem_gpu_idx = gpuIdx;
+                }
+            }
+        }
         if (arg == "-igcl_l0_enable")
         {
             additionalAPIs |= XI::API_TYPE_IGCL_L0;
@@ -200,25 +293,14 @@ int printXPUInfo(int argc, char* argv[])
             std::istringstream istr(argv[++a]);
             std::string devName(argv[++a]);
             istr >> sizeInGB;
-            if (!istr.bad())
+            if (!istr.fail())
             {
-                XI::XPUInfo xi(XPUINFO_INIT_ALL_APIS, runtimes);
-                auto xiDev = xi.getDevice(devName.c_str());
-                if (xiDev)
-                {
-                    std::cout << xi << std::endl << std::endl;
-                    std::cout << "Allocating " << sizeInGB << " GB on " << XI::convert(xiDev->name()) << std::endl;
-                    auto devHandle = xiDev->getHandle_DXCore();
-                    XPUINFO_REQUIRE(devHandle);
-                    ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
-                    std::cout << "Press any key to continue...\n";
-                    getchar();
-                }
-                else
-                {
-                    std::cout << "Device not found: " << devName << std::endl;
-                }
-                return 0;
+                return testInflateGPUMem(sizeInGB, devName);
+            }
+            else
+            {
+                std::cout << "Argument error - Invalid size: " << istr.str() << std::endl;
+                return -1;
             }
             return -1;
         }
@@ -241,7 +323,11 @@ int printXPUInfo(int argc, char* argv[])
 
     try
     {
-
+        if (bRunTelemetry)
+        {
+            return runTelemetry(telemInterval_ms, telem_gpu_idx);
+        }
+        else 
         if (!testIndividual)
         {
             XI::Timer timer;
