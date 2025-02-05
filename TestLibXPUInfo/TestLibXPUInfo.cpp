@@ -10,7 +10,7 @@
 #include "LibXPUInfo.h"
 #include "LibXPUInfo_Util.h"
 #include "LibXPUInfo_JSON.h"
-#include "LibXPUInfo_D3D12Utility.h"
+#include "utility/LibXPUInfo_D3D12Utility.h"
 #include <iostream>
 #include <filesystem>
 #include <fstream>

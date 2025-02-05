@@ -264,11 +264,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\LibXPUInfo_D3D12Utility.cpp" />
+    <ClCompile Include="..\utility\LibXPUInfo_D3D12Utility.cpp" />
     <ClCompile Include="TestLibXPUInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\LibXPUInfo_D3D12Utility.h" />
+    <ClInclude Include="..\utility\LibXPUInfo_D3D12Utility.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
