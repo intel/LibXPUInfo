@@ -54,7 +54,7 @@ namespace XI
     // Needs to be renamed since it is extern "C"
     DEFINE_GUID(LIBXPUINFO_DXCORE_ADAPTER_ATTRIBUTE_D3D12_GENERIC_ML, 0xb71b0d41, 0x1088, 0x422f, 0xa2, 0x7c, 0x2, 0x50, 0xb7, 0xd3, 0xa9, 0x88);
 
-void XPUInfo::initDXCore()
+void XPUInfo::initDXCore(bool updateOnly)
 {
     const bool bPrintInfo = false;
 
@@ -105,7 +105,7 @@ void XPUInfo::initDXCore()
     if (bPrintInfo)
         printf("Printing available adapters..\n");
 
-    auto handleAdapter = [this, luidHighPerf, luidMinPower, bPrintInfo](com_ptr<IDXCoreAdapter>& currAdapter)
+    auto handleAdapter = [this, luidHighPerf, luidMinPower, updateOnly, bPrintInfo](com_ptr<IDXCoreAdapter>& currAdapter)
         {
             // If the adapter is a software adapter then don't consider it for index selection
             bool isHardware, isIntegrated;
@@ -238,17 +238,18 @@ void XPUInfo::initDXCore()
                         }
 
                         newIt->second->initDXCoreDevice(currAdapter, isHighPerf, isMinPower);
+                        m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
                     }
-                    else
+                    else if (!updateOnly)
                     {
                         // Add
                         auto insertResult = m_Devices.insert(std::make_pair(newDevice->getLUID(), newDevice));
                         if (insertResult.second)
                         {
                             insertResult.first->second->initDXCoreDevice(currAdapter, isHighPerf, isMinPower);
+                            m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
                         }
                     }
-                    m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
                 } // newDevice valid        
             }
         };

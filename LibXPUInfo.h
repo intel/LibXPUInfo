@@ -949,6 +949,7 @@ namespace XI
         const winrt::com_ptr<IDXCoreAdapterFactory>& getDXCoreFactory() const { return m_spFactoryDXCore; }
         // TODO: Change to also handle NPUs only in m_spAdapterList2
         const winrt::com_ptr<IDXCoreAdapterList>& getDXCoreAdapterList() const { return m_spAdapterList; }
+        void initDXCore(bool updateOnly=false); // Call with updateOnly=true after deserializing to "activate" DXCore features
 #endif
 
         typedef std::unordered_map<String, RuntimeVersion> RuntimeVersionInfoMap;
@@ -976,7 +977,6 @@ namespace XI
         void initCPU();
 #ifdef _WIN32
         void initDXGI(APIType initMask);
-        void initDXCore();
         void initIGCL(bool useL0);
         void initL0();
         void initOpenCL();

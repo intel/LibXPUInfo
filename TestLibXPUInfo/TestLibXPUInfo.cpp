@@ -10,6 +10,7 @@
 #include "LibXPUInfo.h"
 #include "LibXPUInfo_Util.h"
 #include "LibXPUInfo_JSON.h"
+#include "LibXPUInfo_D3D12Utility.h"
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -78,6 +79,14 @@ bool testVerifyJSON()
                 return false;
             }
             XI::XPUInfoPtr pXID(XI::XPUInfo::deserialize(doc));
+            pXID->initDXCore(true);
+            for (const auto& [luid, pDev] :pXID->getDeviceMap())
+            {
+                if (pDev->getCurrentAPIs() & API_TYPE_DXCORE)
+                {
+                    XPUINFO_REQUIRE(pDev->getHandle_DXCore());
+                }
+            }
             bool xiEqual = JSON::compareXI(pXI, pXID);
             if (!xiEqual)
             {
@@ -126,6 +135,24 @@ bool testReadJSON(const std::filesystem::path jsonPath)
 }
 #endif
 
+#ifdef _WIN32
+class ScopedD3D12MemoryAllocation
+{
+public:
+    ScopedD3D12MemoryAllocation(IUnknown* adapter, double sizeInGB)
+    {
+        size_t sizeInBytes = static_cast<size_t>(sizeInGB * 1024 * 1024 * 1024);
+        if (!CreateD3D12DeviceAndAllocateResource(adapter, sizeInBytes, m_gpuMem))
+        {
+            throw std::runtime_error("Failed to allocate D3D12 memory");
+        }
+
+    }
+protected:
+    std::list<Microsoft::WRL::ComPtr<ID3D12Resource>> m_gpuMem;
+};
+#endif
+
 #if TESTLIBXPUINFO_STANDALONE
 int main(int argc, char* argv[])
 #else
@@ -135,6 +162,12 @@ int printXPUInfo(int argc, char* argv[])
     bool testIndividual = false;
     APIType additionalAPIs = APIType(0);
     APIType apiMask = APIType(0);
+
+    static const XI::RuntimeNames runtimes = {
+        "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
+        "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
+    };
+
     for (int a = 1; a < argc; ++a)
     {
         String arg(argv[a]);
@@ -159,26 +192,52 @@ int printXPUInfo(int argc, char* argv[])
                 apiMask = static_cast<APIType>(inMask);
             }
         }
+#ifdef _WIN32
+        // -inflate_gpu_mem 10.5 Arc
+        else if ((arg == "-inflate_gpu_mem") && (a + 2 < argc))
+        {
+            double sizeInGB;
+            std::istringstream istr(argv[++a]);
+            std::string devName(argv[++a]);
+            istr >> sizeInGB;
+            if (!istr.bad())
+            {
+                XI::XPUInfo xi(XPUINFO_INIT_ALL_APIS, runtimes);
+                auto xiDev = xi.getDevice(devName.c_str());
+                if (xiDev)
+                {
+                    std::cout << xi << std::endl << std::endl;
+                    std::cout << "Allocating " << sizeInGB << " GB on " << XI::convert(xiDev->name()) << std::endl;
+                    auto devHandle = xiDev->getHandle_DXCore();
+                    XPUINFO_REQUIRE(devHandle);
+                    ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
+                    std::cout << "Press any key to continue...\n";
+                    getchar();
+                }
+                else
+                {
+                    std::cout << "Device not found: " << devName << std::endl;
+                }
+                return 0;
+            }
+            return -1;
+        }
+#endif
 #ifdef XPUINFO_USE_RAPIDJSON
-        if (arg == "-write_json")
+        if ((arg == "-write_json") && (a + 1 < argc))
         {
             testWriteJSON(argv[++a]);
         }
-        if (arg == "-verify_json")
+        else if (arg == "-verify_json")
         {
             testVerifyJSON();
         }
-        if (arg == "-from_json")
+        else if ((arg == "-from_json") && (a + 1 < argc))
         {
             testReadJSON(argv[++a]);
         }
 #endif
     }
-
-    static const XI::RuntimeNames runtimes = {
-        "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
-        "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
-    };
 
     try
     {
