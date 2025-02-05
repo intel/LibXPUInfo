@@ -180,6 +180,7 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 	}
 	if (m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY)
 	{
+        SaveRestoreIOSFlags saveFlags(ostr);
 		ostr << "," << std::setprecision(5) << (rec.systemMemoryPhysicalAvailable / (1024.0 * 1024 * 1024))
 			<< "," << (rec.systemMemoryCommitTotal / (1024.0 * 1024 * 1024))
 			<< "," << (rec.systemMemoryCommitLimit / (1024.0 * 1024 * 1024))
