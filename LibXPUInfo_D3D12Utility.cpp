@@ -1,7 +1,7 @@
 #ifdef _WIN32
 
-#include "LibXPUInfo_D3D12Utility.h"
 #include "LibXPUInfo.h"
+#include "LibXPUInfo_D3D12Utility.h"
 #include <stdexcept>
 #include <iostream>
 #include <dxcore.h>

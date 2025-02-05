@@ -151,12 +151,14 @@ public:
 protected:
     std::list<Microsoft::WRL::ComPtr<ID3D12Resource>> m_gpuMem;
 };
-#endif
 
 static const XI::RuntimeNames runtimes = {
     "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
     "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
 };
+#else
+static const XI::RuntimeNames runtimes; // empty for now
+#endif
 
 #ifdef XPUINFO_USE_TELEMETRYTRACKER
 int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx)
@@ -196,11 +198,6 @@ int printXPUInfo(int argc, char* argv[])
     XI::UI32 telem_gpu_idx = 0;
     APIType additionalAPIs = APIType(0);
     APIType apiMask = APIType(0);
-
-    static const XI::RuntimeNames runtimes = {
-        "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
-        "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
-    };
 
     for (int a = 1; a < argc; ++a)
     {
