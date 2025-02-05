@@ -255,7 +255,7 @@ int printXPUInfo(int argc, char* argv[])
             std::istringstream istr(argv[++a]);
             std::string devName(argv[++a]);
             istr >> sizeInGB;
-            if (!istr.bad())
+            if (!istr.fail())
             {
                 XI::XPUInfo xi(XPUINFO_INIT_ALL_APIS, runtimes);
                 auto xiDev = xi.getDevice(devName.c_str());
@@ -265,15 +265,27 @@ int printXPUInfo(int argc, char* argv[])
                     std::cout << "Allocating " << sizeInGB << " GB on " << XI::convert(xiDev->name()) << std::endl;
                     auto devHandle = xiDev->getHandle_DXCore();
                     XPUINFO_REQUIRE(devHandle);
-                    ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
-                    std::cout << "Press any key to continue...\n";
-                    getchar();
+                    try
+                    {
+                        ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
+                        std::cout << "Press any key to continue...\n";
+                        getchar();
+                    }
+                    catch (const std::exception& e)
+                    {
+                        std::cout << "Exception: " << e.what() << std::endl;
+                    }
                 }
                 else
                 {
                     std::cout << "Device not found: " << devName << std::endl;
                 }
                 return 0;
+            }
+            else
+            {
+                std::cout << "Argument error - Invalid size: " << istr.str() << std::endl;
+                return -1;
             }
             return -1;
         }
