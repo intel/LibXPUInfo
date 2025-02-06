@@ -63,6 +63,14 @@
 #include <functional>
 #include <sstream>
 
+// This is to avoid build errors in environments where C++17 features are not available
+#if (_MSVC_LANG >= 201703L) || (__cplusplus >= 201703L)
+#include <optional>
+#define XPUINFO_HAS_CPP17 1
+#else
+#define XPUINFO_HAS_CPP17 0
+#endif
+
 #ifdef _WIN32
 #pragma warning(push)
 #pragma warning(disable : 4251)
@@ -531,7 +539,9 @@ namespace XI
         static DevicePtr deserialize(const rapidjson::Value& val);
 #endif
         bool operator==(const Device& dev) const;
+#if XPUINFO_HAS_CPP17
         std::optional<IntelGfxFamilyNamePair> getIntelGfxFamilyName() const;
+#endif
 
     protected:
         APIType validAPIs = API_TYPE_UNKNOWN;
