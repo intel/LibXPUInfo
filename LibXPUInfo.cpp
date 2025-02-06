@@ -152,6 +152,7 @@ namespace XI
 		return outFamily;
 	}
 
+#if XPUINFO_HAS_CPP17
 	std::optional<IntelGfxFamilyNamePair> Device::getIntelGfxFamilyName() const
 	{
 		if (IsVendor(kVendorId_Intel) && getType()==DEVICE_TYPE_GPU)
@@ -170,6 +171,7 @@ namespace XI
 		}
 		return std::nullopt;
 	}
+#endif
 
 	/* This table is purposefully internal to LibXPUInfo. 
 	*  Design goal is to expose information without creating end-user dependency.
@@ -1456,11 +1458,13 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 			SaveRestoreIOSFlags sr(ostr);
 			ostr << "\tIP Version: 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << devProps.DeviceIPVersion;
 		}
+#if XPUINFO_HAS_CPP17
 		auto IntelFamilyName = xiDev.getIntelGfxFamilyName();
 		if (IntelFamilyName.has_value())
 		{
 			ostr << ", " << IntelFamilyName->second;
 		}
+#endif
 		ostr << std::endl;
 	}
 	if (xiDev.IsVendor(kVendorId_Intel) && (devProps.VendorFlags.IntelFeatureFlags.FLAG_DP4A | devProps.VendorFlags.IntelFeatureFlags.FLAG_DPAS))
