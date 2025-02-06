@@ -5,6 +5,7 @@
 #include "LibXPUInfo.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include "loader/ze_loader.h"
 #include "DebugStream.h"
 #include "LibXPUInfo_Util.h"
 
@@ -456,17 +457,61 @@ void XPUInfo::initL0()
 {
 	std::vector<L0Enum> L0Drivers; // temp
 
-	ze_result_t result;
 	// Initialize the driver
-    // TODO: Once a loader is available supporting zeInitDrivers(), use it instead of zeInit. 
+	// TODO: Once a loader is available supporting zeInitDrivers(), use it instead of zeInit. 
 	//       See https://spec.oneapi.io/level-zero/latest/core/api.html#zeinitdrivers.
-    // NOTE: As of NPU driver 100.2761, the NPU only enumerates when zeInit flags include
+	// NOTE: As of NPU driver 100.2761, the NPU only enumerates when zeInit flags include
 	//       ZE_INIT_FLAG_VPU_ONLY. If zeInit(0) is called earlier in the process lifetime, 
 	//       then all subsequent calls to zeInit will not enumerate the NPU. 
 	//       One side-effect is that the OpenVINO NPU plugin also fails to enumerate the NPU. 
 	//       If this happens unexpectedly, check your app for calls to zeInit, or other 
 	//       modules using it such as IGCL.
-	result = zeInit(ZE_INIT_FLAG_VPU_ONLY|ZE_INIT_FLAG_GPU_ONLY); // We must use both flags to get both GPU and NPU, or else OpenVINO will fail to see NPU!
+
+	uint32_t driverCount = 0;
+	std::vector<ze_driver_handle_t> drivers;
+#if 0
+	// zelLoaderGetVersions succeeds but returns num_components==0.
+	// See https://github.com/openvinotoolkit/openvino/blob/43737ace3474e2f30c7dfc98b30b5408edde341c/src/plugins/intel_npu/src/utils/src/zero/zero_init.cpp#L76
+	zel_version_t loader_version = {};
+	size_t num_components;
+	auto result = zelLoaderGetVersions(&num_components, nullptr);
+	if ((result == ZE_RESULT_SUCCESS) && num_components) {
+		zel_component_version_t* versions = new zel_component_version_t[num_components];
+		result = zelLoaderGetVersions(&num_components, versions);
+
+		if (result == ZE_RESULT_SUCCESS) {
+			for (size_t i = 0; i < num_components; ++i) {
+				if (strncmp(versions[i].component_name, "loader", strlen("loader")) == 0) {
+					loader_version = versions[i].component_lib_version;
+
+					//log.debug("ZeroInitStructsHolder - ze_loader.dll version: %d.%d.%d",
+					//	loader_version.major,
+					//	loader_version.minor,
+					//	loader_version.patch);
+				}
+			}
+		}
+
+		delete[] versions;
+	}
+	//if (loader_version.major > 1 || (loader_version.major == 1 && loader_version.minor > 18) ||
+	//	(loader_version.major == 1 && loader_version.minor == 18 && loader_version.patch >= 5))
+
+	//ze_init_driver_type_desc_t initDesc{ ZE_STRUCTURE_TYPE_INIT_DRIVER_TYPE_DESC,
+	//	nullptr,
+	//	ZE_INIT_DRIVER_TYPE_FLAG_GPU | ZE_INIT_DRIVER_TYPE_FLAG_NPU
+	//};
+	ze_init_driver_type_desc_t initDesc{};
+	initDesc.flags = ZE_INIT_DRIVER_TYPE_FLAG_GPU|ZE_INIT_DRIVER_TYPE_FLAG_NPU;
+	// TODO: This gives ZE_RESULT_ERROR_UNSUPPORTED_VERSION on TGL-H with new ze_loader.dll, or fails to find symbol with ze_loader.dll from driver.  How can we check for compatibility up-front?
+	result = zeInitDrivers(&driverCount, nullptr, &initDesc);
+	drivers.resize(driverCount);
+	if ((ZE_RESULT_SUCCESS == result) && driverCount)
+	{
+		result = zeInitDrivers(&driverCount, drivers.data(), &initDesc);
+	}
+#else
+	ze_result_t result = zeInit(ZE_INIT_FLAG_VPU_ONLY | ZE_INIT_FLAG_GPU_ONLY); // We must use both flags to get both GPU and NPU, or else OpenVINO will fail to see NPU!
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		DebugStream dStr(XPUINFO_L0_VERBOSE);
@@ -476,7 +521,6 @@ void XPUInfo::initL0()
 	{
 		//std::cout << "Driver initialized.\n";
 		ze_result_t status;
-		uint32_t driverCount = 0;
 		status = zeDriverGet(&driverCount, nullptr);
 		if (status != ZE_RESULT_SUCCESS) {
 			DebugStream dStr(XPUINFO_L0_VERBOSE);
@@ -485,7 +529,7 @@ void XPUInfo::initL0()
 		}
 		//std::cout << "zeDriverGet: Found " << driverCount << " drivers\n";
 
-		std::vector<ze_driver_handle_t> drivers(driverCount);
+		drivers.resize(driverCount);
 		status = zeDriverGet(&driverCount, drivers.data());
 
 		if (status != ZE_RESULT_SUCCESS) {
@@ -493,23 +537,24 @@ void XPUInfo::initL0()
 			dStr << "zeDriverGet Failed with return code: " << std::to_string(status) << std::endl;
 			return;
 		}
+	}
+#endif
 
-		L0Drivers.resize(driverCount);
-		for (uint32_t driver = 0; driver < driverCount; ++driver)
-		{
-			ze_driver_handle_t pDriver = drivers[driver];
-			L0Drivers[driver].driver = pDriver;
+	L0Drivers.resize(driverCount);
+	for (uint32_t driver = 0; driver < driverCount; ++driver)
+	{
+		ze_driver_handle_t pDriver = drivers[driver];
+		L0Drivers[driver].driver = pDriver;
 
-			// get all devices
-			uint32_t deviceCount = 0;
-			status = zeDeviceGet(pDriver, &deviceCount, nullptr);
-			XPUINFO_DEBUG_REQUIRE(status == ZE_RESULT_SUCCESS);
-			//std::cout << "zeDeviceGet: Found " << deviceCount << " devices\n";
-			L0Drivers[driver].devices.resize(deviceCount);
+		// get all devices
+		uint32_t deviceCount = 0;
+		ze_result_t status = zeDeviceGet(pDriver, &deviceCount, nullptr);
+		XPUINFO_DEBUG_REQUIRE(status == ZE_RESULT_SUCCESS);
+		//std::cout << "zeDeviceGet: Found " << deviceCount << " devices\n";
+		L0Drivers[driver].devices.resize(deviceCount);
 
-			status = zeDeviceGet(pDriver, &deviceCount, L0Drivers[driver].devices.data());
-			XPUINFO_DEBUG_REQUIRE(status == ZE_RESULT_SUCCESS);
-		}
+		status = zeDeviceGet(pDriver, &deviceCount, L0Drivers[driver].devices.data());
+		XPUINFO_DEBUG_REQUIRE(status == ZE_RESULT_SUCCESS);
 	}
 
 	for (auto l0enum : L0Drivers)
