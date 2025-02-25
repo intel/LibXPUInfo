@@ -12,6 +12,9 @@
 #include "LibXPUInfo_Util.h"
 #include "nvml.h"
 #pragma comment(lib, "nvml.lib")
+#ifdef _WIN32
+#include <delayimp.h>
+#endif
 
 #if 0 // For experimenting with NVML
 #define PRINT_IF_SUCCESS(var, funcName) if (NVML_SUCCESS==result) std::cout << #funcName << " -> " << #var << ": " << var << std::endl;
@@ -171,9 +174,32 @@ bool TelemetryTracker::RecordNVML(TimedRecord& rec)
 }
 #endif
 
+#ifdef _WIN32
+static nvmlReturn_t safeInitNVML()
+{
+    nvmlReturn_t result = NVML_ERROR_UNINITIALIZED;
+    __try
+    {
+        result = nvmlInit();
+    }
+    __except (GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)
+        ? EXCEPTION_EXECUTE_HANDLER
+        : EXCEPTION_CONTINUE_SEARCH)
+    {
+        result = NVML_ERROR_UNINITIALIZED;
+    }
+    return result;
+}
+#endif
+
 void XPUInfo::initNVML()
 {
+#ifdef _WIN32
+    nvmlReturn_t result = safeInitNVML();
+#else
     nvmlReturn_t result = nvmlInit();
+#endif
+
     if (NVML_SUCCESS == result)
     {
         UI32 device_count=0;

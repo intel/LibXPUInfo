@@ -284,9 +284,9 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
     return false;
 }
 
-int writeXPUInfoJSON(const char* jsonPath, const XI::RuntimeNames& runtimes)
+int writeXPUInfoJSON(const char* jsonPath, const XI::RuntimeNames& runtimes, 
+    const XI::APIType apis = XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI)
 {
-    auto apis = XI::APIType(XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI);
     XI::XPUInfoPtr pXI(new XI::XPUInfo(apis, runtimes));
     
     std::ofstream outFile(jsonPath);
@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
 {
     int procRetVal = -1;
 #ifdef _DEBUG
-    std::cout << argv[0] << ": ";
+    std::cout << argv[0] << " ";
     for (int a = 1; a < argc; ++a)
     {
         std::cout << argv[a] << " ";
@@ -327,18 +327,33 @@ int main(int argc, char* argv[])
         bool isServer = false;
         bool usePipe = true;
         XI::RuntimeNames runtimes;
+        XI::APIType apis = XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI;
         for (int a = 1; a < argc; ++a)
         {
             std::string arg(argv[a]);
 #ifdef XPUINFO_USE_RAPIDJSON
+            // Usage: -write_json outfileName apiMask
             if (arg == "-write_json")
             {
                 XPUINFO_REQUIRE(a + 1 < argc);
-                return writeXPUInfoJSON(argv[++a], runtimes);
+                return writeXPUInfoJSON(argv[++a], runtimes, apis);
             }
             else
 #endif
-            if (arg == "-runtimes")
+            // Usage: -apis apiMaskHex
+            // Put this arg before -write_json or others using it
+            if (arg == "-apis")
+            {
+                XPUINFO_REQUIRE(a + 1 < argc);
+                std::underlying_type_t<XI::APIType> inMask;
+                std::istringstream istr(argv[++a]);
+                istr >> std::hex >> inMask;
+                if (!istr.fail())
+                {
+                    apis = static_cast<XI::APIType>(inMask);
+                }
+            }
+            else if (arg == "-runtimes")
             {
                 // Read runtime names as comma-separated list
                 if ((a + 1) < argc)
@@ -354,7 +369,7 @@ int main(int argc, char* argv[])
             {
                 usePipe = false;
             }
-        }
+        } // for each arg
 
         XPUINFO_REQUIRE_CONSTEXPR_MSG(TESTXPUINFOIPC_SUPPORT_PIPE || TESTXPUINFOIPC_SUPPORT_SHAREDMEM,
             "Must build with TESTXPUINFOIPC_SUPPORT_PIPE or TESTXPUINFOIPC_SUPPORT_SHAREDMEM");
