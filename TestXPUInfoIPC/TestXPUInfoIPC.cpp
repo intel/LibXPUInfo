@@ -265,7 +265,7 @@ int XPUInfo_IPC_Server()
 #else // TESTXPUINFOIPC_SHARED
 
 #ifdef XPUINFO_USE_RAPIDJSON
-bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
+bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI, double xiTime)
 {
     if (!ostr.fail())
     {
@@ -274,6 +274,8 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
 
         if (pXI->serialize(doc))
         {
+            auto& a = doc.GetAllocator();
+            doc.AddMember("XPUInfoInitSecs", xiTime, a);
             rapidjson::OStreamWrapper out(ostr);
             rapidjson::PrettyWriter<rapidjson::OStreamWrapper> writer(out);
             doc.Accept(writer);    // Accept() traverses the DOM and generates Handler events.
@@ -287,10 +289,13 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
 int writeXPUInfoJSON(const char* jsonPath, const XI::RuntimeNames& runtimes, 
     const XI::APIType apis = XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI)
 {
+    XI::Timer timer;
+    timer.Start();
     XI::XPUInfoPtr pXI(new XI::XPUInfo(apis, runtimes));
-    
+    timer.Stop();
+    double xiTime = timer.GetElapsedSecs();
     std::ofstream outFile(jsonPath);
-    return (!getXPUInfoJSON(outFile, pXI));
+    return (!getXPUInfoJSON(outFile, pXI, xiTime));
 }
 #endif // XPUINFO_USE_RAPIDJSON
 
