@@ -7,6 +7,9 @@
 #include "zes_api.h"
 #include "DebugStream.h"
 #include "LibXPUInfo_Util.h"
+#ifdef _WIN32
+#include <delayimp.h> // For SEH
+#endif
 
 #ifndef _DEBUG
 #define XPUINFO_L0_VERBOSE false
@@ -452,21 +455,38 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 	}
 }
 
+#ifdef _WIN32
+static ze_result_t safeInitL0()
+{
+	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
+	__try
+	{
+		// Initialize the driver
+		// TODO: Once a loader is available supporting zeInitDrivers(), use it instead of zeInit. 
+		//       See https://spec.oneapi.io/level-zero/latest/core/api.html#zeinitdrivers.
+		// NOTE: As of NPU driver 100.2761, the NPU only enumerates when zeInit flags include
+		//       ZE_INIT_FLAG_VPU_ONLY. If zeInit(0) is called earlier in the process lifetime, 
+		//       then all subsequent calls to zeInit will not enumerate the NPU. 
+		//       One side-effect is that the OpenVINO NPU plugin also fails to enumerate the NPU. 
+		//       If this happens unexpectedly, check your app for calls to zeInit, or other 
+		//       modules using it such as IGCL.
+		result = zeInit(ZE_INIT_FLAG_VPU_ONLY | ZE_INIT_FLAG_GPU_ONLY); // We must use both flags to get both GPU and NPU, or else OpenVINO will fail to see NPU!
+	}
+	__except (GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)
+		? EXCEPTION_EXECUTE_HANDLER
+		: EXCEPTION_CONTINUE_SEARCH)
+	{
+		result = ZE_RESULT_ERROR_UNKNOWN;
+	}
+	return result;
+}
+#endif
+
 void XPUInfo::initL0()
 {
 	std::vector<L0Enum> L0Drivers; // temp
 
-	ze_result_t result;
-	// Initialize the driver
-    // TODO: Once a loader is available supporting zeInitDrivers(), use it instead of zeInit. 
-	//       See https://spec.oneapi.io/level-zero/latest/core/api.html#zeinitdrivers.
-    // NOTE: As of NPU driver 100.2761, the NPU only enumerates when zeInit flags include
-	//       ZE_INIT_FLAG_VPU_ONLY. If zeInit(0) is called earlier in the process lifetime, 
-	//       then all subsequent calls to zeInit will not enumerate the NPU. 
-	//       One side-effect is that the OpenVINO NPU plugin also fails to enumerate the NPU. 
-	//       If this happens unexpectedly, check your app for calls to zeInit, or other 
-	//       modules using it such as IGCL.
-	result = zeInit(ZE_INIT_FLAG_VPU_ONLY|ZE_INIT_FLAG_GPU_ONLY); // We must use both flags to get both GPU and NPU, or else OpenVINO will fail to see NPU!
+    ze_result_t result = safeInitL0();
 	if (result != ZE_RESULT_SUCCESS)
 	{
 		DebugStream dStr(XPUINFO_L0_VERBOSE);
@@ -474,7 +494,6 @@ void XPUInfo::initL0()
 	}
 	else
 	{
-		//std::cout << "Driver initialized.\n";
 		ze_result_t status;
 		uint32_t driverCount = 0;
 		status = zeDriverGet(&driverCount, nullptr);
