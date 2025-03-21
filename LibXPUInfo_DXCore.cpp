@@ -53,21 +53,26 @@ namespace XI
     // See https://github.com/microsoft/DirectX-Headers/releases/tag/v1.614.0
     // Needs to be renamed since it is extern "C"
     DEFINE_GUID(LIBXPUINFO_DXCORE_ADAPTER_ATTRIBUTE_D3D12_GENERIC_ML, 0xb71b0d41, 0x1088, 0x422f, 0xa2, 0x7c, 0x2, 0x50, 0xb7, 0xd3, 0xa9, 0x88);
+    // This one should always be reported for NPUs.  Needed for PTL NPU.
+    DEFINE_GUID(LIBXPUINFO_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU, 0xd46140c4, 0xadd7, 0x451b, 0x9e, 0x56, 0x6, 0xfe, 0x8c, 0x3b, 0x58, 0xed);
 
 void XPUInfo::initDXCore(bool updateOnly)
 {
-    const bool bPrintInfo = false;
+    constexpr bool bPrintInfo = false;
 
     HRESULT hr = CreateDXCore(m_spFactoryDXCore.put());
     THROW_IF_FAILED(hr);
 
     const GUID dxGUIDsOlder[] = { DXCORE_ADAPTER_ATTRIBUTE_D3D12_CORE_COMPUTE };
     const GUID dxGUIDsNewer[] = { LIBXPUINFO_DXCORE_ADAPTER_ATTRIBUTE_D3D12_GENERIC_ML };
+    const GUID dxGUIDsNPU[] = { LIBXPUINFO_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU };
 
     THROW_IF_FAILED(
         m_spFactoryDXCore->CreateAdapterList(ARRAYSIZE(dxGUIDsOlder), dxGUIDsOlder, IID_PPV_ARGS(m_spAdapterList.put())));
     THROW_IF_FAILED(
         m_spFactoryDXCore->CreateAdapterList(ARRAYSIZE(dxGUIDsNewer), dxGUIDsNewer, IID_PPV_ARGS(m_spAdapterList2.put())));
+    THROW_IF_FAILED(
+        m_spFactoryDXCore->CreateAdapterList(ARRAYSIZE(dxGUIDsNPU), dxGUIDsNPU, IID_PPV_ARGS(m_spAdapterListNPU.put())));
 
     UI64 luidMinPower = 0ULL, luidHighPerf = 0ULL;
 
@@ -102,7 +107,7 @@ void XPUInfo::initDXCore(bool updateOnly)
             }
         };
 
-    if (bPrintInfo)
+    if constexpr (bPrintInfo)
         printf("Printing available adapters..\n");
 
     auto handleAdapter = [this, luidHighPerf, luidMinPower, updateOnly, bPrintInfo](com_ptr<IDXCoreAdapter>& currAdapter)
@@ -140,6 +145,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                 sizeof(LARGE_INTEGER), driverVersion));
 
             bool isGraphics = currAdapter->IsAttributeSupported(DXCORE_ADAPTER_ATTRIBUTE_D3D12_GRAPHICS);
+            //bool isNPU = currAdapter->IsAttributeSupported(LIBXPUINFO_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU); // Unused, works
 
             uint64_t DedicatedAdapterMemory;
             THROW_IF_FAILED(currAdapter->GetProperty(DXCoreAdapterProperty::DedicatedAdapterMemory, &DedicatedAdapterMemory));
@@ -162,7 +168,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                 desc1.SharedSystemMemory = SharedSystemMemory;
                 desc1.AdapterLuid = curLUID;
 
-                if (bPrintInfo)
+                if constexpr (bPrintInfo)
                 {
                     printf("Description: %s (%s), LUID=0x%llx, Version %hu.%hu.%hu.%hu\n", driverDescription.c_str(),
                         isIntegratedValid ? (isIntegrated ? "Integrated" : "Discrete") : "UNKNOWN_UMA",
@@ -186,27 +192,33 @@ void XPUInfo::initDXCore(bool updateOnly)
                     DXCoreAdapterMemoryBudget memBudget;
                     THROW_IF_FAILED(currAdapter->QueryState(DXCoreAdapterState::AdapterMemoryBudget, &nsg, &memBudget));
 
-                    if (bPrintInfo && memBudget.budget)
+                    if constexpr (bPrintInfo)
                     {
-                        printf("\tLocal Mem:\n");
-                        printf("\t\tbudget: %.2lf\n", memBudget.budget / (1024 * 1024 * 1024.0));
-                        printf("\t\tcurrentUsage: %.2lf\n", memBudget.currentUsage / (1024 * 1024 * 1024.0));
-                        printf("\t\tavailableForReservation: %.2lf\n", memBudget.availableForReservation / (1024 * 1024 * 1024.0));
-                        printf("\t\tcurrentReservation: %.2lf\n", memBudget.currentReservation / (1024 * 1024 * 1024.0));
+                        if (memBudget.budget)
+                        {
+                            printf("\tLocal Mem:\n");
+                            printf("\t\tbudget: %.2lf\n", memBudget.budget / (1024 * 1024 * 1024.0));
+                            printf("\t\tcurrentUsage: %.2lf\n", memBudget.currentUsage / (1024 * 1024 * 1024.0));
+                            printf("\t\tavailableForReservation: %.2lf\n", memBudget.availableForReservation / (1024 * 1024 * 1024.0));
+                            printf("\t\tcurrentReservation: %.2lf\n", memBudget.currentReservation / (1024 * 1024 * 1024.0));
+                        }
                     }
 
                     nsg.segmentGroup = DXCoreSegmentGroup::NonLocal;
                     THROW_IF_FAILED(currAdapter->QueryState(DXCoreAdapterState::AdapterMemoryBudget, &nsg, &memBudget));
-                    if (bPrintInfo && memBudget.budget)
+                    if constexpr (bPrintInfo)
                     {
-                        printf("\tNonLocal Mem:\n");
-                        printf("\t\tbudget: %.2lf\n", memBudget.budget / (1024 * 1024 * 1024.0));
-                        printf("\t\tcurrentUsage: %.2lf\n", memBudget.currentUsage / (1024 * 1024 * 1024.0));
-                        printf("\t\tavailableForReservation: %.2lf\n", memBudget.availableForReservation / (1024 * 1024 * 1024.0));
-                        printf("\t\tcurrentReservation: %.2lf\n", memBudget.currentReservation / (1024 * 1024 * 1024.0));
+                        if (memBudget.budget)
+                        {
+                            printf("\tNonLocal Mem:\n");
+                            printf("\t\tbudget: %.2lf\n", memBudget.budget / (1024 * 1024 * 1024.0));
+                            printf("\t\tcurrentUsage: %.2lf\n", memBudget.currentUsage / (1024 * 1024 * 1024.0));
+                            printf("\t\tavailableForReservation: %.2lf\n", memBudget.availableForReservation / (1024 * 1024 * 1024.0));
+                            printf("\t\tcurrentReservation: %.2lf\n", memBudget.currentReservation / (1024 * 1024 * 1024.0));
+                        }
                     }
                 }
-                if (bPrintInfo)
+                if constexpr (bPrintInfo)
                     printf("\n");
 
                 DeviceType devType = isGraphics ? DEVICE_TYPE_GPU : DEVICE_TYPE_NPU;
@@ -254,22 +266,17 @@ void XPUInfo::initDXCore(bool updateOnly)
             }
         };
 
-    handleSort(m_spAdapterList);
-    for (UINT i = 0; i < m_spAdapterList->GetAdapterCount(); i++)
+    const std::vector<decltype(m_spAdapterList)> adapterLists{ m_spAdapterList, m_spAdapterList2, m_spAdapterListNPU };
+    for (const auto& list : adapterLists)
     {
-        com_ptr<IDXCoreAdapter> currAdapter = nullptr;
-        THROW_IF_FAILED(m_spAdapterList->GetAdapter(i, currAdapter.put()));
-        handleAdapter(currAdapter);
+        handleSort(list);
+        for (UINT i = 0; i < list->GetAdapterCount(); i++)
+        {
+            com_ptr<IDXCoreAdapter> currAdapter = nullptr;
+            THROW_IF_FAILED(list->GetAdapter(i, currAdapter.put()));
+            handleAdapter(currAdapter);
+        }
     }
-
-    handleSort(m_spAdapterList2);
-    for (UINT i = 0; i < m_spAdapterList2->GetAdapterCount(); i++)
-    {
-        com_ptr<IDXCoreAdapter> currAdapter = nullptr;
-        THROW_IF_FAILED(m_spAdapterList2->GetAdapter(i, currAdapter.put()));
-        handleAdapter(currAdapter);
-    }
-
 }
 
 void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHighPerf, bool bMinPower)
