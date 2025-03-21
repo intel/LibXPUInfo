@@ -1024,8 +1024,11 @@ namespace XI
 #ifdef _WIN32
         std::shared_ptr<SetupDeviceInfo> m_pSetupInfo;
         winrt::com_ptr<IDXCoreAdapterFactory> m_spFactoryDXCore;
+
+        // These lists are class objects for use with ScopedRegisterNotification
         winrt::com_ptr<IDXCoreAdapterList> m_spAdapterList;
         winrt::com_ptr<IDXCoreAdapterList> m_spAdapterList2;
+        winrt::com_ptr<IDXCoreAdapterList> m_spAdapterListNPU;
 #endif
         std::shared_ptr<DeviceCPU> m_pCPU;
 
