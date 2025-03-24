@@ -192,6 +192,7 @@ namespace XI
 		{1272, "Meteor Lake", "iMTL", 0x311c004},
 		{1272, "Meteor Lake", "MTL_IAG", 0x311c004}, // Inf name first seen with 101.5445
 		{1273, "Arrow Lake",  "iARL", 0x3118004},
+		{1274, "Battlemage", "BMG_", 0x5004000},
 		{1275, "Lunar Lake", "iLNL", 0x5010001},
 		{1275, "Lunar Lake", "LNL_", 0x5010001}, // TODO: Remove one of these when no longer needed
 		{1275, "Lunar Lake", "LNL_", 0x5010004}, // TODO: Remove one of these when no longer needed
