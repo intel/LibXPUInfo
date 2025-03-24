@@ -168,7 +168,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                 desc1.SharedSystemMemory = SharedSystemMemory;
                 desc1.AdapterLuid = curLUID;
 
-                if constexpr (bPrintInfo)
+                if (bPrintInfo)
                 {
                     printf("Description: %s (%s), LUID=0x%llx, Version %hu.%hu.%hu.%hu\n", driverDescription.c_str(),
                         isIntegratedValid ? (isIntegrated ? "Integrated" : "Discrete") : "UNKNOWN_UMA",
@@ -192,7 +192,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                     DXCoreAdapterMemoryBudget memBudget;
                     THROW_IF_FAILED(currAdapter->QueryState(DXCoreAdapterState::AdapterMemoryBudget, &nsg, &memBudget));
 
-                    if constexpr (bPrintInfo)
+                    if (bPrintInfo)
                     {
                         if (memBudget.budget)
                         {
@@ -206,7 +206,7 @@ void XPUInfo::initDXCore(bool updateOnly)
 
                     nsg.segmentGroup = DXCoreSegmentGroup::NonLocal;
                     THROW_IF_FAILED(currAdapter->QueryState(DXCoreAdapterState::AdapterMemoryBudget, &nsg, &memBudget));
-                    if constexpr (bPrintInfo)
+                    if (bPrintInfo)
                     {
                         if (memBudget.budget)
                         {
@@ -218,7 +218,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                         }
                     }
                 }
-                if constexpr (bPrintInfo)
+                if (bPrintInfo)
                     printf("\n");
 
                 DeviceType devType = isGraphics ? DEVICE_TYPE_GPU : DEVICE_TYPE_NPU;
