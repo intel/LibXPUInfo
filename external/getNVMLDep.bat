@@ -5,7 +5,7 @@ set _EXTPATH=%~dp0
 @if EXIST %_EXTPATH%\NVML\lib\x64\nvml.lib if EXIST %_EXTPATH%\NVML\include\nvml.h goto NVML_DONE
 
 @echo Make sure env var https_proxy is set if needed!
-set NVML_BASE_NAME=cuda_nvml_dev-windows-x86_64-12.6.68-archive
+set NVML_BASE_NAME=cuda_nvml_dev-windows-x86_64-12.8.90-archive
 
 if NOT EXIST NVML.zip curl.exe -o NVML.zip https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvml_dev/windows-x86_64/%NVML_BASE_NAME%.zip
 @if %ERRORLEVEL% neq 0 goto ERROR

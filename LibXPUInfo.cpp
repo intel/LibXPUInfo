@@ -1477,6 +1477,14 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 			ostr << "DPAS ";
 		ostr << std::endl;
 	}
+	if (xiDev.IsVendor(kVendorId_nVidia))
+	{
+		auto ccc = devProps.VendorSpecific.nVidia.getCudaComputeCapability();
+		if (ccc)
+		{
+			ostr << "\tCUDA Compute Capability: " << ccc << std::endl;
+		}
+	}
 	if (devProps.NumComputeUnits != -1)
 	{
 		ostr << "\tCompute Units: " << devProps.NumComputeUnits;

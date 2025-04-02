@@ -443,6 +443,19 @@ namespace XI
             UI32 IntelFeatureFlagsUI32;
         } VendorFlags = {};         // From OpenCL
 
+        union
+        {
+            struct
+            {
+                int getCudaComputeCapability() const
+                {
+                    return cudaComputeCapability_Major * 10 + cudaComputeCapability_Minor;
+                }
+                int cudaComputeCapability_Major;
+                int cudaComputeCapability_Minor;
+            } nVidia;
+        } VendorSpecific;
+
         I8 IsHighPerformance = -1;  // Only 1 Device will be set.  From DXCore.
         I8 IsMinimumPower = -1;     // Only 1 Device will be set.  From DXCore.
         I8 IsDetachable = -1;       // From DXCore
