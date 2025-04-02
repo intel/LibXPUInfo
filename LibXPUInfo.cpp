@@ -1550,15 +1550,15 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 				numCores += p.NumberOfCores;
 				numLP += p.NumberOfLogicalProcessors;
 			}
-			if (numEnabledCores != m_pProcInfo->numPhysicalCores)
+			if (numEnabledCores && (numEnabledCores != m_pProcInfo->numPhysicalCores))
 			{
 				ostr << "\tCores Enabled: " << numEnabledCores << std::endl;
 			}
-			if (numCores != m_pProcInfo->numPhysicalCores)
+			if (numCores && (numCores != m_pProcInfo->numPhysicalCores))
 			{
 				ostr << "\tSystem Cores: " << numCores << std::endl;
 			}
-			if (numLP != m_pProcInfo->numLogicalCores)
+			if (numLP && (numLP != m_pProcInfo->numLogicalCores))
 			{
 				ostr << "\tSystem Logical: " << numLP << std::endl;
 			}
