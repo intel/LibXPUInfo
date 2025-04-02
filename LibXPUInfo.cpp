@@ -228,6 +228,8 @@ namespace XI
 		{7, "Ampere"},
 		{8, "Ada"},
 		{9, "Hopper"},
+		{10, "Blackwell"},
+		{11, "Orin"},
 	};
 
 	std::ostream& operator<<(std::ostream& s, APIType t)
