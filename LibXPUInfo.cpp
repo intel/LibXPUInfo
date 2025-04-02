@@ -1482,7 +1482,7 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	if (xiDev.IsVendor(kVendorId_nVidia))
 	{
 		auto ccc = devProps.VendorSpecific.nVidia.getCudaComputeCapability();
-		if (ccc)
+		if (ccc > 0)
 		{
 			ostr << "\tCUDA Compute Capability: " << ccc << std::endl;
 		}
