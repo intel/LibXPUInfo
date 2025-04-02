@@ -127,9 +127,7 @@ Given a GPU entry from this list, it will tell us <hardware, framework> to run t
     Framework is OpenVINO, OpenVINO-CPU, ORT-CPU, TensorRT.
 */
 
-// TODO: For nVidia GPU info, find path to driver files, run nvidia-smi - see "nvidia-smi --help-query-gpu"
-// i.e. nvidia-smi --query-gpu=timestamp,name,pci.bus_id,driver_version,pstate,pcie.link.gen.max,pcie.link.gen.current,pcie.link.width.current,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used,power.default_limit,power.max_limit,enforced.power.limit,power.limit,clocks.max.gr --format=csv
-// For direct-access, see NVML at https://developer.nvidia.com/nvidia-management-library-nvml
+// NVML docs at https://developer.nvidia.com/nvidia-management-library-nvml
 // TODO: For AMD, see https://gpuopen.com/gpuperfapi/, see ADLX
 // 
 
@@ -442,6 +440,20 @@ namespace XI
             } IntelFeatureFlags;
             UI32 IntelFeatureFlagsUI32;
         } VendorFlags = {};         // From OpenCL
+
+        union
+        {
+            struct
+            {
+                // <0 is unknown, 0 is invalid
+                int getCudaComputeCapability() const
+                {
+                    return cudaComputeCapability_Major * 10 + cudaComputeCapability_Minor;
+                }
+                int cudaComputeCapability_Major;
+                int cudaComputeCapability_Minor;
+            } nVidia;
+        } VendorSpecific;
 
         I8 IsHighPerformance = -1;  // Only 1 Device will be set.  From DXCore.
         I8 IsMinimumPower = -1;     // Only 1 Device will be set.  From DXCore.

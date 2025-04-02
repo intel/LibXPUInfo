@@ -217,7 +217,13 @@ DevicePtr Device::deserialize(const rapidjson::Value& val)
         newDev->m_props.PCIDeviceGen = safeGetI32(val, "PCIDeviceGen").value_or(-1);
         newDev->m_props.PCIDeviceWidth = safeGetI32(val, "PCIDeviceWidth").value_or(-1);
         newDev->m_props.VendorFlags.IntelFeatureFlagsUI32 = safeGetUI32(val, "VendorFlags").value_or(0);
-
+        if (newDev->IsVendor(kVendorId_nVidia))
+        {
+            newDev->m_props.VendorSpecific.nVidia.cudaComputeCapability_Major = 
+                safeGetI32(val, "cudaComputeCapability_Major").value_or(-1);
+            newDev->m_props.VendorSpecific.nVidia.cudaComputeCapability_Minor =
+                safeGetI32(val, "cudaComputeCapability_Minor").value_or(-1);
+        }
         newDev->m_props.MemoryBandWidthMax = safeGetI64(val, "MemoryBandWidthMax").value_or(-1);
 
         return newDev;
@@ -305,6 +311,13 @@ rapidjson::Value Device::serialize(AllocatorType& a)
     curDev.AddMember("MemoryFreqMinMHz", getProperties().MemoryFreqMinMHz, a);
 
     curDev.AddMember("VendorFlags", getProperties().VendorFlags.IntelFeatureFlagsUI32, a);
+    if (IsVendor(kVendorId_nVidia))
+    {
+        curDev.AddMember("cudaComputeCapability_Major", 
+            getProperties().VendorSpecific.nVidia.cudaComputeCapability_Major, a);
+        curDev.AddMember("cudaComputeCapability_Minor",
+            getProperties().VendorSpecific.nVidia.cudaComputeCapability_Minor, a);
+    }
 
     curDev.AddMember("IsHighPerformance", getProperties().IsHighPerformance, a);
     curDev.AddMember("IsMinimumPower", getProperties().IsMinimumPower, a);

@@ -125,6 +125,24 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         }
     }
 
+    int cccMajor = 0, cccMinor = 0;
+    result = nvmlDeviceGetCudaComputeCapability(device, &cccMajor, &cccMinor);
+    if (NVML_SUCCESS == result)
+    {
+        m_props.VendorSpecific.nVidia.cudaComputeCapability_Major = cccMajor;
+        m_props.VendorSpecific.nVidia.cudaComputeCapability_Minor = cccMinor;
+    }
+
+    // Currently only for multi-instance GPU (MIG)
+#if 0
+    nvmlDeviceAttributes_t devAttrs{};
+    result = nvmlDeviceGetAttributes(device, &devAttrs);
+    if (NVML_SUCCESS == result)
+    {
+
+    }
+#endif
+
 #if 0 // TODO: calculate MemoryBandWidthMax
     if (freqMem && busWidth)
     {

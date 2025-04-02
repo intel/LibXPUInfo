@@ -228,6 +228,8 @@ namespace XI
 		{7, "Ampere"},
 		{8, "Ada"},
 		{9, "Hopper"},
+		{10, "Blackwell"},
+		{11, "Orin"},
 	};
 
 	std::ostream& operator<<(std::ostream& s, APIType t)
@@ -1477,6 +1479,14 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 			ostr << "DPAS ";
 		ostr << std::endl;
 	}
+	if (xiDev.IsVendor(kVendorId_nVidia))
+	{
+		auto ccc = devProps.VendorSpecific.nVidia.getCudaComputeCapability();
+		if (ccc > 0)
+		{
+			ostr << "\tCUDA Compute Capability: " << ccc << std::endl;
+		}
+	}
 	if (devProps.NumComputeUnits != -1)
 	{
 		ostr << "\tCompute Units: " << devProps.NumComputeUnits;
@@ -1542,15 +1552,15 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 				numCores += p.NumberOfCores;
 				numLP += p.NumberOfLogicalProcessors;
 			}
-			if (numEnabledCores != m_pProcInfo->numPhysicalCores)
+			if (numEnabledCores && (numEnabledCores != m_pProcInfo->numPhysicalCores))
 			{
 				ostr << "\tCores Enabled: " << numEnabledCores << std::endl;
 			}
-			if (numCores != m_pProcInfo->numPhysicalCores)
+			if (numCores && (numCores != m_pProcInfo->numPhysicalCores))
 			{
 				ostr << "\tSystem Cores: " << numCores << std::endl;
 			}
-			if (numLP != m_pProcInfo->numLogicalCores)
+			if (numLP && (numLP != m_pProcInfo->numLogicalCores))
 			{
 				ostr << "\tSystem Logical: " << numLP << std::endl;
 			}
