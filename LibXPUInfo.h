@@ -391,6 +391,7 @@ namespace XI
     // Properties that are frequently used or common to most devices
     struct XPUINFO_EXPORT DeviceProperties
     {
+        DeviceProperties();
         DXGI_ADAPTER_DESC1 dxgiDesc;
         DriverInfoPtr pDriverInfo;
 
@@ -443,6 +444,7 @@ namespace XI
 
         union
         {
+            // All values initialized in DeviceProperties constructor to -1
             struct
             {
                 // <0 is unknown, 0 is invalid

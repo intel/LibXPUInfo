@@ -864,6 +864,12 @@ const DeviceDriverVersion& Device::driverVersion() const
 	}
 }
 
+DeviceProperties::DeviceProperties()
+{
+	// Initialize to -1 to indicate unknown across all members of union
+	memset(&VendorSpecific, -1, sizeof(VendorSpecific));
+};
+
 const char* DeviceProperties::getDeviceGenerationName() const
 {
 	if ((DeviceGenerationAPI == API_TYPE_DX11_INTEL_PERF_COUNTER) || (DeviceGenerationAPI == API_TYPE_SETUPAPI))
