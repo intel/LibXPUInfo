@@ -13,10 +13,10 @@
 #include "LibXPUInfo.h"
 #ifdef _WIN32
 #include <Windows.h>
-#endif
 
 #pragma warning(push)
 #pragma warning(disable : 4251)
+#endif // _WIN32
 
 namespace XI
 {
@@ -210,6 +210,8 @@ namespace Win
 #endif // _WIN32
 } // XI
 
+#ifdef _WIN32
 #pragma warning(pop)
+#endif // _WIN32
 
 #endif // XPUINFO_USE_IPC
