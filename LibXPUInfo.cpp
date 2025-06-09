@@ -1932,8 +1932,15 @@ size_t SystemMemoryInfo::getCurrentInstalledPhysicalMemory()
 {
 #ifdef _WIN32
 	ULONGLONG TotalMemoryInKilobytes = 0;
-	XPUINFO_REQUIRE(GetPhysicallyInstalledSystemMemory(&TotalMemoryInKilobytes));
-	return TotalMemoryInKilobytes * 1024ULL;
+	BOOL bSuccess = GetPhysicallyInstalledSystemMemory(&TotalMemoryInKilobytes);
+	if (bSuccess)
+	{
+		return TotalMemoryInKilobytes * 1024ULL;
+	}
+	else
+	{
+		 return 0;
+	}
 #elif defined(__APPLE__)
 	uint64_t ram = 0;
 	auto size = sizeof(ram);
