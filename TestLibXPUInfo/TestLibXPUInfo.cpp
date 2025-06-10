@@ -382,9 +382,14 @@ int printXPUInfo(int argc, char* argv[])
             }
         }
     }
+    catch (const std::exception& e)
+    {
+        std::cout << "Exception initializing XPUInfo: " << e.what() << std::endl;
+        return -1;
+    }
     catch (...)
     {
-        std::cout << "Exception initializing XPUInfo!\n";
+        std::cout << "Unknwon exception initializing XPUInfo!\n";
         return -1;
     }
     return 0;

@@ -80,22 +80,33 @@ namespace XI {
     typedef void(*ErrorHandlerType)(const std::string& message, const char* fileName, const int lineNumber);
     XPUINFO_EXPORT ErrorHandlerType getErrorHandlerFunc();
     XPUINFO_EXPORT ErrorHandlerType setErrorHandlerFunc(ErrorHandlerType f);
+    XPUINFO_EXPORT const char* get_filename_from_path(const char* path);
 }
+
+#ifndef XPUINFO_TRIM_PATH
+#define XPUINFO_TRIM_PATH 0 // If defined, trim the path to the file name only
+#endif
+#if XPUINFO_TRIM_PATH
+#define _XI_FILE_ XI::get_filename_from_path(__FILE__)
+#else
+#define _XI_FILE_ __FILE__
+#endif
+
 #define ENABLE_PER_LOGICAL_CPUID_ISA_DETECTION 0
-#define XPUINFO_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, __FILE__, __LINE__)
+#define XPUINFO_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, _XI_FILE_, __LINE__)
 #define XPUINFO_REQUIRE_CONSTEXPR_MSG(x, msg) if constexpr (!(x)) { \
             std::ostringstream ostr; \
             ostr << msg; \
-            XI::getErrorHandlerFunc()(ostr.str(), __FILE__, __LINE__); \
+            XI::getErrorHandlerFunc()(ostr.str(), _XI_FILE_, __LINE__); \
         }
 #define XPUINFO_REQUIRE_MSG(x, msg) if (!(x)) { \
             std::ostringstream ostr; \
             ostr << msg; \
-            XI::getErrorHandlerFunc()(ostr.str(), __FILE__, __LINE__); \
+            XI::getErrorHandlerFunc()(ostr.str(), _XI_FILE_, __LINE__); \
         }
 
 #ifdef _DEBUG
-#define XPUINFO_DEBUG_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, __FILE__, __LINE__)
+#define XPUINFO_DEBUG_REQUIRE(x) if (!(x)) XI::getErrorHandlerFunc()(#x, _XI_FILE_, __LINE__)
 #else
 #define XPUINFO_DEBUG_REQUIRE(x)
 #endif

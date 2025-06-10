@@ -219,7 +219,7 @@ namespace
 			SAFE_RELEASE(pDevice);
 
 			XI::DebugStream dStr(true);
-			dStr << __FILE__ << ": " << __FUNCTION__ << ": D3D11CreateDevice failed: " << hr << std::endl;
+			dStr << _XI_FILE_ << ": " << __FUNCTION__ << ": D3D11CreateDevice failed: " << hr << std::endl;
 
 			return GGF_E_D3D_ERROR;
 		}

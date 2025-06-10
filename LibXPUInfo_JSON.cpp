@@ -83,8 +83,9 @@ XPUInfoPtr XPUInfo::deserialize(const rapidjson::Document& val)
 {
     XPUInfoPtr xiPtr;
 
-    std::string version = val["Version"].GetString();
-    XPUINFO_REQUIRE(version == XPUINFO_JSON_VERSION);
+    // Note: Version field is not used (yet)
+    //std::string version = val["Version"].GetString();
+    //XPUINFO_REQUIRE(version == XPUINFO_JSON_VERSION);
 
     xiPtr.reset(new XPUInfo(XI::API_TYPE_DESERIALIZED));
 

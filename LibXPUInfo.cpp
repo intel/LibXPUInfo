@@ -36,6 +36,14 @@ namespace WRL = Microsoft::WRL;
 
 namespace XI
 {
+	const char* get_filename_from_path(const char* path) 
+	{
+		const char* last_slash = strrchr(path, '/');
+		const char* last_backslash = strrchr(path, '\\');
+		const char* last_separator = last_slash > last_backslash ? last_slash : last_backslash;
+		return last_separator ? last_separator + 1 : path;
+	}
+
 	void ErrorHandlerDefault(const std::string& message, const char* fileName, const int lineNumber)
 	{
 		std::ostringstream err;
@@ -1932,8 +1940,15 @@ size_t SystemMemoryInfo::getCurrentInstalledPhysicalMemory()
 {
 #ifdef _WIN32
 	ULONGLONG TotalMemoryInKilobytes = 0;
-	XPUINFO_REQUIRE(GetPhysicallyInstalledSystemMemory(&TotalMemoryInKilobytes));
-	return TotalMemoryInKilobytes * 1024ULL;
+	BOOL bSuccess = GetPhysicallyInstalledSystemMemory(&TotalMemoryInKilobytes);
+	if (bSuccess)
+	{
+		return TotalMemoryInKilobytes * 1024ULL;
+	}
+	else
+	{
+		 return 0;
+	}
 #elif defined(__APPLE__)
 	uint64_t ram = 0;
 	auto size = sizeof(ram);
