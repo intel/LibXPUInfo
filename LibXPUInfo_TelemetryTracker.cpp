@@ -57,6 +57,16 @@ UI64 TelemetryTracker::getMaxMemUsage() const
 	return maxMemUsage;
 }
 
+TelemetryTracker::PeakUsage TelemetryTracker::getPeakUsage() const
+{
+	PeakUsage peak{};
+	for (const auto& rec : m_records)
+	{
+		peak.updatePeak(rec);
+	}
+	return peak;
+}
+
 UI64 TelemetryTracker::getInitialMemUsage() const
 {
 	UI64 memUsage = 0;
@@ -475,6 +485,8 @@ void TelemetryTracker::InitPDH()
 	static const char* counterGPU_Memory_Dedicated = "*)\\Dedicated Usage";
 	static const char* counterGPU_Memory_Total = "*)\\Total Committed";
 	static const char* counterGPULocal_Memory[] = { "\\GPU Local Adapter Memory(luid_0x", "*)\\Local Usage" };
+	// TODO: Add "\\GPU Engine(*_luid_<luidPdhStr>*)\\Utilization Percentage", parse each engine of adapter per process, show totals per-engine
+	//		 Instance Naming: pid_<process_id>_luid_<adapter_luid>_engtype_<engine_type>
 
 	std::string luidPdhStr(getLuidStringForPDH(getDevice()->getLUIDAsStruct()));
 	std::string gpuMemoryLocalCounterPath = counterGPULocal_Memory[0] + luidPdhStr + counterGPULocal_Memory[1];

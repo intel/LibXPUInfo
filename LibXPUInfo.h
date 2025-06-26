@@ -676,7 +676,7 @@ namespace XI
             UI64 bw_write;
 
             // Resource usage
-            UI64 deviceMemoryUsedBytes; // Current process
+            UI64 deviceMemoryUsedBytes; // Current process, dedicated+shared (summed)
             UI64 deviceMemoryBudgetBytes;
 
             // Engine activity
@@ -687,9 +687,9 @@ namespace XI
             double pctCPU;
             double cpu_freq;
             double gpu_mem_Local;
-            double gpu_mem_Adapter_Total;
+            double gpu_mem_Adapter_Total; // All processes, dedicated + shared + GPU-related system memory
             double gpu_mem_Adapter_Shared;
-            double gpu_mem_Adapter_Dedicated;
+            double gpu_mem_Adapter_Dedicated; // All processes
 
             // System memory
             UI64 systemMemoryPhysicalAvailable;
@@ -698,6 +698,21 @@ namespace XI
             UI64 systemMemoryCommitPeak;
         };
         typedef std::vector<TimedRecord> TimedRecords;
+
+        struct PeakUsage
+        {
+            PeakUsage& updatePeak(const TimedRecord& r)
+            {
+                deviceMemoryUsedBytes = std::max(deviceMemoryUsedBytes, r.deviceMemoryUsedBytes);
+                gpu_mem_Adapter_Total = std::max(gpu_mem_Adapter_Total, r.gpu_mem_Adapter_Total);
+                gpu_mem_Adapter_Dedicated = std::max(gpu_mem_Adapter_Dedicated, r.gpu_mem_Adapter_Dedicated);
+                return *this;
+            }
+            UI64 deviceMemoryUsedBytes; // Current process, dedicated+shared (summed)
+            double gpu_mem_Adapter_Total; // All processes, dedicated + shared + GPU-related system memory
+            double gpu_mem_Adapter_Dedicated; // All processes
+        };
+        PeakUsage getPeakUsage() const;
 
 #ifdef _WIN32
         static VOID CALLBACK
