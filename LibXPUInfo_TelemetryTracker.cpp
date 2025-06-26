@@ -62,7 +62,7 @@ TelemetryTracker::PeakUsage TelemetryTracker::getPeakUsage() const
 	PeakUsage peak{};
 	for (const auto& rec : m_records)
 	{
-		peak = peak.updatePeak(rec);
+		peak.updatePeak(rec);
 	}
 	return peak;
 }
