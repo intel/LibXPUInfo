@@ -10,6 +10,58 @@
 namespace XI
 {
 using namespace JSON;
+
+static rapidjson::Value serializeMapToJson(rapidjson::Document& doc, const std::map<unsigned, std::vector<ULONG>>& inputMap) {
+    using namespace rapidjson;
+    auto& allocator = doc.GetAllocator();
+
+    // Create a JSON object for the map
+    Value mapObject(kObjectType);
+
+    // Iterate through the map
+    for (const auto& pair : inputMap) {
+        // Convert unsigned key to string (JSON keys must be strings)
+        std::string keyStr = std::to_string(pair.first);
+
+        // Create a JSON array for the vector
+        Value jsonArray(kArrayType);
+        for (const auto& value : pair.second) {
+            jsonArray.PushBack((std::uint32_t)value, allocator); // Add ULONG to array
+        }
+
+        // Add key-value pair to map object
+        Value key(keyStr.c_str(), allocator); // Create JSON string key
+        mapObject.AddMember(key, jsonArray, allocator);
+    }
+
+    return mapObject;
+}
+
+static rapidjson::Value serializeCoreMasksToJson(rapidjson::Document& doc, const std::map<short, ULONG64>& coreMasks) {
+    using namespace rapidjson;
+    auto& allocator = doc.GetAllocator();
+
+    // Create a JSON object for the map
+    Value mapObject(kObjectType);
+
+    // Iterate through the map
+    for (const auto& pair : coreMasks) {
+        // Convert short key to string (JSON keys must be strings)
+        std::string keyStr = std::to_string(pair.first);
+
+        // Create a JSON value for ULONG64
+        Value jsonValue;
+        jsonValue.SetUint64(pair.second); // Use SetUint64 for ULONG64
+
+        // Add key-value pair to map object
+        Value key(keyStr.c_str(), allocator); // Create JSON string key
+        mapObject.AddMember(key, jsonValue, allocator);
+    }
+
+    return mapObject;
+}
+
+
 bool XPUInfo::serialize(rapidjson::Document& doc)
 {
     auto& a = doc.GetAllocator();
@@ -38,6 +90,10 @@ bool XPUInfo::serialize(rapidjson::Document& doc)
         objCPU.AddMember("Hybrid", pi->hybrid, a);
         objCPU.AddMember("FeatureFlagsUI64", pi->flagsUI64, a);
         objCPU.AddMember("CPUID_1_EAX", pi->cpuid_1_eax, a);
+
+        // cpuSets: std::map<unsigned, std::vector<ULONG>>
+        objCPU.AddMember("cpuSets", serializeMapToJson(doc, pi->cpuSets), a);
+        objCPU.AddMember("coreMasks", serializeCoreMasksToJson(doc, pi->coreMasks), a);
 
         // TODO: Frequency
     }
@@ -337,6 +393,70 @@ SystemMemoryInfo::SystemMemoryInfo(const rapidjson::Value& val)/*: m_pSysInfo(nu
 }
 #endif
 
+static void deserializeMapFromJson(std::map<unsigned, std::vector<ULONG>> &result, const rapidjson::Value& mapObject) {
+    using namespace rapidjson;
+
+    // Iterate through the map object
+    for (Value::ConstMemberIterator itr = mapObject.MemberBegin(); itr != mapObject.MemberEnd(); ++itr) {
+        // Get the key and convert to unsigned
+        const char* keyStr = itr->name.GetString();
+        unsigned key;
+        try {
+            key = std::stoul(keyStr);
+        }
+        catch (const std::exception&) {
+            throw std::runtime_error("Invalid map key (must be unsigned integer): " + std::string(keyStr));
+        }
+
+        // Get the array
+        if (!itr->value.IsArray()) {
+            throw std::runtime_error("Value for key " + std::string(keyStr) + " must be an array");
+        }
+
+        // Convert array to vector<ULONG>
+        std::vector<ULONG> values;
+        for (const auto& val : itr->value.GetArray()) {
+            if (!val.IsUint64()) {
+                throw std::runtime_error("Array element for key " + std::string(keyStr) + " must be an unsigned integer");
+            }
+            values.push_back(static_cast<ULONG>(val.GetUint64()));
+        }
+
+        // Add to result map
+        result[key] = values;
+    }
+}
+
+static void deserializeCoreMasksFromJson(std::map<short, ULONG64>& result, const rapidjson::Value& mapObject) {
+    using namespace rapidjson;
+
+    // Iterate through the map object
+    for (Value::ConstMemberIterator itr = mapObject.MemberBegin(); itr != mapObject.MemberEnd(); ++itr) {
+        // Get the key and convert to short
+        const char* keyStr = itr->name.GetString();
+        short key;
+        try {
+            int keyInt = std::stoi(keyStr); // Use stoi to handle negative numbers
+            if (keyInt < std::numeric_limits<short>::min() || keyInt > std::numeric_limits<short>::max()) {
+                throw std::out_of_range("Key out of range for short");
+            }
+            key = static_cast<short>(keyInt);
+        }
+        catch (const std::exception&) {
+            throw std::runtime_error("Invalid map key (must be short integer): " + std::string(keyStr));
+        }
+
+        // Get the value and convert to ULONG64
+        if (!itr->value.IsUint64()) {
+            throw std::runtime_error("Value for key " + std::string(keyStr) + " must be an unsigned 64-bit integer");
+        }
+        ULONG64 value = itr->value.GetUint64();
+
+        // Add to result map
+        result[key] = value;
+    }
+}
+
 DeviceCPU::DeviceCPU(const rapidjson::Value& val) :
     DeviceBase(DeviceBase::kAdapterIndex_CPU, DEVICE_TYPE_CPU),
     m_initialMXCSR(UI32(-1)) // TODO
@@ -370,6 +490,15 @@ DeviceCPU::DeviceCPU(const rapidjson::Value& val) :
     m_pProcInfo->flagsUI64 = JSON::safeGetUI64(val, "FeatureFlagsUI64").value_or(0);
     m_pProcInfo->cpuid_1_eax = JSON::safeGetUI32(val, "CPUID_1_EAX").value_or(0);
 
+    if (val.HasMember("cpuSets") && val["cpuSets"].IsObject())
+    {
+        deserializeMapFromJson(m_pProcInfo->cpuSets, val["cpuSets"]);
+    }
+
+    if (val.HasMember("coreMasks") && val["coreMasks"].IsObject())
+    {
+        deserializeCoreMasksFromJson(m_pProcInfo->coreMasks, val["coreMasks"]);
+    }
 }
 
 SystemInfo::SystemInfo(const rapidjson::Value& val)
