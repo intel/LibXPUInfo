@@ -548,10 +548,10 @@ WString SystemInfo::getMemoryDescription() const
         {
             os << ", ";
         }
-        os << count << L" x " << dev.Capacity / (1024.0 * 1024 * 1024) << "GB at " << dev.SpeedMHz << "MHz";
+        os << count << L" x " << BtoGB(dev.Capacity) << "GB at " << dev.SpeedMHz << "MHz";
         ++i;
     }
-    os << " (" << totalMem / (1024.0 * 1024 * 1024) << "GB Total)";
+    os << " (" << BtoGB(totalMem) << "GB Total)";
 #endif
     return os.str();
 }
@@ -634,7 +634,7 @@ std::ostream& operator<<(std::ostream& os, const SystemInfo& si)
     {
         os << left << setw(colW) << "\tSystemType:" << convert(si.SystemType) << endl;
     }
-    os << left << setw(colW) << "\tTotalPhysicalMemory (GB):" << setprecision(4) << si.TotalPhysicalMemory / (1024.0 * 1024 * 1024) << endl;
+    os << left << setw(colW) << "\tTotalPhysicalMemory (GB):" << setprecision(4) << BtoGB(si.TotalPhysicalMemory) << endl;
     if (si.OS.TotalVirtualMemorySizeKB)
     {
         os << left << setw(colW) << "\tTotalVirtualMemory (GB):" << setprecision(4) << si.OS.TotalVirtualMemorySizeKB / (1024.0 * 1024) << endl;

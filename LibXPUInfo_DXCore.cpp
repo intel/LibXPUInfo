@@ -180,9 +180,9 @@ void XPUInfo::initDXCore(bool updateOnly)
                     );
 
                     printf("\tDedicated Video: %.3lf, System: %.3lf, Shared: %.3lf\n",
-                        DedicatedAdapterMemory / (1024 * 1024 * 1024.0),
-                        DedicatedSystemMemory / (1024 * 1024 * 1024.0),
-                        SharedSystemMemory / (1024 * 1024 * 1024.0));
+                        BtoGB(DedicatedAdapterMemory),
+                        BtoGB(DedicatedSystemMemory),
+                        BtoGB(SharedSystemMemory));
                 }
 
                 // TODO:  Does the budget and available amount below account for non-DX12 usage?
@@ -197,10 +197,10 @@ void XPUInfo::initDXCore(bool updateOnly)
                         if (memBudget.budget)
                         {
                             printf("\tLocal Mem:\n");
-                            printf("\t\tbudget: %.2lf\n", memBudget.budget / (1024 * 1024 * 1024.0));
-                            printf("\t\tcurrentUsage: %.2lf\n", memBudget.currentUsage / (1024 * 1024 * 1024.0));
-                            printf("\t\tavailableForReservation: %.2lf\n", memBudget.availableForReservation / (1024 * 1024 * 1024.0));
-                            printf("\t\tcurrentReservation: %.2lf\n", memBudget.currentReservation / (1024 * 1024 * 1024.0));
+                            printf("\t\tbudget: %.2lf\n", BtoGB(memBudget.budget));
+                            printf("\t\tcurrentUsage: %.2lf\n", BtoGB(memBudget.currentUsage));
+                            printf("\t\tavailableForReservation: %.2lf\n", BtoGB(memBudget.availableForReservation));
+                            printf("\t\tcurrentReservation: %.2lf\n", BtoGB(memBudget.currentReservation));
                         }
                     }
 
@@ -211,10 +211,10 @@ void XPUInfo::initDXCore(bool updateOnly)
                         if (memBudget.budget)
                         {
                             printf("\tNonLocal Mem:\n");
-                            printf("\t\tbudget: %.2lf\n", memBudget.budget / (1024 * 1024 * 1024.0));
-                            printf("\t\tcurrentUsage: %.2lf\n", memBudget.currentUsage / (1024 * 1024 * 1024.0));
-                            printf("\t\tavailableForReservation: %.2lf\n", memBudget.availableForReservation / (1024 * 1024 * 1024.0));
-                            printf("\t\tcurrentReservation: %.2lf\n", memBudget.currentReservation / (1024 * 1024 * 1024.0));
+                            printf("\t\tbudget: %.2lf\n", BtoGB(memBudget.budget));
+                            printf("\t\tcurrentUsage: %.2lf\n", BtoGB(memBudget.currentUsage));
+                            printf("\t\tavailableForReservation: %.2lf\n", BtoGB(memBudget.availableForReservation));
+                            printf("\t\tcurrentReservation: %.2lf\n", BtoGB(memBudget.currentReservation));
                         }
                     }
                 }
@@ -361,7 +361,7 @@ void ScopedRegisterNotification::ExampleNotificationFunc_DXCORE(DXCoreNotificati
 
         auto newBudget = xiDev->getMemUsage();
         std::cout << __FUNCTION__ << ": Budget changed for device " << convert(xiDev->name()) << 
-            " to " << std::setprecision(4) << newBudget.budget / (1024.0 * 1024*1024) << " GB" << std::endl;
+            " to " << std::setprecision(4) << BtoGB(newBudget.budget) << " GB" << std::endl;
     }
     break;
 

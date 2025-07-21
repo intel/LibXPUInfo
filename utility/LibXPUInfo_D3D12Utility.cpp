@@ -45,8 +45,8 @@ bool CreateD3D12DeviceAndAllocateResource(IUnknown* pAdapter, size_t sizeInBytes
             }
             else if (memBudget.budget < sizeInBytes)
             {
-                std::cout << __FUNCTION__ << ": Memory requested, " << sizeInBytes / (1024.0 * 1024 * 1024) <<
-                    " GB, exceeds available, " << memBudget.budget / (1024.0 * 1024 * 1024) << " GB\n";
+                std::cout << __FUNCTION__ << ": Memory requested, " << BtoGB(sizeInBytes) <<
+                    " GB, exceeds available, " << BtoGB(memBudget.budget) << " GB\n";
             }
             else
             {

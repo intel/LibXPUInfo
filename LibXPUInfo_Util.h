@@ -213,15 +213,17 @@ class SaveRestoreIOSFlags
 {
 public:
     typedef std::basic_ios<CharT, Traits> Stream;
-    SaveRestoreIOSFlags(Stream& s): m_stream(s), m_Flags(s.flags()) {}
+    SaveRestoreIOSFlags(Stream& s): m_stream(s), m_Flags(s.flags()), m_precision(s.precision()) {}
     ~SaveRestoreIOSFlags()
     {
-        m_stream.setf(m_Flags);
+        m_stream.precision(m_precision);
+        m_stream.setf(m_Flags, -1); // set to original flags
     }
 
 protected:
     Stream& m_stream;
     const std::ios::fmtflags m_Flags;
+    std::streamsize m_precision;
 };
 
 } // XI

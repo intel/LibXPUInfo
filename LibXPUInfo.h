@@ -281,11 +281,13 @@ namespace XI
         NONUMA_DISCRETE =   1 << 1
     };
 
-    inline double BtoGB(size_t n)
+    template <typename T>
+    inline double BtoGB(T n)
     {
         return (n / (1024.0 * 1024 * 1024));
     }
-    inline double BtoKB(size_t n)
+    template <typename T>
+    inline double BtoKB(T n)
     {
         return (n / 1024.0);
     }
@@ -626,19 +628,6 @@ namespace XI
     class XPUINFO_EXPORT TelemetryTracker : public NoCopyAssign
     {
     public:
-        friend class Device;
-        TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod, std::ostream* pRealTimeOutputStream = nullptr);
-        virtual ~TelemetryTracker() noexcept(false);
-
-        void start();
-        void stop();
-        String getLog() const;
-
-        UI64 getMaxMemUsage() const;
-        UI64 getInitialMemUsage() const;
-
-        const DevicePtr& getDevice() const;
-
         enum TelemetryItem : UI32
         {
             TELEMETRYITEM_UNKNOWN = 0,
@@ -657,8 +646,24 @@ namespace XI
 
             TELEMETRYITEM_SYSTEMMEMORY = 1 << 10,
 
+            // Flags that modify behavior
+            TELEMETRYITEM_PEAKUSAGE_ONLY = 1U << 31 // If set, only peak usage is recorded, no over-time data
+
             // TODO: PCI bandwidth?  Neither IGCL nor L0 working now.  Can derive from micro+mem_bw, though.
         };
+
+        TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod, 
+            std::ostream* pRealTimeOutputStream = nullptr, TelemetryItem controlMask = TELEMETRYITEM_UNKNOWN);
+        virtual ~TelemetryTracker() noexcept(false);
+
+        void start();
+        void stop();
+        String getLog() const;
+
+        UI64 getMaxMemUsage() const;
+        UI64 getInitialMemUsage() const;
+
+        const DevicePtr& getDevice() const;
 
         struct TimedRecord
         {
@@ -705,14 +710,17 @@ namespace XI
             {
                 deviceMemoryUsedBytes = std::max(deviceMemoryUsedBytes, r.deviceMemoryUsedBytes);
                 gpu_mem_Adapter_Total = std::max(gpu_mem_Adapter_Total, r.gpu_mem_Adapter_Total);
+                gpu_mem_Adapter_Shared = std::max(gpu_mem_Adapter_Shared, r.gpu_mem_Adapter_Shared);
                 gpu_mem_Adapter_Dedicated = std::max(gpu_mem_Adapter_Dedicated, r.gpu_mem_Adapter_Dedicated);
                 return *this;
             }
             UI64 deviceMemoryUsedBytes; // Current process, dedicated+shared (summed)
             double gpu_mem_Adapter_Total; // All processes, dedicated + shared + GPU-related system memory
+            double gpu_mem_Adapter_Shared; // All processes, shared memory
             double gpu_mem_Adapter_Dedicated; // All processes
         };
         PeakUsage getPeakUsage() const;
+        PeakUsage getInitialUsage() const { return m_initialUsage; }
 
 #ifdef _WIN32
         static VOID CALLBACK
@@ -734,7 +742,9 @@ namespace XI
         std::mutex m_RecordMutex;
         const DevicePtr m_Device; // Tracker will keep device "alive" if needed
         const DWORD m_msPeriod;
-        TelemetryItem m_ResultMask;
+        TelemetryItem m_ResultMask = {};
+        TelemetryItem m_ControlMask = {};
+        std::size_t m_numRecords = 0; // Number of records recorded so far
         std::ostream* m_pRealtime_ostr;
 
 #ifdef _WIN32
@@ -775,6 +785,8 @@ namespace XI
         double m_freqMin = std::numeric_limits<double>::max();
         double m_freqMaxHW = 0.;
         double m_freqMinHW = 0.;
+        PeakUsage m_peakUsage;
+        PeakUsage m_initialUsage; // Initial usage at start of tracking
         std::vector<TimedRecord> m_records;
         std::vector<zes_freq_handle_t> m_freqHandlesL0;
 
