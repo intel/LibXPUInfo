@@ -217,7 +217,7 @@ public:
     ~SaveRestoreIOSFlags()
     {
         m_stream.precision(m_precision);
-        m_stream.setf(m_Flags);
+        m_stream.setf(m_Flags, -1); // set to original flags
     }
 
 protected:
