@@ -708,17 +708,17 @@ namespace XI
             {
                 deviceMemoryUsedBytes = std::max(deviceMemoryUsedBytes, r.deviceMemoryUsedBytes);
                 gpu_mem_Adapter_Total = std::max(gpu_mem_Adapter_Total, r.gpu_mem_Adapter_Total);
-				gpu_mem_Adapter_Shared = std::max(gpu_mem_Adapter_Shared, r.gpu_mem_Adapter_Shared);
+                gpu_mem_Adapter_Shared = std::max(gpu_mem_Adapter_Shared, r.gpu_mem_Adapter_Shared);
                 gpu_mem_Adapter_Dedicated = std::max(gpu_mem_Adapter_Dedicated, r.gpu_mem_Adapter_Dedicated);
                 return *this;
             }
             UI64 deviceMemoryUsedBytes; // Current process, dedicated+shared (summed)
             double gpu_mem_Adapter_Total; // All processes, dedicated + shared + GPU-related system memory
-			double gpu_mem_Adapter_Shared; // All processes, shared memory
+            double gpu_mem_Adapter_Shared; // All processes, shared memory
             double gpu_mem_Adapter_Dedicated; // All processes
         };
         PeakUsage getPeakUsage() const;
-		PeakUsage getInitialUsage() const { return m_initialUsage; }
+        PeakUsage getInitialUsage() const { return m_initialUsage; }
 
 #ifdef _WIN32
         static VOID CALLBACK
@@ -742,7 +742,7 @@ namespace XI
         const DWORD m_msPeriod;
         TelemetryItem m_ResultMask = {};
         TelemetryItem m_ControlMask = {};
-		std::size_t m_numRecords = 0; // Number of records recorded so far
+        std::size_t m_numRecords = 0; // Number of records recorded so far
         std::ostream* m_pRealtime_ostr;
 
 #ifdef _WIN32
@@ -784,7 +784,7 @@ namespace XI
         double m_freqMaxHW = 0.;
         double m_freqMinHW = 0.;
         PeakUsage m_peakUsage;
-		PeakUsage m_initialUsage; // Initial usage at start of tracking
+        PeakUsage m_initialUsage; // Initial usage at start of tracking
         std::vector<TimedRecord> m_records;
         std::vector<zes_freq_handle_t> m_freqHandlesL0;
 

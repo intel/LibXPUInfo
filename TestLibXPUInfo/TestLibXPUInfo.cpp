@@ -218,7 +218,7 @@ int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx, bool peakOnl
         
         if (peakOnly)
         {
-			tt = std::make_unique<XI::TelemetryTracker>(telemDevice, telemInterval_ms, nullptr, XI::TelemetryTracker::TELEMETRYITEM_PEAKUSAGE_ONLY);
+            tt = std::make_unique<XI::TelemetryTracker>(telemDevice, telemInterval_ms, nullptr, XI::TelemetryTracker::TELEMETRYITEM_PEAKUSAGE_ONLY);
         }
         else
         {
@@ -233,9 +233,9 @@ int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx, bool peakOnl
 
         std::cout << std::right << std::setw(40) << "Memory usage summary for device: " << XI::convert(telemDevice->name()) << std::endl;
         auto peak = tt->getPeakUsage();
-		auto initial = tt->getInitialUsage();
+        auto initial = tt->getInitialUsage();
         XI::SaveRestoreIOSFlags sr(std::cout);
-		auto printPeak = [](const std::string& label, const XI::TelemetryTracker::PeakUsage& peak) {
+        auto printPeak = [](const std::string& label, const XI::TelemetryTracker::PeakUsage& peak) {
             std::cout.precision(2);
             std::cout << std::fixed;
             std::cout << std::right << std::setw(40) << (label + " Device Mem (GB): ") << peak.deviceMemoryUsedBytes / (1024.0 * 1024 * 1024) << std::endl;
@@ -243,9 +243,9 @@ int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx, bool peakOnl
             std::cout << std::right << std::setw(40) << (label + " Shared Device Mem (GB): ") << peak.gpu_mem_Adapter_Shared / (1024.0 * 1024 * 1024) << std::endl;
             std::cout << std::right << std::setw(40) << (label + " Dedicated Device Mem (GB): ") << peak.gpu_mem_Adapter_Dedicated / (1024.0 * 1024 * 1024) << std::endl;
             };
-		printPeak("Peak", peak);
-		printPeak("Initial", initial);
-		tt.reset(); // Stop telemetry and print results
+        printPeak("Peak", peak);
+        printPeak("Initial", initial);
+        tt.reset(); // Stop telemetry and print results
     }
     std::cout << std::endl << xi << std::endl;
     return 0;
@@ -300,9 +300,9 @@ int printXPUInfo(int argc, char* argv[])
             }
         }
         else if (arg == "-peak_only")
-		{
-			peakOnly = true;
-		}
+        {
+            peakOnly = true;
+        }
         else if (arg == "-igcl_l0_enable")
         {
             additionalAPIs |= XI::API_TYPE_IGCL_L0;
