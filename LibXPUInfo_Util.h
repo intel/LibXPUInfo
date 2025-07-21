@@ -217,12 +217,12 @@ public:
     ~SaveRestoreIOSFlags()
     {
         m_stream.precision(m_precision);
-        m_stream.setf(m_Flags, -1); // set to original flags
+        m_stream.setf(m_Flags, static_cast<std::ios_base::fmtflags>(-1)); // set to original flags
     }
 
 protected:
     Stream& m_stream;
-    const std::ios::fmtflags m_Flags;
+    const std::ios_base::fmtflags m_Flags;
     std::streamsize m_precision;
 };
 
