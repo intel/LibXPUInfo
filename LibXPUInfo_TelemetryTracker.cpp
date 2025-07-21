@@ -59,22 +59,36 @@ UI64 TelemetryTracker::getMaxMemUsage() const
 
 TelemetryTracker::PeakUsage TelemetryTracker::getPeakUsage() const
 {
-	PeakUsage peak{};
-	for (const auto& rec : m_records)
+	if (m_ControlMask & TELEMETRYITEM_PEAKUSAGE_ONLY)
 	{
-		peak.updatePeak(rec);
+		return m_peakUsage;
 	}
-	return peak;
+	else
+	{
+		PeakUsage peak{};
+		for (const auto& rec : m_records)
+		{
+			peak.updatePeak(rec);
+		}
+		return peak;
+	}
 }
 
 UI64 TelemetryTracker::getInitialMemUsage() const
 {
-	UI64 memUsage = 0;
-	if (m_records.size())
+	if (m_ControlMask & TELEMETRYITEM_PEAKUSAGE_ONLY)
 	{
-		memUsage = m_records.front().deviceMemoryUsedBytes;
+		return m_initialUsage.deviceMemoryUsedBytes;
 	}
-	return memUsage;
+	else
+	{
+		UI64 memUsage = 0;
+		if (m_records.size())
+		{
+			memUsage = m_records.front().deviceMemoryUsedBytes;
+		}
+		return memUsage;
+	}
 }
 
 const DevicePtr& TelemetryTracker::getDevice() const
@@ -221,9 +235,10 @@ String TelemetryTracker::getLog() const
 	return ostr.str();
 }
 
-TelemetryTracker::TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod, std::ostream* pRealTimeOutputStream):
+TelemetryTracker::TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod, 
+	std::ostream* pRealTimeOutputStream, TelemetryItem controlMask):
 	m_Device(deviceToTrack), m_msPeriod(msPeriod),
-	m_ResultMask(TELEMETRYITEM_UNKNOWN),
+	m_ResultMask(TELEMETRYITEM_UNKNOWN), m_ControlMask(controlMask),
 	m_pRealtime_ostr(pRealTimeOutputStream)
 {
 #if defined(_WIN32) && !defined(_M_ARM64)
@@ -231,8 +246,11 @@ TelemetryTracker::TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod
 
 	if (m_Device->getCurrentAPIs() & (API_TYPE_IGCL|API_TYPE_LEVELZERO|API_TYPE_DXCORE))
 	{
-		m_records.reserve(1024);
-
+		bool collectingOverTime = ((m_ControlMask & TELEMETRYITEM_PEAKUSAGE_ONLY) == 0);
+		if (collectingOverTime)
+		{
+			m_records.reserve(1024);
+		}
 		InitializeThreadpoolEnvironment(&m_CallBackEnviron);
 
 		// Create a cleanup group for this thread pool.
@@ -397,6 +415,7 @@ void TelemetryTracker::RecordNow()
 {
 	TimedRecord rec{};
 	bool bUpdate = false;
+	const bool collectingOverTime = ((m_ControlMask & TELEMETRYITEM_PEAKUSAGE_ONLY) == 0);
 	std::lock_guard<std::mutex> lock(m_RecordMutex); // for now, only support one at a time
 
 	// Frequency, throttleReason (L0, IGCL)
@@ -414,31 +433,34 @@ void TelemetryTracker::RecordNow()
 		bUpdate = RecordMemoryUsage(rec) || bUpdate;
 	}
 
-#ifdef XPUINFO_USE_IGCL
-	if (m_Device->getCurrentAPIs() & API_TYPE_IGCL)
-	{
-		bUpdate = RecordIGCL(rec) || bUpdate;
-	}
-#endif // XPUINFO_USE_IGCL
-
 #if defined(_WIN32) && !defined(_M_ARM64)
 	bUpdate = RecordCPU_PDH(rec) || bUpdate;
 #endif
 
-#ifdef XPUINFO_USE_LEVELZERO
-	if (m_Device->getCurrentAPIs() & API_TYPE_LEVELZERO)
+	if (collectingOverTime)
 	{
-		bool bL0 = RecordL0(rec);
-		bUpdate = bL0 || bUpdate;
-	}
+#ifdef XPUINFO_USE_IGCL
+		if (m_Device->getCurrentAPIs() & API_TYPE_IGCL)
+		{
+			bUpdate = RecordIGCL(rec) || bUpdate;
+		}
+#endif // XPUINFO_USE_IGCL
+
+#ifdef XPUINFO_USE_LEVELZERO
+		if (m_Device->getCurrentAPIs() & API_TYPE_LEVELZERO)
+		{
+			bool bL0 = RecordL0(rec);
+			bUpdate = bL0 || bUpdate;
+		}
 #endif
 
 #ifdef XPUINFO_USE_NVML
-	if (m_Device->getCurrentAPIs() & API_TYPE_NVML)
-	{
-		bUpdate = RecordNVML(rec) || bUpdate;
-	}
+		if (m_Device->getCurrentAPIs() & API_TYPE_NVML)
+		{
+			bUpdate = RecordNVML(rec) || bUpdate;
+		}
 #endif
+	}
 
 	if (bUpdate)
 	{
@@ -447,15 +469,35 @@ void TelemetryTracker::RecordNow()
 			RecordCPUTimestamp(rec);
 		}
 
-		m_records.push_back(rec);
+		if (collectingOverTime)
+		{
+			m_records.push_back(rec);
+		}
+		else
+		{
+			m_peakUsage.updatePeak(rec);
+		}
+		if (m_numRecords == 0ULL)
+		{
+			m_initialUsage.updatePeak(rec);
+		}
 		if (m_pRealtime_ostr)
 		{
 			if (m_records.size() == 1)
 			{
 				printRecordHeader(*m_pRealtime_ostr);
 			}
-			printRecord(m_records.end()-1, *m_pRealtime_ostr);
+			if (collectingOverTime)
+			{
+				printRecord(m_records.end() - 1, *m_pRealtime_ostr);
+			}
+			else
+			{
+				TimedRecords tempRecords(1, rec);
+				printRecord(tempRecords.begin(), *m_pRealtime_ostr);
+			}
 		}
+		++m_numRecords;
 	}
 }
 
