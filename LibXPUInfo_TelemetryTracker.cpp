@@ -114,10 +114,10 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 
 #if defined(_WIN32) && !defined(_M_ARM64)
 	ostr << "," << rec.pctCPU << "," << rec.cpu_freq / (100.0);
-	ostr << "," << rec.gpu_mem_Local / (1024.0 * 1024 * 1024);
-	ostr << "," << rec.gpu_mem_Adapter_Shared / (1024.0 * 1024 * 1024);
-	ostr << "," << rec.gpu_mem_Adapter_Dedicated / (1024.0 * 1024 * 1024);
-	ostr << "," << rec.gpu_mem_Adapter_Total / (1024.0 * 1024 * 1024);
+	ostr << "," << BtoGB(rec.gpu_mem_Local);
+	ostr << "," << BtoGB(rec.gpu_mem_Adapter_Shared);
+	ostr << "," << BtoGB(rec.gpu_mem_Adapter_Dedicated);
+	ostr << "," << BtoGB(rec.gpu_mem_Adapter_Total);
 #endif
 
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY)
@@ -205,10 +205,10 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 	if (m_ResultMask & TELEMETRYITEM_SYSTEMMEMORY)
 	{
         SaveRestoreIOSFlags saveFlags(ostr);
-		ostr << "," << std::setprecision(5) << (rec.systemMemoryPhysicalAvailable / (1024.0 * 1024 * 1024))
-			<< "," << (rec.systemMemoryCommitTotal / (1024.0 * 1024 * 1024))
-			<< "," << (rec.systemMemoryCommitLimit / (1024.0 * 1024 * 1024))
-			<< "," << (rec.systemMemoryCommitPeak / (1024.0 * 1024 * 1024))
+		ostr << "," << std::setprecision(5) << BtoGB(rec.systemMemoryPhysicalAvailable)
+			<< "," << BtoGB(rec.systemMemoryCommitTotal)
+			<< "," << BtoGB(rec.systemMemoryCommitLimit)
+			<< "," << BtoGB(rec.systemMemoryCommitPeak)
 			;
 	}
 
