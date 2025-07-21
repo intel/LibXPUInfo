@@ -281,11 +281,13 @@ namespace XI
         NONUMA_DISCRETE =   1 << 1
     };
 
-    inline double BtoGB(size_t n)
+    template <typename T>
+    inline double BtoGB(T n)
     {
         return (n / (1024.0 * 1024 * 1024));
     }
-    inline double BtoKB(size_t n)
+    template <typename T>
+    inline double BtoKB(T n)
     {
         return (n / 1024.0);
     }
