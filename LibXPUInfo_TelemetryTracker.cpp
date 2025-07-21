@@ -479,7 +479,7 @@ void TelemetryTracker::RecordNow()
 		}
 		if (m_pRealtime_ostr)
 		{
-			if (m_records.size() == 1)
+			if (m_numRecords == 0)
 			{
 				printRecordHeader(*m_pRealtime_ostr);
 			}
@@ -493,7 +493,7 @@ void TelemetryTracker::RecordNow()
 				printRecord(tempRecords.begin(), *m_pRealtime_ostr);
 			}
 		}
-		if (m_numRecords++ == 0ULL)
+		if (m_numRecords++ == 0)
 		{
 			m_initialUsage.updatePeak(rec);
 		}
