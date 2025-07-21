@@ -284,12 +284,12 @@ namespace XI
     template <typename T>
     inline double BtoGB(T n)
     {
-        return (n / (1024.0 * 1024 * 1024));
+        return (double(n) / (1024.0 * 1024 * 1024));
     }
     template <typename T>
     inline double BtoKB(T n)
     {
-        return (n / 1024.0);
+        return (double(n) / 1024.0);
     }
 
     struct IGCLAdapterProperties;
