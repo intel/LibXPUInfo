@@ -706,6 +706,9 @@ namespace XI
 
         struct PeakUsage
         {
+            PeakUsage() : deviceMemoryUsedBytes(0),
+                gpu_mem_Adapter_Total(0), gpu_mem_Adapter_Shared(0), gpu_mem_Adapter_Dedicated(0) 
+            {}
             PeakUsage& updatePeak(const TimedRecord& r)
             {
                 deviceMemoryUsedBytes = std::max(deviceMemoryUsedBytes, r.deviceMemoryUsedBytes);
