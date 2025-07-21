@@ -477,10 +477,6 @@ void TelemetryTracker::RecordNow()
 		{
 			m_peakUsage.updatePeak(rec);
 		}
-		if (m_numRecords == 0ULL)
-		{
-			m_initialUsage.updatePeak(rec);
-		}
 		if (m_pRealtime_ostr)
 		{
 			if (m_records.size() == 1)
@@ -497,7 +493,10 @@ void TelemetryTracker::RecordNow()
 				printRecord(tempRecords.begin(), *m_pRealtime_ostr);
 			}
 		}
-		++m_numRecords;
+		if (m_numRecords++ == 0ULL)
+		{
+			m_initialUsage.updatePeak(rec);
+		}
 	}
 }
 

@@ -238,6 +238,7 @@ int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx, bool peakOnl
         auto printPeak = [](const std::string& label, const XI::TelemetryTracker::PeakUsage& peak) {
             std::cout.precision(2);
             std::cout << std::fixed;
+            constexpr double BYTES_TO_GB = 1024.0 * 1024.0 * 1024.0;
             std::cout << std::right << std::setw(40) << (label + " Device Mem (GB): ") << peak.deviceMemoryUsedBytes / BYTES_TO_GB << std::endl;
             std::cout << std::right << std::setw(40) << (label + " Device Mem, All Processes (GB): ") << peak.gpu_mem_Adapter_Total / BYTES_TO_GB << std::endl;
             std::cout << std::right << std::setw(40) << (label + " Shared Device Mem (GB): ") << peak.gpu_mem_Adapter_Shared / BYTES_TO_GB << std::endl;
