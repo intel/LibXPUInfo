@@ -482,12 +482,14 @@ static ze_result_t safeInitL0()
 }
 #endif
 
+#if 0 // Unused typedef, retained for potential future use
 typedef ze_result_t
 (*zeIntelGetDriverVersionString_fn)(
 	ze_driver_handle_t hDriver, ///< [in] Driver handle whose version is being read.
 	char* pDriverVersion,       ///< [in,out] pointer to driver version string.
 	size_t* pVersionSize);      ///< [in,out] pointer to the size of the driver version string.
 ///< if size is zero, then the size of the version string is returned.
+#endif
 
 void XPUInfo::initL0()
 {
