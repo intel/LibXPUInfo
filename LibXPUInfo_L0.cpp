@@ -565,7 +565,7 @@ void XPUInfo::initL0()
 			}
 		}
 
-#if 0	// Not needed
+#if 0	// Not needed yet, retained for potential future use
 		if (pDriverVerStringExt)
 		{
 			zeIntelGetDriverVersionString_fn pfnGetDriverVersionFn = nullptr;
