@@ -140,9 +140,15 @@ void XPUInfo::initDXCore(bool updateOnly)
                 WORD driverVersion[4];
                 UI64 driverVersion64;
             };
+            driverVersion64 = 0; // If this remains zero, Device constructor will attempt to lookup LUID as with DXGI path
 
-            THROW_IF_FAILED(currAdapter->GetProperty(DXCoreAdapterProperty::DriverVersion,
-                sizeof(LARGE_INTEGER), driverVersion));
+            hr = currAdapter->GetProperty(DXCoreAdapterProperty::DriverVersion,
+                sizeof(LARGE_INTEGER), driverVersion);
+            if (FAILED(hr) || !driverVersion64)
+            {
+                DebugStream dStr(false);
+                dStr << "DXCore DriverVersion failed (hr=" << hr << ", ver=" << driverVersion64 << ") for device: " << driverDescription << std::endl;
+            }
 
             bool isGraphics = currAdapter->IsAttributeSupported(DXCORE_ADAPTER_ATTRIBUTE_D3D12_GRAPHICS);
             //bool isNPU = currAdapter->IsAttributeSupported(LIBXPUINFO_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU); // Unused, works

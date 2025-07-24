@@ -204,10 +204,12 @@ namespace XI
 		{1275, "Lunar Lake", "iLNL", 0x5010001},
 		{1275, "Lunar Lake", "LNL_", 0x5010001}, // TODO: Remove one of these when no longer needed
 		{1275, "Lunar Lake", "LNL_", 0x5010004}, // TODO: Remove one of these when no longer needed
+		{1300, "Panther Lake", "PTL_", 0x07800004},
 		// Devices with no "Intel Device Information" value have negative values
 		{0x80000000, "NPU2.7", "mtl_w" },
 		{0x80000000, "NPU2.7", "NPU2_7" },
-		{0x80000002, "NPU4", "NPU4" }
+		{0x80000002, "NPU4", "NPU4" },
+		{0x80000003, "NPU5", "NPU5" },
 	};
 	static const int S_numGenNames = sizeof(S_GenNameMap)/sizeof(GenName);
 
@@ -993,38 +995,45 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	{
 		m_pSetupInfo.reset(new SetupDeviceInfo);
 		bool bSDIMatchFound = false;
-		for (auto& device : m_Devices)
+		for (auto& devPair : m_Devices)
 		{
-			DriverInfoPtr pSDI = m_pSetupInfo->getByLUID(device.second->getLUID());
+			auto& device = devPair.second;
+			DriverInfoPtr pSDI = m_pSetupInfo->getByLUID(device->getLUID());
 			if (!pSDI)
 			{
-				if (device.second->m_props.PCIAddress.valid())
+				if (device->m_props.PCIAddress.valid())
 				{
-					pSDI = m_pSetupInfo->getAtAddress(device.second->m_props.PCIAddress);
+					pSDI = m_pSetupInfo->getAtAddress(device->m_props.PCIAddress);
 				}
 				else
 				{
 					// Match name
 					// TODO: What should happen if multiple devices have the same name?  (i.e. 2x RTX 3080?)
 					// For now, assume they have the same driver and other properties.
-					pSDI = m_pSetupInfo->getByName(device.second->name());
+					pSDI = m_pSetupInfo->getByName(device->name());
 				}
 			}
 			if (pSDI)
 			{
-				if (!device.second->m_props.pDriverInfo)
+				if (!device->m_props.pDriverInfo)
 				{
-					device.second->m_props.pDriverInfo = pSDI;
-					device.second->validAPIs = device.second->validAPIs | API_TYPE_SETUPAPI;
+					device->m_props.pDriverInfo = pSDI;
+					device->validAPIs = device->validAPIs | API_TYPE_SETUPAPI;
 					bSDIMatchFound = true;
+					if (device->m_pDriverVersion && !device->m_pDriverVersion->Valid())
+					{
+						// LUID lookup in registry failed
+						// Set DriverVersion from SetupAPI version string
+						*device->m_pDriverVersion = DeviceDriverVersion::FromString(convert(pSDI->DriverVersion));
+					}
 				}
-				if (!device.second->m_props.PCIAddress.valid())
+				if (!device->m_props.PCIAddress.valid())
 				{
-					device.second->m_props.PCIAddress = pSDI->LocationInfo;
+					device->m_props.PCIAddress = pSDI->LocationInfo;
 				}
-				if (device.second->IsVendor(kVendorId_Intel))
+				if (device->IsVendor(kVendorId_Intel))
 				{
-					if (device.second->getProperties().DeviceGenerationAPI == API_TYPE_UNKNOWN)
+					if (device->getProperties().DeviceGenerationAPI == API_TYPE_UNKNOWN)
 					{
 						String infName(convert(pSDI->DriverInfSection));
 
@@ -1032,8 +1041,8 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 						{
 							if (S_GenNameMap[i].infName && (infName.find(S_GenNameMap[i].infName) == 0))
 							{
-								device.second->m_props.DeviceGenerationID = S_GenNameMap[i].gen;
-								device.second->m_props.DeviceGenerationAPI = API_TYPE_SETUPAPI;
+								device->m_props.DeviceGenerationID = S_GenNameMap[i].gen;
+								device->m_props.DeviceGenerationAPI = API_TYPE_SETUPAPI;
 								break;
 							}
 						}

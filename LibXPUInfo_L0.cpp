@@ -482,6 +482,13 @@ static ze_result_t safeInitL0()
 }
 #endif
 
+typedef ze_result_t
+(*zeIntelGetDriverVersionString_fn)(
+	ze_driver_handle_t hDriver, ///< [in] Driver handle whose version is being read.
+	char* pDriverVersion,       ///< [in,out] pointer to driver version string.
+	size_t* pVersionSize);      ///< [in,out] pointer to the size of the driver version string.
+///< if size is zero, then the size of the version string is returned.
+
 void XPUInfo::initL0()
 {
 	std::vector<L0Enum> L0Drivers; // temp
@@ -542,6 +549,7 @@ void XPUInfo::initL0()
 		L0_Extensions driverExts(numExts);
 		const ze_driver_extension_properties_t* pLuidExt = nullptr;
 		const ze_driver_extension_properties_t* pDevIPExt = nullptr;
+		//const ze_driver_extension_properties_t* pDriverVerStringExt = nullptr;
 		if (ZE_RESULT_SUCCESS == zRes)
 		{
 			zRes = zeDriverGetExtensionProperties(l0enum.driver, &numExts, driverExts.data());
@@ -550,9 +558,40 @@ void XPUInfo::initL0()
 				// See https://spec.oneapi.io/level-zero/latest/core/EXT.html
 				pLuidExt = driverExts.find("ZE_extension_device_luid");
 				pDevIPExt = driverExts.find("ZE_extension_device_ip_version");
+				//pDriverVerStringExt = driverExts.find("ZE_intel_get_driver_version_string"); // call zeIntelGetDriverVersionString
 				// ZE_extension_eu_count
 			}
 		}
+
+#if 0	// Not needed
+		if (pDriverVerStringExt)
+		{
+			zeIntelGetDriverVersionString_fn pfnGetDriverVersionFn = nullptr;
+			zRes = zeDriverGetExtensionFunctionAddress(l0enum.driver, "zeIntelGetDriverVersionString", reinterpret_cast<void**>(&pfnGetDriverVersionFn));
+			if (ZE_RESULT_SUCCESS == zRes)
+			{
+				size_t sizeOfDriverString = 0;
+				pfnGetDriverVersionFn(l0enum.driver, nullptr, &sizeOfDriverString);
+				std::string verStr;
+				verStr.resize(sizeOfDriverString+1);
+				pfnGetDriverVersionFn(l0enum.driver, verStr.data(), &sizeOfDriverString);
+				std::cout << "Driver string: " << verStr << std::endl;
+			}
+		}
+
+		ze_driver_properties_t driver_props = { ZE_STRUCTURE_TYPE_DRIVER_PROPERTIES, NULL };
+		result = zeDriverGetProperties(l0enum.driver, &driver_props);
+		if (ZE_RESULT_SUCCESS == zRes)
+		{
+			// Extract major, minor, and build numbers from driverVersion
+			uint32_t version = driver_props.driverVersion;
+			uint32_t major = (version >> 24) & 0xFF;
+			uint32_t minor = (version >> 16) & 0xFF;
+			uint32_t build = version & 0xFFFF;
+
+			printf("Driver Version: %u.%u.%u\n", major, minor, build);
+		}
+#endif
 
 		for (auto l0device : l0enum.devices)
 		{
