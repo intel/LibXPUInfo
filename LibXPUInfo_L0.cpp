@@ -461,6 +461,9 @@ static ze_result_t safeInitL0()
 	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
 	__try
 	{
+		// Set env var for Sysman
+		_putenv_s("ZES_ENABLE_SYSMAN", "1");
+
 		// Initialize the driver
 		// TODO: Once a loader is available supporting zeInitDrivers(), use it instead of zeInit. 
 		//       See https://spec.oneapi.io/level-zero/latest/core/api.html#zeinitdrivers.
