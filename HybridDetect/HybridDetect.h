@@ -1273,6 +1273,11 @@ inline short RunOn(
 #endif
 	const std::vector<ULONG> fallbackSet = {})
 {
+#ifndef ENABLE_RUNON
+	// Note: [[maybe_unused]] does not appear to work with Visual Studio 2022 17.13
+    (void)fallbackSet; // Avoid unused variable warning
+#endif
+
 #ifdef ENABLE_RUNON_PRIORITY
 	switch (type)
 	{
