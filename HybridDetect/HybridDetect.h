@@ -1250,6 +1250,7 @@ inline short RunOnCPUSet(PROCESSOR_INFO& procInfo, HANDLE threadHandle, std::vec
 #else
 inline short RunOnCPUSet(PROCESSOR_INFO& , HANDLE , std::vector<ULONG> , std::vector<ULONG> fallbackSet = {})
 {
+	(void)fallbackSet; // Avoid unused variable warning
 	return -1;
 }
 #endif
@@ -1348,6 +1349,7 @@ inline short RunOn(PROCESSOR_INFO& procInfo, const CoreTypes type, const std::ve
 #else
 inline short RunOn(PROCESSOR_INFO& , const CoreTypes , const std::vector<ULONG> fallbackSet = {})
 {
+	(void)fallbackSet; // Avoid unused variable warning
 	return 0;
 }
 #endif
@@ -1361,6 +1363,7 @@ inline short RunOnAny(PROCESSOR_INFO& procInfo, HANDLE threadHandle, const std::
 #else
 inline short RunOnAny(PROCESSOR_INFO& , HANDLE , const std::vector<ULONG> fallbackSet = {})
 {
+	(void)fallbackSet; // Avoid unused variable warning
 	return 0;
 }
 #endif
@@ -1375,6 +1378,7 @@ inline short RunOnAny(PROCESSOR_INFO& procInfo, const std::vector<ULONG> fallbac
 #else
 inline short RunOnAny(PROCESSOR_INFO& , const std::vector<ULONG> fallbackSet = {})
 {
+	(void)fallbackSet; // Avoid unused variable warning
 	return 0;
 }
 #endif
@@ -1424,6 +1428,7 @@ inline short RunOnOne(PROCESSOR_INFO& procInfo, HANDLE threadHandle, const short
 #else
 inline short RunOnOne(PROCESSOR_INFO& , HANDLE , const short , const std::vector<ULONG> fallbackSet = {})
 {
+	(void)fallbackSet; // Avoid unused variable warning
 	return -1;
 }
 #endif
@@ -1438,6 +1443,7 @@ inline bool RunOnOne(PROCESSOR_INFO& procInfo, const short coreID, const std::ve
 #else
 inline bool RunOnOne(PROCESSOR_INFO& , const short , const std::vector<ULONG> fallbackSet = {})
 {
+	(void)fallbackSet; // Avoid unused variable warning
 	return false;
 }
 #endif
