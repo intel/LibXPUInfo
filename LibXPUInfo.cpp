@@ -1105,7 +1105,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 #endif
 #ifdef XPUINFO_USE_SYSTEMEMORYINFO
 	// Init after SystemMemoryInfo (WMI on Win)
-	m_pMemoryInfo.reset(new SystemMemoryInfo(m_pSystemInfo));
+	m_pMemoryInfo.reset(new SystemMemoryInfo);
 #endif // XPUINFO_USE_SYSTEMEMORYINFO
 }
 
@@ -1973,8 +1973,7 @@ size_t SystemMemoryInfo::getCurrentInstalledPhysicalMemory()
 }
 
 
-SystemMemoryInfo::SystemMemoryInfo(const std::shared_ptr<SystemInfo> pSysInfo)
-	/*: m_pSysInfo(pSysInfo)*/
+SystemMemoryInfo::SystemMemoryInfo()
 {
 #ifdef _WIN32
 	PERFORMANCE_INFORMATION pi;
