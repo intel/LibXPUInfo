@@ -974,7 +974,7 @@ namespace XI
     class XPUINFO_EXPORT SystemMemoryInfo
     {
     public:
-        SystemMemoryInfo(const std::shared_ptr<SystemInfo> pSysInfo = nullptr);
+        SystemMemoryInfo();
 #ifdef XPUINFO_USE_RAPIDJSON
         SystemMemoryInfo(const rapidjson::Value& val);
 #endif
