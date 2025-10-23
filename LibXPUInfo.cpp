@@ -1537,7 +1537,7 @@ inline const HybridDetect::LOGICAL_PROCESSOR_INFO* getLPIBySet(const HybridDetec
 			auto coreInfoIt = std::find_if(pi->cores.begin(), pi->cores.end(),
 				[&coreIdIt,idx](const HybridDetect::LOGICAL_PROCESSOR_INFO& lpi)
 				{
-					return (lpi.id == coreIdIt->second[idx]);
+					return (coreIdIt->second.size() > idx) && (lpi.id == coreIdIt->second[idx]);
 				});
 			if (coreInfoIt != pi->cores.end())
 			{
