@@ -18,6 +18,15 @@
 
 using namespace XI;
 
+static void pause(bool bNotify=true)
+{
+    if (bNotify)
+    {
+        std::cout << "Press ENTER to continue...\n";
+    }
+    std::cin.get();
+}
+
 #ifdef XPUINFO_USE_RAPIDJSON
 bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
 {
@@ -174,8 +183,7 @@ int testInflateGPUMem(double sizeInGB, const std::string& devName)
             try
             {
                 ScopedD3D12MemoryAllocation mem(devHandle, sizeInGB);
-                std::cout << "Press any key to continue...\n";
-                int c = getchar(); (void)c;
+                pause();
             }
             catch (const std::exception& e)
             {
@@ -226,10 +234,9 @@ int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx, bool peakOnl
         }
         XPUINFO_REQUIRE(tt);
         std::cout << "Telemetry started on device " << XI::convert(telemDevice->name()) << " with " << telemInterval_ms << " ms interval.\n";
-        std::cout << "Press any key to stop...\n";
+        std::cout << "Press ENTER key to stop...\n";
         tt->start();
-        auto c = getchar();
-        (void)c;
+        pause(false);
 
         std::cout << std::right << std::setw(40) << "Memory usage summary for device: " << XI::convert(telemDevice->name()) << std::endl;
         auto peak = tt->getPeakUsage();
@@ -258,6 +265,7 @@ int main(int argc, char* argv[])
 int printXPUInfo(int argc, char* argv[])
 #endif
 {
+    bool pauseOnExit = true;
     bool testIndividual = false;
     bool bRunTelemetry = false;
     bool peakOnly = false;
@@ -269,11 +277,17 @@ int printXPUInfo(int argc, char* argv[])
     for (int a = 1; a < argc; ++a)
     {
         String arg(argv[a]);
+        if (arg == "-nopause")
+        {
+            pauseOnExit = false;
+        }
+        else
 #ifdef _WIN32
         if (arg == "-1")
         {
             testIndividual = true;
         }
+        else
 #endif
         if (arg == "-telemetry") // -telemetry <ms> [<gpuIndex>]
         {
@@ -383,6 +397,10 @@ int printXPUInfo(int argc, char* argv[])
             std::cout << xi << std::endl;
             timer.Stop();
             std::cout << "XPUInfo Time: " << timer.GetElapsedSecs() << " seconds\n";
+            if (pauseOnExit)
+            {
+                pause();
+            }
         }
         else
         {
