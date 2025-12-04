@@ -706,35 +706,36 @@ void TelemetryTracker::InitL0()
 
 		if ((ZE_RESULT_SUCCESS == zRes) && (domain_count > 0))
 		{
-			m_freqHandlesL0.resize(domain_count);
+			std::vector<zes_freq_handle_t> freqHandlesL0(domain_count);
 			zRes = zesDeviceEnumFrequencyDomains(
-				l0device, &domain_count, m_freqHandlesL0.data());
+				l0device, &domain_count, freqHandlesL0.data());
 			XPUINFO_DEBUG_REQUIRE(ZE_RESULT_SUCCESS == zRes);
 
-			for (uint32_t i = 0; i < m_freqHandlesL0.size(); ++i)
+			for (uint32_t i = 0; i < freqHandlesL0.size(); ++i)
 			{
 				zes_freq_properties_t domain_props{
 					ZES_STRUCTURE_TYPE_FREQ_PROPERTIES, };
-				zRes = zesFrequencyGetProperties(m_freqHandlesL0[i], &domain_props);
+				zRes = zesFrequencyGetProperties(freqHandlesL0[i], &domain_props);
 				if ((ZE_RESULT_SUCCESS == zRes))
 				{
 					if (domain_props.type == ZES_FREQ_DOMAIN_GPU)
 					{
-						//std::cout << "L0 GPU" << std::endl;
-						if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL_L0) && m_freqHandlesL0.size())
+						if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL_L0))
 						{
 							m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY);
+                            m_freqHandlesL0.emplace(std::make_pair(freqHandlesL0[i], TELEMETRYITEM_FREQUENCY));
 						}
 					}
 					else if (domain_props.type == ZES_FREQ_DOMAIN_MEDIA)
 					{
-						//std::cout << "L0 MEDIA" << std::endl;
 						m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY_MEDIA);
+						m_freqHandlesL0.emplace(std::make_pair(freqHandlesL0[i], TELEMETRYITEM_FREQUENCY_MEDIA));
 					}
 #if L0_TRACK_FREQUENCY_MEMORY
 					else if (domain_props.type == ZES_FREQ_DOMAIN_MEMORY)
 					{
 						m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY_MEMORY);
+						m_freqHandlesL0.emplace(std::make_pair(freqHandlesL0[i], TELEMETRYITEM_FREQUENCY_MEMORY));
 					}
 #endif
 				}
@@ -791,16 +792,13 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 	// Get Freq from L0 if no IGCL
     if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL) && m_freqHandlesL0.size())
     {
-        for (uint32_t i = 0; i < m_freqHandlesL0.size(); ++i) {
-            zes_freq_properties_t domain_props{
-                ZES_STRUCTURE_TYPE_FREQ_PROPERTIES, };
-            auto zRes = zesFrequencyGetProperties(m_freqHandlesL0[i], &domain_props);
-
-            if ((ZE_RESULT_SUCCESS==zRes) && (domain_props.type == ZES_FREQ_DOMAIN_GPU))
+        for (const auto [freqHandle, telemItem] : m_freqHandlesL0)
+		{
+            if (telemItem == ZES_FREQ_DOMAIN_GPU)
             {
                 zes_freq_state_t state{ ZES_STRUCTURE_TYPE_FREQ_STATE, };
                 TimerTick tt = Timer::GetNow();
-                zRes = zesFrequencyGetState(m_freqHandlesL0[i], &state);
+                ze_result_t zRes = zesFrequencyGetState(freqHandle, &state);
 				if (ZE_RESULT_SUCCESS == zRes)
 				{
 					rec.timeStamp = (double)(
@@ -824,26 +822,22 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
         }
     }
 
-	for (uint32_t i = 0; i < m_freqHandlesL0.size(); ++i) {
-		zes_freq_properties_t domain_props{
-			ZES_STRUCTURE_TYPE_FREQ_PROPERTIES, };
-		// TODO: Change to map so zesFrequencyGetProperties not needed on each sample
-		auto zRes = zesFrequencyGetProperties(m_freqHandlesL0[i], &domain_props);
-
-		if ((ZE_RESULT_SUCCESS == zRes) &&
-			((domain_props.type == ZES_FREQ_DOMAIN_MEDIA)
+	for (const auto [freqHandle, telemItem] : m_freqHandlesL0)
+	{
+		if (
+			((telemItem == ZES_FREQ_DOMAIN_MEDIA)
 #if L0_TRACK_FREQUENCY_MEMORY
-				|| (domain_props.type == ZES_FREQ_DOMAIN_MEMORY)
+				|| (telemItem == ZES_FREQ_DOMAIN_MEMORY)
 #endif
 				)
 			)
 		{
 			zes_freq_state_t state{ ZES_STRUCTURE_TYPE_FREQ_STATE, };
-			zRes = zesFrequencyGetState(m_freqHandlesL0[i], &state);
+			ze_result_t zRes = zesFrequencyGetState(freqHandle, &state);
 			if (ZE_RESULT_SUCCESS == zRes)
 			{
 				// TODO: Expose state.throttleReasons
-				if (domain_props.type == ZES_FREQ_DOMAIN_MEDIA)
+				if (telemItem == ZES_FREQ_DOMAIN_MEDIA)
 				{
 					rec.freq_media = state.actual;
 				}
