@@ -884,7 +884,6 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
             telemItem->prevStats = engine_stats;
             bUpdate = true;
         }
-
 	}
 
 #if 0
