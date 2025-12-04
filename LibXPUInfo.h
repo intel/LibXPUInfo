@@ -151,6 +151,7 @@ typedef struct _ctl_freq_handle_t* ctl_freq_handle_t;
 typedef struct _ze_driver_handle_t* ze_driver_handle_t;
 typedef struct _ze_device_handle_t* ze_device_handle_t;
 typedef struct _zes_freq_handle_t* zes_freq_handle_t;
+typedef struct _zes_engine_handle_t* zes_engine_handle_t;
 typedef struct _ze_device_properties_t ze_device_properties_t;
 typedef struct _ze_driver_extension_properties_t ze_driver_extension_properties_t;
 
@@ -792,6 +793,13 @@ namespace XI
         PeakUsage m_initialUsage; // Initial usage at start of tracking
         std::vector<TimedRecord> m_records;
         std::vector<zes_freq_handle_t> m_freqHandlesL0;
+        struct engineActivityL0;
+        struct engineActivityL0Deleter
+        {
+            void operator()(engineActivityL0* p) const;
+        };
+        typedef std::unique_ptr<engineActivityL0, engineActivityL0Deleter> engineActivityL0Ptr;
+        std::unordered_map<zes_engine_handle_t, engineActivityL0Ptr> m_engineHandlesL0;
 
         // IGCL, ctlFrequencyGetState
         ctl_freq_handle_t m_IGCL_MemFreqHandle = nullptr;

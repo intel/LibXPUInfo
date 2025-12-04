@@ -52,6 +52,17 @@ typedef struct _ze_intel_device_module_dp_exp_properties_t {
 
 namespace XI
 {
+struct TelemetryTracker::engineActivityL0
+{
+    engineActivityL0(TelemetryItem inEngineType) : engineType(inEngineType) {}
+    zes_engine_stats_t prevStats = {};
+    TelemetryItem engineType = TELEMETRYITEM_UNKNOWN;
+};
+
+void TelemetryTracker::engineActivityL0Deleter::operator()(engineActivityL0* p) const
+{
+    delete p;
+};
 
 L0_Extensions::L0_Extensions(size_t inSize) : std::vector<ze_driver_extension_properties_t>(inSize)
 {
@@ -684,7 +695,7 @@ void XPUInfo::initL0()
 	}
 }
 
-#define L0_TRACK_FREQUENCY_MEMORY 0 // In IGCL
+#define L0_TRACK_FREQUENCY_MEMORY 1
 void TelemetryTracker::InitL0()
 {
 	auto l0device = m_Device->getHandle_L0();
@@ -700,7 +711,7 @@ void TelemetryTracker::InitL0()
 				l0device, &domain_count, m_freqHandlesL0.data());
 			XPUINFO_DEBUG_REQUIRE(ZE_RESULT_SUCCESS == zRes);
 
-			for (uint32_t i = 0; i < m_freqHandlesL0.size(); ++i) 
+			for (uint32_t i = 0; i < m_freqHandlesL0.size(); ++i)
 			{
 				zes_freq_properties_t domain_props{
 					ZES_STRUCTURE_TYPE_FREQ_PROPERTIES, };
@@ -726,6 +737,47 @@ void TelemetryTracker::InitL0()
 						m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY_MEMORY);
 					}
 #endif
+				}
+			}
+		}
+
+		uint32_t engine_count = 0;
+		zRes = zesDeviceEnumEngineGroups(l0device, &engine_count, nullptr);
+		if ((ZE_RESULT_SUCCESS == zRes) && (engine_count > 0))
+		{
+			std::vector<zes_engine_handle_t> engineHandlesL0(engine_count);
+			zRes = zesDeviceEnumEngineGroups(l0device, &engine_count, engineHandlesL0.data());
+			XPUINFO_DEBUG_REQUIRE(ZE_RESULT_SUCCESS == zRes);
+
+			for (uint32_t i = 0; i < engineHandlesL0.size(); ++i)
+			{
+				zes_engine_properties_t engine_props{
+					ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES, };
+				zRes = zesEngineGetProperties(engineHandlesL0[i], &engine_props);
+				if ((ZE_RESULT_SUCCESS == zRes))
+                {
+                    TelemetryItem item = TELEMETRYITEM_UNKNOWN;
+                    if (engine_props.type == ZES_ENGINE_GROUP_COMPUTE_ALL)
+                    {
+						item = TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY;
+                    }
+					else if (engine_props.type == ZES_ENGINE_GROUP_ALL)
+					{
+						item = TELEMETRYITEM_GLOBAL_ACTIVITY;
+					}
+                    else if (engine_props.type == ZES_ENGINE_GROUP_MEDIA_ALL)
+                    {
+						item = TELEMETRYITEM_MEDIA_ACTIVITY;
+                    }
+					else
+					{
+						continue;
+					}
+					m_ResultMask = (TelemetryItem)(m_ResultMask | item);
+					m_engineHandlesL0.emplace(std::make_pair(engineHandlesL0[i], 
+						//std::make_unique<engineActivityL0>(item) // Need C++23 for use with deleter
+						engineActivityL0Ptr(new engineActivityL0(item), engineActivityL0Deleter{})
+					));
 				}
 			}
 		}
@@ -775,6 +827,7 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 	for (uint32_t i = 0; i < m_freqHandlesL0.size(); ++i) {
 		zes_freq_properties_t domain_props{
 			ZES_STRUCTURE_TYPE_FREQ_PROPERTIES, };
+		// TODO: Change to map so zesFrequencyGetProperties not needed on each sample
 		auto zRes = zesFrequencyGetProperties(m_freqHandlesL0[i], &domain_props);
 
 		if ((ZE_RESULT_SUCCESS == zRes) &&
@@ -809,6 +862,34 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 			}
 			break;
 		}
+	}
+
+	for (auto& [engineHandle, telemItem] : m_engineHandlesL0)
+    {
+		zes_engine_stats_t engine_stats;
+        auto zRes = zesEngineGetActivity(engineHandle, &engine_stats);
+        if (ZE_RESULT_SUCCESS == zRes)
+        {
+			///     - Percent utilization is calculated by taking two snapshots (s1, s2) and
+			///       using the equation: %util = (s2.activeTime - s1.activeTime) /
+			///       (s2.timestamp - s1.timestamp)
+			double pctActivity = (engine_stats.activeTime - telemItem->prevStats.activeTime) / (double)(engine_stats.timestamp - telemItem->prevStats.timestamp) * 100.0;
+            if (telemItem->engineType == TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY)
+            {
+				rec.activity_compute = pctActivity;
+            }
+            else if (telemItem->engineType == TELEMETRYITEM_MEDIA_ACTIVITY)
+            {
+				rec.activity_media = pctActivity;
+            }
+            else if (telemItem->engineType == TELEMETRYITEM_GLOBAL_ACTIVITY)
+            {
+				rec.activity_global = pctActivity;
+            }
+            telemItem->prevStats = engine_stats;
+            bUpdate = true;
+        }
+
 	}
 
 #if 0
