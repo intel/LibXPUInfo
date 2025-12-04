@@ -794,7 +794,7 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
     {
         for (const auto [freqHandle, telemItem] : m_freqHandlesL0)
 		{
-            if (telemItem == ZES_FREQ_DOMAIN_GPU)
+            if (telemItem == TELEMETRYITEM_FREQUENCY)
             {
                 zes_freq_state_t state{ ZES_STRUCTURE_TYPE_FREQ_STATE, };
                 TimerTick tt = Timer::GetNow();
@@ -825,9 +825,9 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 	for (const auto [freqHandle, telemItem] : m_freqHandlesL0)
 	{
 		if (
-			((telemItem == ZES_FREQ_DOMAIN_MEDIA)
+			((telemItem == TELEMETRYITEM_FREQUENCY_MEDIA)
 #if L0_TRACK_FREQUENCY_MEMORY
-				|| (telemItem == ZES_FREQ_DOMAIN_MEMORY)
+				|| (telemItem == TELEMETRYITEM_FREQUENCY_MEMORY)
 #endif
 				)
 			)
@@ -837,7 +837,7 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 			if (ZE_RESULT_SUCCESS == zRes)
 			{
 				// TODO: Expose state.throttleReasons
-				if (telemItem == ZES_FREQ_DOMAIN_MEDIA)
+				if (telemItem == TELEMETRYITEM_FREQUENCY_MEDIA)
 				{
 					rec.freq_media = state.actual;
 				}
@@ -867,7 +867,8 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 			///     - Percent utilization is calculated by taking two snapshots (s1, s2) and
 			///       using the equation: %util = (s2.activeTime - s1.activeTime) /
 			///       (s2.timestamp - s1.timestamp)
-			double pctActivity = (engine_stats.activeTime - telemItem->prevStats.activeTime) / (double)(engine_stats.timestamp - telemItem->prevStats.timestamp) * 100.0;
+			double pctActivity = (engine_stats.activeTime - telemItem->prevStats.activeTime) / 
+				(double)(engine_stats.timestamp - telemItem->prevStats.timestamp) * 100.0;
             if (telemItem->engineType == TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY)
             {
 				rec.activity_compute = pctActivity;
