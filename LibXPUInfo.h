@@ -793,8 +793,8 @@ namespace XI
         PeakUsage m_initialUsage; // Initial usage at start of tracking
         std::vector<TimedRecord> m_records;
         std::vector<zes_freq_handle_t> m_freqHandlesL0;
-        struct engineActivityL0;
-        struct engineActivityL0Deleter
+        struct engineActivityL0; // Avoid adding more L0 defs to this public header
+        struct engineActivityL0Deleter // Get delete definition from LibXPUInfo_L0.cpp
         {
             void operator()(engineActivityL0* p) const;
         };
