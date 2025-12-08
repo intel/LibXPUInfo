@@ -5,3 +5,6 @@ ARM64
 BuildExternalDeps/NVML
 BuildExternalDeps/NVML.zip
 *.vcxproj.user
+*.o
+bin
+
