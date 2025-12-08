@@ -34,8 +34,6 @@ BIN_DIR  := bin
 SOURCES  := LibXPUInfo.cpp LibXPUInfo_Util.cpp LibXPUInfo_NVML.cpp DebugStream.cpp TestLibXPUInfo/TestLibXPUInfo.cpp
 
 # LibXPUInfo_JSON.cpp \
-# LibXPUInfo_NVML.cpp \
-# LibXPUInfo_Util.cpp
 #LibXPUInfo_DXCore.cpp \
 #LibXPUInfo_IPC.cpp \
 #LibXPUInfo_IntelDeviceInfoDX11.cpp \
@@ -44,7 +42,6 @@ SOURCES  := LibXPUInfo.cpp LibXPUInfo_Util.cpp LibXPUInfo_NVML.cpp DebugStream.c
 #LibXPUInfo_SetupAPI.cpp \
 #LibXPUInfo_TelemetryTracker.cpp \
 #LibXPUInfo_WMI.cpp
-#DebugStream.cpp
 
 #OBJECTS  := $(SOURCES:.cpp=.o)
 
@@ -89,7 +86,7 @@ release:
 	$(MAKE) BUILD=release all
 
 run: debug
-	./$(BIN_DIR)/$(TARGET)
+	./$(BIN_DIR)/$(TARGET) -nopause
 
 clean:
 	rm -rf obj bin *.o
