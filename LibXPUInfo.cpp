@@ -1818,14 +1818,12 @@ void XPUInfo::printInfo(std::ostream& ostr) const
 	}
 #endif // XPUINFO_USE_RUNTIMEVERSIONINFO
 
-#ifdef _WIN32 // Not interesting for other OSs
 	{
 		SaveRestoreIOSFlags srFlags(ostr);
 		ostr << std::endl;
 		ostr << std::left << std::setw(24) << "APIs requested at init:" << m_InitAPIs << std::endl;
 		ostr << std::left << std::setw(24) << "APIs initialized: " << m_UsedAPIs << std::endl;
 	}
-#endif
 }
 
 std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi)
