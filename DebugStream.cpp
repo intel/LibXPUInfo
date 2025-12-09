@@ -29,7 +29,7 @@ void DebugStream::OutputToDebugger() noexcept
             OutputDebugStringA(str().c_str());
         }
         else
-#elif defined(__APPLE__)
+#else
         if (1)
         {
             std::cerr << str().c_str();
@@ -41,7 +41,7 @@ void DebugStream::OutputToDebugger() noexcept
             {
                 std::cout << str().c_str();
             }
-#ifndef __APPLE__
+#ifdef _WIN32
         clear();
 #endif
     }
@@ -73,10 +73,10 @@ void DebugStreamW::OutputToDebugger() noexcept
             OutputDebugStringW(str().c_str());
         }
         else
-#elif defined(__APPLE__)
+#else
         if (1)
         {
-            std::cerr << str().c_str();
+            std::wcerr << str().c_str();
         }
         else
 #endif
@@ -85,7 +85,7 @@ void DebugStreamW::OutputToDebugger() noexcept
             {
                 std::wcout << str().c_str();
             }
-#ifndef __APPLE__
+#ifdef _WIN32
         clear();
 #endif
     }
