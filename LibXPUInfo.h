@@ -557,8 +557,10 @@ namespace XI
         APIType getCurrentAPIs() const { return validAPIs; }
         ctl_device_adapter_handle_t getHandle_IGCL() const { return m_hIGCLAdapter; }
         ze_device_handle_t getHandle_L0() const { return m_L0Device; }
-#ifdef _WIN32
+#ifdef XPUINFO_USE_NVML
         nvmlDevice_t getHandle_NVML() const { return m_nvmlDevice; }
+#endif
+#ifdef _WIN32
         IDXCoreAdapter* const getHandle_DXCore() const { return m_pDXCoreAdapter.get(); }
 #endif
 
@@ -609,7 +611,7 @@ namespace XI
         DXCoreAdapterMemoryBudget getMemUsage_Metal() const;
 
         // NVML
-#if defined(_WIN32) || defined(__linux__)
+#ifdef XPUINFO_USE_NVML
         void initNVMLDevice(nvmlDevice_t device);
         nvmlDevice_t m_nvmlDevice = nullptr;
 #endif
