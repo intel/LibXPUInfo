@@ -40,7 +40,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         nameStr = name;
     }
 
-	#ifndef XPUINFO_NVML_RESTRICT_FEATURES
+	#if NVML_API_VERSION>=12
     // Ampere has 64 or 128 CUDA cores per SM
     UI32 numGPUCores = 0;
     result = nvmlDeviceGetNumGpuCores(device, &numGPUCores);
@@ -75,7 +75,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         updateIfDstNotSet(m_props.PackageTDP, (I32)(powerLimit / 1000));
     }
 
-#ifndef XPUINFO_NVML_RESTRICT_FEATURES
+#if NVML_API_VERSION>=12
     UI32 busWidth = 0;
     result = nvmlDeviceGetMemoryBusWidth(device, &busWidth);
     PRINT_IF_SUCCESS(busWidth, nvmlDeviceGetMemoryBusWidth);
@@ -120,7 +120,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         }
     }
 
-#ifndef XPUINFO_NVML_RESTRICT_FEATURES
+#if NVML_API_VERSION>=12
     nvmlDeviceArchitecture_t arch = 0;
     result = nvmlDeviceGetArchitecture(device, &arch);
     if (NVML_SUCCESS == result)
@@ -283,8 +283,13 @@ void XPUInfo::initNVML()
 							desc1.SharedSystemMemory = bar1Mem.bar1Total;
 						}
 						
+						#if NVML_API_VERSION>=12
 						char uuid[NVML_DEVICE_UUID_V2_BUFFER_SIZE];
 						nvmlRet = nvmlDeviceGetUUID(device, uuid, NVML_DEVICE_UUID_V2_BUFFER_SIZE);
+						#else
+						char uuid[NVML_DEVICE_UUID_BUFFER_SIZE];
+						nvmlRet = nvmlDeviceGetUUID(device, uuid, NVML_DEVICE_UUID_BUFFER_SIZE);
+						#endif
 						if (NVML_SUCCESS == nvmlRet)
 						{
 							desc1.AdapterLuid = *(decltype(desc1.AdapterLuid)*)uuid;
