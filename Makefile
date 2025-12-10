@@ -9,7 +9,7 @@ CXXFLAGS := -std=c++17 -I. -I/usr/local/cuda/include -DENABLE_PER_LOGICAL_CPUID_
 #-fno-omit-frame-pointer 
 # -Wall -Wextra -Wpedantic -Werror
 #CPPFLAGS := -MMD -MP             # auto dependency generation
-LDFLAGS  := -L/usr/local/cuda/lib64 -L/usr/local/cuda/lib64/stubs # e.g. -L/usr/local/lib
+LDFLAGS  := -L/usr/local/cuda/lib64/stubs
 LDLIBS   := -lnvidia-ml             # e.g. -lpthread -lboost_program_options
 
 # Build type (debug by default)
