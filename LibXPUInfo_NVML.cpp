@@ -40,6 +40,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         nameStr = name;
     }
 
+	#ifndef XPUINFO_NVML_RESTRICT_FEATURES
     // Ampere has 64 or 128 CUDA cores per SM
     UI32 numGPUCores = 0;
     result = nvmlDeviceGetNumGpuCores(device, &numGPUCores);
@@ -48,6 +49,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         // Overwrite OpenCL result which is SM, use CUDA cores
         m_props.NumComputeUnits = (I32)numGPUCores;
     }
+	#endif
 
     nvmlEnableState_t mode = NVML_FEATURE_DISABLED;
     result = nvmlDeviceGetPowerManagementMode(device, &mode);
@@ -73,9 +75,11 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         updateIfDstNotSet(m_props.PackageTDP, (I32)(powerLimit / 1000));
     }
 
+#ifndef XPUINFO_NVML_RESTRICT_FEATURES
     UI32 busWidth = 0;
     result = nvmlDeviceGetMemoryBusWidth(device, &busWidth);
     PRINT_IF_SUCCESS(busWidth, nvmlDeviceGetMemoryBusWidth);
+#endif
     nvmlMemory_t memoryInfo;
     result = nvmlDeviceGetMemoryInfo(device, &memoryInfo);
     PRINT_IF_SUCCESS(memoryInfo.total, nvmlDeviceGetMemoryInfo);
@@ -116,6 +120,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         }
     }
 
+#ifndef XPUINFO_NVML_RESTRICT_FEATURES
     nvmlDeviceArchitecture_t arch = 0;
     result = nvmlDeviceGetArchitecture(device, &arch);
     if (NVML_SUCCESS == result)
@@ -126,6 +131,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
             m_props.DeviceGenerationAPI = API_TYPE_NVML;
         }
     }
+#endif
 
     int cccMajor = 0, cccMinor = 0;
     result = nvmlDeviceGetCudaComputeCapability(device, &cccMajor, &cccMinor);
