@@ -68,6 +68,9 @@ bool XPUInfo::serialize(rapidjson::Document& doc)
     //std::result_of<decltype(&rapidjson::Document::GetAllocator)(rapidjson::Document)>::type& a;
 
     doc.AddMember("Version", XPUINFO_JSON_VERSION, a);
+    doc.AddMember("APIVersion", XPUINFO_API_VERSION, a);
+    doc.AddMember("ClientBuildTimestamp", m_clientBuildTimestamp, a);
+    doc.AddMember("InternalBuildTimestamp", m_internalBuildTimestamp, a);
     doc.AddMember("UsedAPIsUI32", (UI32)m_UsedAPIs, a);
 
     rapidjson::Value valDevices(rapidjson::kArrayType);
@@ -142,8 +145,12 @@ XPUInfoPtr XPUInfo::deserialize(const rapidjson::Document& val)
     // Note: Version field is not used (yet)
     //std::string version = val["Version"].GetString();
     //XPUINFO_REQUIRE(version == XPUINFO_JSON_VERSION);
-
-    xiPtr.reset(new XPUInfo(XI::API_TYPE_DESERIALIZED));
+    String clientBuildTimestamp("Unknown");
+    if (val.HasMember("ClientBuildTimestamp"))
+    {
+        clientBuildTimestamp = val["ClientBuildTimestamp"].GetString();
+    }
+    xiPtr = std::make_unique<XPUInfo>(XI::API_TYPE_DESERIALIZED, XI::RuntimeNames(), sizeof(XPUInfo), clientBuildTimestamp.c_str());
 
     xiPtr->m_UsedAPIs = (XI::APIType)XI::JSON::safeGetUI32(val, "UsedAPIsUI32").value_or(0);
 
