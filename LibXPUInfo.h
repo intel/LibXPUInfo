@@ -139,7 +139,7 @@ Given a GPU entry from this list, it will tell us <hardware, framework> to run t
 */
 
 // NVML docs at https://developer.nvidia.com/nvidia-management-library-nvml
-// TODO: For AMD, see https://gpuopen.com/gpuperfapi/, see ADLX
+// TODO: For AMD, see https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK, https://github.com/GPUOpen-Tools/gpu_performance_api, https://gpuopen.com/gpuperfapi/
 // 
 
 // ** Fwd Decl **
