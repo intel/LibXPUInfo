@@ -1007,7 +1007,8 @@ namespace XI
     public:
         // Constructor compares class size of client to that of lib to help verify that 
         // preprocessor arguments are in agreement between different projects.
-        XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack = RuntimeNames(), size_t classSize = sizeof(XPUInfo), const char* clientBuildTimestamp = XPUINFO_BUILD_TIMESTAMP);
+        XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack = RuntimeNames(), 
+            size_t classSize = sizeof(XPUInfo), const char* clientBuildTimestamp = XPUINFO_BUILD_TIMESTAMP);
         ~XPUInfo();
         size_t deviceCount() const { return m_Devices.size(); }
         template <APIType APITYPE>
