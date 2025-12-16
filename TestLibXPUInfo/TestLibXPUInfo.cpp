@@ -27,6 +27,13 @@ static void pause(bool bNotify=true)
     std::cin.get();
 }
 
+static const XI::RuntimeNames runtimes = {
+#ifdef _WIN64
+    "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
+    "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
+#endif
+};
+
 #ifdef XPUINFO_USE_RAPIDJSON
 bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI)
 {
@@ -53,7 +60,7 @@ bool testWriteJSON(const std::filesystem::path jsonPath)
     std::ofstream jf(jsonPath);
     APIType apis = APIType(XPUINFO_INIT_ALL_APIS | API_TYPE_WMI);
     std::cout << "Initializing XPUInfo with APIType = " << apis << "...\n";
-    XI::XPUInfoPtr pXI(new XPUInfo(apis));
+    XI::XPUInfoPtr pXI = std::make_unique<XPUInfo>(apis, runtimes);
 
     bool result = getXPUInfoJSON(jf, pXI);
     if (!result)
@@ -72,7 +79,7 @@ bool testVerifyJSON()
     std::ostringstream ostr;
     APIType apis = APIType(XPUINFO_INIT_ALL_APIS | API_TYPE_WMI);
     std::cout << "Initializing XPUInfo with APIType = " << apis << "...\n";
-    XI::XPUInfoPtr pXI(new XPUInfo(apis));
+    XI::XPUInfoPtr pXI = std::make_unique<XPUInfo>(apis);
     if (getXPUInfoJSON(ostr, pXI))
     {
         std::istringstream istr(ostr.str());
@@ -161,11 +168,6 @@ public:
     }
 protected:
     std::list<Microsoft::WRL::ComPtr<ID3D12Resource>> m_gpuMem;
-};
-
-static const XI::RuntimeNames runtimes = {
-    "Microsoft.AI.MachineLearning.dll", "DirectML.dll", "onnxruntime.dll", "OpenVino.dll",
-    "onnxruntime_providers_shared.dll", "onnxruntime_providers_openvino.dll",
 };
 
 int testInflateGPUMem(double sizeInGB, const std::string& devName)
@@ -355,7 +357,8 @@ int printXPUInfo(int argc, char* argv[])
 #ifdef XPUINFO_USE_RAPIDJSON
         if ((arg == "-write_json") && (a + 1 < argc))
         {
-            testWriteJSON(argv[++a]);
+            bool bRet = testWriteJSON(argv[++a]);
+            return bRet ? 0 : -1;
         }
         else if (arg == "-verify_json")
         {
@@ -363,7 +366,8 @@ int printXPUInfo(int argc, char* argv[])
         }
         else if ((arg == "-from_json") && (a + 1 < argc))
         {
-            testReadJSON(argv[++a]);
+            bool bRet = testReadJSON(argv[++a]);
+            return bRet ? 0 : -1;
         }
 #endif
     }
