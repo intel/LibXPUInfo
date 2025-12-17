@@ -206,8 +206,6 @@ int testInflateGPUMem(double sizeInGB, const std::string& devName)
     }
     return 0;
 }
-#else
-static const XI::RuntimeNames runtimes; // empty for now
 #endif
 
 #ifdef XPUINFO_USE_TELEMETRYTRACKER
