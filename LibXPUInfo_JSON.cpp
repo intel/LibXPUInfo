@@ -65,7 +65,6 @@ static rapidjson::Value serializeCoreMasksToJson(rapidjson::Document& doc, const
 bool XPUInfo::serialize(rapidjson::Document& doc)
 {
     auto& a = doc.GetAllocator();
-    //std::result_of<decltype(&rapidjson::Document::GetAllocator)(rapidjson::Document)>::type& a;
 
     doc.AddMember("Version", XPUINFO_JSON_VERSION, a);
     doc.AddMember("APIVersion", XPUINFO_API_VERSION, a);

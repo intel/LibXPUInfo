@@ -19,8 +19,10 @@
 #endif // XPUINFO_BUILD_TIMESTAMP
 
 #ifdef XPUINFO_USE_RAPIDJSON
-    // Allow client override
-    #ifndef XPUINFO_JSON_VERSION
+    // Allow client override as preprocessor literal, but stringify it
+    #ifndef XPUINFO_JSON_VERSION_LITERAL
         #define XPUINFO_JSON_VERSION XPUINFO_API_VERSION_STRING
+    #else
+        #define XPUINFO_JSON_VERSION XPUINFO_TEXTIFY(XPUINFO_JSON_VERSION_LITERAL)
     #endif
 #endif // XPUINFO_USE_RAPIDJSON
