@@ -286,12 +286,13 @@ bool getXPUInfoJSON(std::ostream& ostr, const XI::XPUInfoPtr& pXI, double xiTime
     return false;
 }
 
-int writeXPUInfoJSON(const char* jsonPath, const XI::RuntimeNames& runtimes, 
+int writeXPUInfoJSON(const char* jsonPath, const XI::RuntimeNames& runtimes, const XI::String& clientTimestamp,
     const XI::APIType apis = XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI)
 {
     XI::Timer timer;
     timer.Start();
-    XI::XPUInfoPtr pXI(new XI::XPUInfo(apis, runtimes));
+    XI::XPUInfoPtr pXI = clientTimestamp.empty() ? std::make_shared<XI::XPUInfo>(apis, runtimes) :
+        std::make_shared<XI::XPUInfo>(apis, runtimes, sizeof(XI::XPUInfo), clientTimestamp.c_str());
     timer.Stop();
     double xiTime = timer.GetElapsedSecs();
     std::ofstream outFile(jsonPath);
@@ -333,6 +334,7 @@ int main(int argc, char* argv[])
         bool usePipe = true;
         XI::RuntimeNames runtimes;
         XI::APIType apis = XPUINFO_INIT_ALL_APIS | XI::API_TYPE_WMI;
+        XI::String clientTimestamp;
         for (int a = 1; a < argc; ++a)
         {
             std::string arg(argv[a]);
@@ -341,7 +343,7 @@ int main(int argc, char* argv[])
             if (arg == "-write_json")
             {
                 XPUINFO_REQUIRE(a + 1 < argc);
-                return writeXPUInfoJSON(argv[++a], runtimes, apis);
+                return writeXPUInfoJSON(argv[++a], runtimes, clientTimestamp, apis);
             }
             else
 #endif
@@ -365,6 +367,10 @@ int main(int argc, char* argv[])
                 {
                     runtimes = parseCommaSeparatedList(argv[a + 1]);
                 }
+            }
+            else if ((arg == "-client_timestamp") && (a + 1 < argc))
+            {
+                clientTimestamp = argv[++a];
             }
             else if (arg == "-server")
             {
