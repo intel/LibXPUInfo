@@ -800,6 +800,7 @@ namespace XI
         PeakUsage m_peakUsage;
         PeakUsage m_initialUsage; // Initial usage at start of tracking
         std::vector<TimedRecord> m_records;
+#ifdef XPUINFO_USE_LEVELZERO
         std::unordered_map<zes_freq_handle_t, TelemetryItem> m_freqHandlesL0;
         struct engineActivityL0; // Avoid adding more L0 defs to this public header
         struct engineActivityL0Deleter // Get delete definition from LibXPUInfo_L0.cpp
@@ -808,6 +809,7 @@ namespace XI
         };
         typedef std::unique_ptr<engineActivityL0, engineActivityL0Deleter> engineActivityL0Ptr;
         std::unordered_map<zes_engine_handle_t, engineActivityL0Ptr> m_engineHandlesL0;
+#endif
 
         // IGCL, ctlFrequencyGetState
         ctl_freq_handle_t m_IGCL_MemFreqHandle = nullptr;
