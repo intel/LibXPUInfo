@@ -372,11 +372,13 @@ int printXPUInfo(int argc, char* argv[])
 
     try
     {
+#ifdef XPUINFO_USE_TELEMETRYTRACKER		
         if (bRunTelemetry)
         {
             return runTelemetry(telemInterval_ms, telem_gpu_idx, peakOnly);
         }
         else 
+#endif
         if (!testIndividual)
         {
             XI::Timer timer;
@@ -385,6 +387,8 @@ int printXPUInfo(int argc, char* argv[])
                 | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
                 | XI::API_TYPE_LEVELZERO \
                 | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML) | API_TYPE_WMI);
+#elif defined(__linux__)
+            APIType apis = XI::API_TYPE_NVML;
 #else
             APIType apis = XI::API_TYPE_METAL;
 #endif

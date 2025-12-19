@@ -8,11 +8,13 @@
    */
 #ifdef XPUINFO_USE_NVML
 #include "LibXPUInfo.h"
+#ifndef __linux__
 #include "DebugStream.h"
+#endif
 #include "LibXPUInfo_Util.h"
 #include "nvml.h"
-#pragma comment(lib, "nvml.lib")
 #ifdef _WIN32
+#pragma comment(lib, "nvml.lib")
 #include <delayimp.h>
 #endif
 
@@ -38,6 +40,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         nameStr = name;
     }
 
+	#if NVML_API_VERSION>=12
     // Ampere has 64 or 128 CUDA cores per SM
     UI32 numGPUCores = 0;
     result = nvmlDeviceGetNumGpuCores(device, &numGPUCores);
@@ -46,6 +49,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         // Overwrite OpenCL result which is SM, use CUDA cores
         m_props.NumComputeUnits = (I32)numGPUCores;
     }
+	#endif
 
     nvmlEnableState_t mode = NVML_FEATURE_DISABLED;
     result = nvmlDeviceGetPowerManagementMode(device, &mode);
@@ -71,9 +75,11 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         updateIfDstNotSet(m_props.PackageTDP, (I32)(powerLimit / 1000));
     }
 
+#if NVML_API_VERSION>=12
     UI32 busWidth = 0;
     result = nvmlDeviceGetMemoryBusWidth(device, &busWidth);
     PRINT_IF_SUCCESS(busWidth, nvmlDeviceGetMemoryBusWidth);
+#endif
     nvmlMemory_t memoryInfo;
     result = nvmlDeviceGetMemoryInfo(device, &memoryInfo);
     PRINT_IF_SUCCESS(memoryInfo.total, nvmlDeviceGetMemoryInfo);
@@ -114,6 +120,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         }
     }
 
+#if NVML_API_VERSION>=12
     nvmlDeviceArchitecture_t arch = 0;
     result = nvmlDeviceGetArchitecture(device, &arch);
     if (NVML_SUCCESS == result)
@@ -124,6 +131,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
             m_props.DeviceGenerationAPI = API_TYPE_NVML;
         }
     }
+#endif
 
     int cccMajor = 0, cccMinor = 0;
     result = nvmlDeviceGetCudaComputeCapability(device, &cccMajor, &cccMinor);
@@ -224,8 +232,9 @@ void XPUInfo::initNVML()
         result = nvmlDeviceGetCount(&device_count);
         if (NVML_SUCCESS == result)
         {
+#ifndef __linux__
             m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
-
+#endif
             for (UI32 i = 0; i < device_count; ++i)
             {
                 nvmlDevice_t device = nullptr;
@@ -249,6 +258,76 @@ void XPUInfo::initNVML()
                             pciAddr.function = atoi(funcStr.c_str());
                         }
 
+#ifdef __linux__
+// Add to devices
+						DXGI_ADAPTER_DESC1 desc1{};
+						desc1.VendorId = pci.pciDeviceId & 0xffff;
+						desc1.DeviceId = pci.pciDeviceId >> 16;
+						XPUINFO_REQUIRE(desc1.VendorId == kVendorId_nVidia);
+						// desc1.SubSysId = hwID.subSysID;
+						// desc1.Revision = hwID.revision;
+						// desc1.DedicatedSystemMemory = DedicatedSystemMemory;
+						nvmlReturn_t nvmlRet;
+						
+						nvmlMemory_t nvmlMem{};
+						nvmlRet = nvmlDeviceGetMemoryInfo(device, &nvmlMem);
+						if (NVML_SUCCESS == nvmlRet)
+						{
+							desc1.DedicatedVideoMemory = nvmlMem.total;
+						}
+						
+						nvmlBAR1Memory_t bar1Mem{};
+						nvmlRet = nvmlDeviceGetBAR1MemoryInfo(device, &bar1Mem);
+						if (NVML_SUCCESS == nvmlRet)
+						{
+							desc1.SharedSystemMemory = bar1Mem.bar1Total;
+						}
+						
+						#if NVML_API_VERSION>=12
+						char uuid[NVML_DEVICE_UUID_V2_BUFFER_SIZE];
+						nvmlRet = nvmlDeviceGetUUID(device, uuid, NVML_DEVICE_UUID_V2_BUFFER_SIZE);
+						#else
+						char uuid[NVML_DEVICE_UUID_BUFFER_SIZE];
+						nvmlRet = nvmlDeviceGetUUID(device, uuid, NVML_DEVICE_UUID_BUFFER_SIZE);
+						#endif
+						if (NVML_SUCCESS == nvmlRet)
+						{
+							desc1.AdapterLuid = *(decltype(desc1.AdapterLuid)*)uuid;
+						}
+						
+						char name[NVML_DEVICE_NAME_BUFFER_SIZE];
+						WString nameStr;
+
+						nvmlRet = nvmlDeviceGetName(device, name, NVML_DEVICE_NAME_BUFFER_SIZE);
+						if (NVML_SUCCESS == nvmlRet)
+						{
+							nameStr = convert(name);
+							std::wcscpy(desc1.Description, nameStr.c_str());
+						}
+						
+						char version[NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE];
+						DeviceDriverVersion ddv(0);
+						nvmlRet = nvmlSystemGetDriverVersion(version, NVML_SYSTEM_DRIVER_VERSION_BUFFER_SIZE);
+						if (NVML_SUCCESS == nvmlRet)
+						{
+							ddv = DeviceDriverVersion::FromString(version);
+						}
+
+						DevicePtr newDevice(new Device((UI32)m_Devices.size(), &desc1, 
+							DEVICE_TYPE_GPU, API_TYPE_NVML, ddv.GetAsUI64()));
+
+						auto newIt = m_Devices.find(newDevice->getLUID());
+						if (newIt == m_Devices.end())
+						{
+							// Add
+							auto insertResult = m_Devices.insert(std::make_pair(newDevice->getLUID(), newDevice));
+							if (insertResult.second)
+							{
+								insertResult.first->second->initNVMLDevice(device);
+								m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
+							}
+						}
+#else
                         for (auto& [luid, dev] : m_Devices)
                         {
                             if (dev->getProperties().PCIAddress == pciAddr)
@@ -257,15 +336,18 @@ void XPUInfo::initNVML()
                                 break;
                             }
                         }
+#endif
                     }
                 }
             }
         }
+#ifndef __linux__
         else
         {
             DebugStream dStr(true);
             dStr << "Failed to query device count: " << nvmlErrorString(result) << std::endl;
         }
+#endif
     }
 
 }

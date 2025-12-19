@@ -59,6 +59,10 @@
     #endif
 #endif
 
+#ifdef __linux__
+#include <fstream>
+#endif
+
 #ifdef HYBRIDDETECT_OS_WIN
 #include <Windows.h>
 #if HYBRIDDETECT_USE_PROCESSOR_POWER_INFO
@@ -104,7 +108,7 @@ typedef void* HANDLE;
 #endif
 #if HYBRID_DETECT_TRACE_ENABLED_VOLUME
 #define HYBRID_DETECT_TRACE(vol, fmt, ...) if HYBRID_DETECT_CONSTEXPR (vol <= HYBRID_DETECT_TRACE_ENABLED_VOLUME){ \
-	printf("[%s][vol=%2d]: "##fmt##"\n", __FUNCTION__, vol, ##__VA_ARGS__); \
+	printf("[%s][vol=%2d]: " #fmt "\n", __FUNCTION__, vol, ##__VA_ARGS__); \
 	fflush(stdout); \
 }
 #else
@@ -691,6 +695,36 @@ inline bool GetLogicalProcessors(PROCESSOR_INFO& procInfo)
 #endif
 
 }
+#else 
+inline bool GetLogicalProcessors(PROCESSOR_INFO& procInfo)
+{
+	// WIP
+	procInfo.numLogicalCores = std::thread::hardware_concurrency();
+#ifdef __linux__
+	// Not handling multi-socket
+	std::ifstream file("/proc/cpuinfo");
+    if (file.is_open()) {
+        std::string line;
+		int cpu_cores_value;
+		
+        while (std::getline(file, line)) {
+			if (line.find("cpu cores") == 0) {
+                std::istringstream iss(line);
+                std::string tmp;
+                iss >> tmp >> tmp >> tmp; // skip "cpu" "cores" ":"
+                iss >> cpu_cores_value;
+				break;
+            }
+        }
+        file.close();
+        procInfo.numPhysicalCores = cpu_cores_value;
+    }
+#else
+	procInfo.numPhysicalCores = procInfo.numLogicalCores;
+#endif
+	procInfo.numProcessorPackages = 1;
+	return true;
+}
 #endif // HYBRIDDETECT_OS_WIN
 
 // Calls CPUID & GetLogicalProcessors to fill in PROCESSOR_INFO Caches & Cores
@@ -1167,7 +1201,10 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 
 		procInfo.hybrid = bHybrid;
 	}
+#elif defined(__linux__)
+	GetLogicalProcessors(procInfo);
 #endif // APPLE
+
 #endif
 #endif
 	HYBRID_DETECT_TRACE(7, "<<< ");

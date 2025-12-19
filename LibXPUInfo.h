@@ -160,11 +160,14 @@ typedef struct _ze_driver_extension_properties_t ze_driver_extension_properties_
 typedef struct _cl_platform_id* cl_platform_id;
 typedef struct _cl_device_id* cl_device_id;
 
+#if defined(_WIN32) || defined(__linux__)
+// NVML
+typedef struct nvmlDevice_st* nvmlDevice_t;
+#endif
+
 #ifdef _WIN32
 // SetupAPI
 typedef PVOID HDEVINFO;
-// NVML
-typedef struct nvmlDevice_st* nvmlDevice_t;
 #else
 // Windows types used for cross-OS compatibility
 typedef union {std::uint64_t ui64;} LUID; // Union primarily to make it a different type than XI::UI64 for overloading
@@ -266,6 +269,8 @@ namespace XI
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
     | XI::API_TYPE_LEVELZERO \
     | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML)
+#elif defined(__linux__)
+#define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML
 #else
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_METAL
 #endif
@@ -554,8 +559,10 @@ namespace XI
         APIType getCurrentAPIs() const { return validAPIs; }
         ctl_device_adapter_handle_t getHandle_IGCL() const { return m_hIGCLAdapter; }
         ze_device_handle_t getHandle_L0() const { return m_L0Device; }
-#ifdef _WIN32
+#ifdef XPUINFO_USE_NVML
         nvmlDevice_t getHandle_NVML() const { return m_nvmlDevice; }
+#endif
+#ifdef _WIN32
         IDXCoreAdapter* const getHandle_DXCore() const { return m_pDXCoreAdapter.get(); }
 #endif
 
@@ -606,7 +613,7 @@ namespace XI
         DXCoreAdapterMemoryBudget getMemUsage_Metal() const;
 
         // NVML
-#ifdef _WIN32
+#ifdef XPUINFO_USE_NVML
         void initNVMLDevice(nvmlDevice_t device);
         nvmlDevice_t m_nvmlDevice = nullptr;
 #endif
@@ -1073,13 +1080,15 @@ namespace XI
 #ifdef _WIN32
         void initDXGI(APIType initMask);
         void initIGCL(bool useL0);
-        void initL0();
         void initOpenCL();
-        void initNVML();
         void initWMI();
-        void shutdownNVML();
 #elif __APPLE__
         void initMetal();
+#endif
+#if defined(_WIN32) || defined(__linux__)
+        void initL0();
+        void initNVML();
+        void shutdownNVML();
 #endif
         void finalInitDXGI();
         DeviceMap m_Devices;

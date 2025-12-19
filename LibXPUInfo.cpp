@@ -1064,6 +1064,9 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 #ifdef XPUINFO_USE_NVML
 	if (initMask & API_TYPE_NVML)
 	{
+#ifdef __linux__
+		initNVML();
+#else
 		// Only run if at least 1 nVidia GPU found - delay-loading nvml.dll
 		for (const auto& [luid, dev] : m_Devices)
 		{
@@ -1073,6 +1076,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 				break;
 			}
 		}
+#endif // linux
 	}
 #endif
 
