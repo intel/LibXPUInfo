@@ -88,11 +88,22 @@ typedef unsigned char BYTE;
 typedef void* HANDLE;
 #endif
 
+#if (_MSVC_LANG >= 201703L) || (__cplusplus >= 201703L)
+#define HYBRID_DETECT_HAS_CPP17 1
+#else
+#define HYBRID_DETECT_HAS_CPP17 0
+#endif
+#if HYBRID_DETECT_HAS_CPP17
+#define HYBRID_DETECT_CONSTEXPR constexpr
+#else
+#define HYBRID_DETECT_CONSTEXPR 
+#endif
+
 #ifndef HYBRID_DETECT_TRACE_ENABLED_VOLUME
 #define HYBRID_DETECT_TRACE_ENABLED_VOLUME 0 // Scale of 1-10, 10 being most verbose
 #endif
 #if HYBRID_DETECT_TRACE_ENABLED_VOLUME
-#define HYBRID_DETECT_TRACE(vol, fmt, ...) if (vol <= HYBRID_DETECT_TRACE_ENABLED_VOLUME){ \
+#define HYBRID_DETECT_TRACE(vol, fmt, ...) if HYBRID_DETECT_CONSTEXPR (vol <= HYBRID_DETECT_TRACE_ENABLED_VOLUME){ \
 	printf("[%s][vol=%2d]: "##fmt##"\n", __FUNCTION__, vol, ##__VA_ARGS__); \
 	fflush(stdout); \
 }

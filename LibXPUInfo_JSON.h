@@ -6,14 +6,13 @@
 #ifdef XPUINFO_USE_RAPIDJSON
 #include "LibXPUInfo.h"
 #include "LibXPUInfo_Util.h" // for XI::convert
+#include "LibXPUInfo_Version.h"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include <rapidjson/ostreamwrapper.h>
 #include <rapidjson/istreamwrapper.h>
 // Support serialization
 #include <optional>
-
-#define XPUINFO_JSON_VERSION "0.0.1"
 
 namespace XI
 {
