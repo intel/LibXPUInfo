@@ -52,6 +52,7 @@
     #endif
     #include <dxgi1_4.h>
 #endif // _WIN32
+#include "LibXPUInfo_Version.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -139,7 +140,7 @@ Given a GPU entry from this list, it will tell us <hardware, framework> to run t
 */
 
 // NVML docs at https://developer.nvidia.com/nvidia-management-library-nvml
-// TODO: For AMD, see https://gpuopen.com/gpuperfapi/, see ADLX
+// TODO: For AMD, see https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK, https://github.com/GPUOpen-Tools/gpu_performance_api, https://gpuopen.com/gpuperfapi/
 // 
 
 // ** Fwd Decl **
@@ -151,6 +152,7 @@ typedef struct _ctl_freq_handle_t* ctl_freq_handle_t;
 typedef struct _ze_driver_handle_t* ze_driver_handle_t;
 typedef struct _ze_device_handle_t* ze_device_handle_t;
 typedef struct _zes_freq_handle_t* zes_freq_handle_t;
+typedef struct _zes_engine_handle_t* zes_engine_handle_t;
 typedef struct _ze_device_properties_t ze_device_properties_t;
 typedef struct _ze_driver_extension_properties_t ze_driver_extension_properties_t;
 
@@ -798,7 +800,14 @@ namespace XI
         PeakUsage m_peakUsage;
         PeakUsage m_initialUsage; // Initial usage at start of tracking
         std::vector<TimedRecord> m_records;
-        std::vector<zes_freq_handle_t> m_freqHandlesL0;
+        std::unordered_map<zes_freq_handle_t, TelemetryItem> m_freqHandlesL0;
+        struct engineActivityL0; // Avoid adding more L0 defs to this public header
+        struct engineActivityL0Deleter // Get delete definition from LibXPUInfo_L0.cpp
+        {
+            void operator()(engineActivityL0* p) const;
+        };
+        typedef std::unique_ptr<engineActivityL0, engineActivityL0Deleter> engineActivityL0Ptr;
+        std::unordered_map<zes_engine_handle_t, engineActivityL0Ptr> m_engineHandlesL0;
 
         // IGCL, ctlFrequencyGetState
         ctl_freq_handle_t m_IGCL_MemFreqHandle = nullptr;
@@ -1013,7 +1022,8 @@ namespace XI
     public:
         // Constructor compares class size of client to that of lib to help verify that 
         // preprocessor arguments are in agreement between different projects.
-        XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack = RuntimeNames(), size_t classSize = sizeof(XPUInfo));
+        XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack = RuntimeNames(), 
+            size_t classSize = sizeof(XPUInfo), const char* clientBuildTimestamp = XPUINFO_BUILD_TIMESTAMP);
         ~XPUInfo();
         size_t deviceCount() const { return m_Devices.size(); }
         template <APIType APITYPE>
@@ -1059,6 +1069,10 @@ namespace XI
         // APIs used by at least one device
         APIType getUsedAPIs() const { return m_UsedAPIs; }
 
+        // Build timestamps, for helping apps determine when serialized data may be stale
+        const String& getClientBuildTimestamp() const { return m_clientBuildTimestamp; }
+        const String& getInternalBuildTimestamp() const { return m_internalBuildTimestamp; }
+
     private:
         DevicePtr getDeviceInternal(UI64 inLUID);
         DevicePtr getDeviceInternal(const char* inNameSubString);
@@ -1100,6 +1114,8 @@ namespace XI
         void getRuntimeVersions(const RuntimeNames& runtimeNames);
         RuntimeVersionInfoMap m_RuntimeVersions;
 #endif
+        const String m_clientBuildTimestamp; // Serialized and deserialized
+        const String m_internalBuildTimestamp; // Serialized, not deserialized - from constructor compilation
     };
     XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi);
 

@@ -36,7 +36,7 @@ void TelemetryTracker::printRecordHeader(std::ostream& ostr) const
 	if (m_ResultMask & TELEMETRYITEM_MEDIA_ACTIVITY)
 		ostr << ",% Media";
 	if (m_ResultMask & TELEMETRYITEM_MEMORY_USAGE)
-		ostr << ",Device Memory Used (MB)";
+		ostr << ",Device Memory Used (GB)";
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY_MEDIA)
 		ostr << ",Media Freq (MHz)";
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY_MEMORY)
@@ -139,17 +139,21 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 			ostr << "," << wrDelta / (tDelta * (1024 * 1024));
 			ostr << "," << bwDelta / (tDelta * (1024 * 1024));
 		}
-		if ((m_ResultMask & (TELEMETRYITEM_GLOBAL_ACTIVITY | TELEMETRYITEM_TIMESTAMP_DOUBLE)) == (TELEMETRYITEM_GLOBAL_ACTIVITY | TELEMETRYITEM_TIMESTAMP_DOUBLE))
+		// TELEMETRYITEM_TIMESTAMP_DOUBLE indicates IGCL collection needing interval computation
+		if (m_ResultMask & TELEMETRYITEM_TIMESTAMP_DOUBLE)
 		{
-			ostr << "," << (rec.activity_global - prev.activity_global) * 100. / tDelta;
-		}
-		if ((m_ResultMask & (TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY | TELEMETRYITEM_TIMESTAMP_DOUBLE)) == (TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY | TELEMETRYITEM_TIMESTAMP_DOUBLE))
-		{
-			ostr << "," << (rec.activity_compute - prev.activity_compute) * 100. / tDelta;
-		}
-		if ((m_ResultMask & (TELEMETRYITEM_MEDIA_ACTIVITY | TELEMETRYITEM_TIMESTAMP_DOUBLE)) == (TELEMETRYITEM_MEDIA_ACTIVITY | TELEMETRYITEM_TIMESTAMP_DOUBLE))
-		{
-			ostr << "," << (rec.activity_media - prev.activity_media) * 100. / tDelta;
+			if (m_ResultMask & TELEMETRYITEM_GLOBAL_ACTIVITY)
+			{
+				ostr << "," << (rec.activity_global - prev.activity_global) * 100. / tDelta;
+			}
+			if (m_ResultMask & TELEMETRYITEM_RENDER_COMPUTE_ACTIVITY)
+			{
+				ostr << "," << (rec.activity_compute - prev.activity_compute) * 100. / tDelta;
+			}
+			if (m_ResultMask & TELEMETRYITEM_MEDIA_ACTIVITY)
+			{
+				ostr << "," << (rec.activity_media - prev.activity_media) * 100. / tDelta;
+			}
 		}
 	}
 	else
@@ -183,15 +187,18 @@ void TelemetryTracker::printRecord(TimedRecords::const_iterator it, std::ostream
 	}
 	if (m_ResultMask & TELEMETRYITEM_MEDIA_ACTIVITY)
 	{
-		if ((it - m_records.begin()) == 0)
+		if (!(m_ResultMask & TELEMETRYITEM_TIMESTAMP_DOUBLE))
+		{
+			ostr << "," << rec.activity_media;
+		}
+		else if ((it - m_records.begin()) == 0)
 		{
 			ostr << ",";
 		}
 	}
 	if (m_ResultMask & TELEMETRYITEM_MEMORY_USAGE)
 	{
-		//ostr << "," << 100.0 * rec.deviceMemoryUsedBytes / (rec.deviceMemoryBudgetBytes);
-		ostr << "," << (rec.deviceMemoryUsedBytes) / (1024.0 * 1024);
+		ostr << "," << XI::BtoGB(rec.deviceMemoryUsedBytes);
 	}
 
 	if (m_ResultMask & TELEMETRYITEM_FREQUENCY_MEDIA)
