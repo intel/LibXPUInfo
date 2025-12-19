@@ -919,8 +919,10 @@ UI64 DeviceProperties::getVideoMemorySize() const
 		dxgiDesc.DedicatedVideoMemory;
 }
 
-XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize) : 
-	m_InitAPIs(initMask), m_UsedAPIs(API_TYPE_UNKNOWN)
+#define XPUINFO_BUILD_TIMESTAMP_INTERNAL __DATE__ " " __TIME__
+
+XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size_t clientClassSize, const char* buildTimestamp) : 
+	m_InitAPIs(initMask), m_UsedAPIs(API_TYPE_UNKNOWN), m_clientBuildTimestamp(buildTimestamp), m_internalBuildTimestamp(XPUINFO_BUILD_TIMESTAMP_INTERNAL)
 {
 	// Verify class size matches between internal lib and clients
 	const size_t libClassSize = sizeof(XPUInfo);
@@ -1814,14 +1816,14 @@ void XPUInfo::printInfo(std::ostream& ostr) const
 	}
 #endif // XPUINFO_USE_RUNTIMEVERSIONINFO
 
-#ifdef _WIN32 // Not interesting for other OSs
 	{
 		SaveRestoreIOSFlags srFlags(ostr);
 		ostr << std::endl;
 		ostr << std::left << std::setw(24) << "APIs requested at init:" << m_InitAPIs << std::endl;
 		ostr << std::left << std::setw(24) << "APIs initialized: " << m_UsedAPIs << std::endl;
+		ostr << std::left << std::setw(24) << "XPUInfo API Version: " << XPUINFO_API_VERSION_STRING << 
+			", client build=\"" << m_clientBuildTimestamp << "\", internal build=\"" << m_internalBuildTimestamp << "\"\n";
 	}
-#endif
 }
 
 std::ostream& operator<<(std::ostream& ostr, const XPUInfo& xi)
