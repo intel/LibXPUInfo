@@ -52,6 +52,7 @@ typedef struct _ze_intel_device_module_dp_exp_properties_t {
 
 namespace XI
 {
+#if XPUINFO_USE_TELEMETRYTRACKER
 struct TelemetryTracker::engineActivityL0
 {
     engineActivityL0(TelemetryItem inEngineType) : engineType(inEngineType) {}
@@ -63,6 +64,7 @@ void TelemetryTracker::engineActivityL0Deleter::operator()(engineActivityL0* p) 
 {
     delete p;
 };
+#endif
 
 L0_Extensions::L0_Extensions(size_t inSize) : std::vector<ze_driver_extension_properties_t>(inSize)
 {
@@ -696,6 +698,7 @@ void XPUInfo::initL0()
 }
 
 #define L0_TRACK_FREQUENCY_MEMORY 1
+#if XPUINFO_USE_TELEMETRYTRACKER
 void TelemetryTracker::InitL0()
 {
 	auto l0device = m_Device->getHandle_L0();
@@ -912,6 +915,7 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 
 	return bUpdate;
 }
+#endif // XPUINFO_USE_TELEMETRYTRACKER
 
 } // XI
 #endif // XPUINFO_USE_LEVELZERO
