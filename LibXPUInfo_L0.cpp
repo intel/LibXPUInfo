@@ -52,7 +52,7 @@ typedef struct _ze_intel_device_module_dp_exp_properties_t {
 
 namespace XI
 {
-#if XPUINFO_USE_TELEMETRYTRACKER
+#ifdef XPUINFO_USE_TELEMETRYTRACKER
 struct TelemetryTracker::engineActivityL0
 {
     engineActivityL0(TelemetryItem inEngineType) : engineType(inEngineType) {}
@@ -698,7 +698,7 @@ void XPUInfo::initL0()
 }
 
 #define L0_TRACK_FREQUENCY_MEMORY 1
-#if XPUINFO_USE_TELEMETRYTRACKER
+#ifdef XPUINFO_USE_TELEMETRYTRACKER
 void TelemetryTracker::InitL0()
 {
 	auto l0device = m_Device->getHandle_L0();
