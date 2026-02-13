@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>XPUINFO_USE_AGS;RAPIDJSON_HAS_STDSTRING=1;XPUINFO_USE_RUNTIMEVERSIONINFO;XPUINFO_USE_SYSTEMEMORYINFO;XPUINFO_USE_RAPIDJSON;XPUINFO_USE_TELEMETRYTRACKER;XPUINFO_USE_IPC;XPUINFO_USE_WMI;XPUINFO_USE_SETUPAPI;XPUINFO_USE_NVML;XPUINFO_USE_DXCORE;XPUINFO_USE_LEVELZERO;XPUINFO_USE_OPENCL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
