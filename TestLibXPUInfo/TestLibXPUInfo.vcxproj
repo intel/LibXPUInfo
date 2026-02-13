@@ -196,7 +196,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d12.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration);$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration);$(OutDir)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -213,7 +213,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d12.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(OutDir)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
     </Link>
@@ -236,7 +236,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d12.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(OutDir)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -258,7 +258,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d12.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(OutDir)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
     </Link>

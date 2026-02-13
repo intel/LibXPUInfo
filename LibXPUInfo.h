@@ -165,6 +165,9 @@ typedef struct _cl_device_id* cl_device_id;
 typedef struct nvmlDevice_st* nvmlDevice_t;
 #endif
 
+// AGS
+typedef struct AGSGPUInfo AGSGPUInfo;
+
 #ifdef _WIN32
 // SetupAPI
 typedef PVOID HDEVINFO;
@@ -254,8 +257,9 @@ namespace XI
         API_TYPE_WMI =                      1 << 9,
         API_TYPE_DESERIALIZED =             1 << 10,
         API_TYPE_IGCL_L0 =                  1 << 11, // Allow IGCL to use L0.  Once L0 issue with ZE_INIT_FLAG_VPU_ONLY is resolved, this can be removed.
-        API_TYPE_LAST =                     1 << 12,
-    };
+        API_TYPE_AGS =                      1 << 12,
+        API_TYPE_LAST =                     1 << 13,
+    };  
     inline APIType operator|=(APIType& a, APIType b) {
         a = static_cast<APIType>(a | b);
         return a;
@@ -268,7 +272,7 @@ namespace XI
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
     | XI::API_TYPE_LEVELZERO \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS)
 #elif defined(__linux__)
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML
 #else
@@ -407,6 +411,7 @@ namespace XI
 
     const UINT kVendorId_Intel = 0x8086;
     const UINT kVendorId_nVidia = 0x10de;
+    const UINT kVendorId_AMD = 0x1002;
 
     // Properties that are frequently used or common to most devices
     struct XPUINFO_EXPORT DeviceProperties
@@ -537,6 +542,12 @@ namespace XI
         std::shared_ptr<HybridDetect::PROCESSOR_INFO> m_pProcInfo;
     };
 
+    typedef std::unique_ptr<AGSGPUInfo> AGSGPUInfoPtr;
+#ifdef XPUINFO_USE_AGS
+    XPUINFO_EXPORT
+    const char* getGenerationName_AGS(XI::I32 agsAsicFamily);
+#endif
+
     class Device;
     typedef std::shared_ptr<Device> DevicePtr;
 
@@ -616,6 +627,11 @@ namespace XI
 #ifdef XPUINFO_USE_NVML
         void initNVMLDevice(nvmlDevice_t device);
         nvmlDevice_t m_nvmlDevice = nullptr;
+#endif
+
+        // AGS
+#ifdef XPUINFO_USE_AGS
+        void initAGSDevice(int agsAdapterIndex, const AGSGPUInfoPtr& pAGSAdapterInfo);
 #endif
     };
     XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const Device& xi);
@@ -1083,6 +1099,7 @@ namespace XI
         void initDXGI(APIType initMask);
         void initIGCL(bool useL0);
         void initOpenCL();
+        void initAGS();
         void initWMI();
 #elif __APPLE__
         void initMetal();

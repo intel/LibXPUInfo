@@ -197,7 +197,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration);$(SolutionDir)x64\Debug</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration);$(SolutionDir)x64\Debug</AdditionalLibraryDirectories>
       <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -214,7 +214,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>testxpuinfoipc_shared.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(OutDir)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
     </Link>
@@ -238,7 +238,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
       <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(SolutionDir)x64\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(SolutionDir)x64\Release</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDynamic|x64'">
@@ -261,7 +261,7 @@
       <DelayLoadDLLs>
       </DelayLoadDLLs>
       <AdditionalDependencies>testxpuinfoipc_shared.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

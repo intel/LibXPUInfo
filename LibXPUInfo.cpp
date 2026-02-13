@@ -295,6 +295,11 @@ namespace XI
 				apiNames.push_back("NVML");
 				break;
 #endif
+#ifdef XPUINFO_USE_AGS
+			case API_TYPE_AGS:
+				apiNames.push_back("AGS");
+				break;
+#endif
 #ifdef __APPLE__
             case API_TYPE_METAL:
                 apiNames.push_back("Metal");
@@ -910,6 +915,12 @@ const char* DeviceProperties::getDeviceGenerationName() const
 			return it->second.c_str();
 		}
 	}
+#ifdef XPUINFO_USE_AGS
+	else if (DeviceGenerationAPI == API_TYPE_AGS)
+	{
+        return getGenerationName_AGS(DeviceGenerationID);
+	}
+#endif
 	return nullptr;
 }
 
@@ -952,6 +963,13 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	if ((initMask & API_TYPE_DXCORE) && hasDXCore())
 	{
 		initDXCore();
+	}
+#endif
+
+#ifdef XPUINFO_USE_AGS
+	if (initMask & API_TYPE_AGS)
+	{
+		initAGS();
 	}
 #endif
 

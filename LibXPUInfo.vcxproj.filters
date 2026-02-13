@@ -98,5 +98,8 @@
     <ClCompile Include="external\IGCL\Source\cApiWrapper.cpp">
       <Filter>IGCL</Filter>
     </ClCompile>
+    <ClCompile Include="LibXPUInfo_AGS.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
