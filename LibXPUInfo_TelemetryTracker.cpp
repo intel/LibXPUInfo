@@ -314,11 +314,6 @@ TelemetryTracker::~TelemetryTracker() noexcept(false)
 		XPUINFO_REQUIRE(ERROR_SUCCESS == pdhs);
 	}
 
-	if (m_timer)
-	{
-		CloseThreadpoolTimer(m_timer);
-	}
-
 	if (m_cleanupgroup)
 	{
 		CloseThreadpoolCleanupGroupMembers(m_cleanupgroup,
@@ -360,6 +355,8 @@ void TelemetryTracker::stop()
 			0);
 
 		WaitForThreadpoolTimerCallbacks(m_timer, TRUE);
+		CloseThreadpoolTimer(m_timer);
+		m_timer = nullptr;
 	}
 #endif
 }

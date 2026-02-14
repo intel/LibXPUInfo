@@ -92,6 +92,7 @@ bool XPUInfo::serialize(rapidjson::Document& doc)
         objCPU.AddMember("Hybrid", pi->hybrid, a);
         objCPU.AddMember("FeatureFlagsUI64", pi->flagsUI64, a);
         objCPU.AddMember("CPUID_1_EAX", pi->cpuid_1_eax, a);
+        objCPU.AddMember("microcodeRevision", pi->microcodeRevision, a);
 
         // cpuSets: std::map<unsigned, std::vector<ULONG>>
         objCPU.AddMember("cpuSets", serializeMapToJson(doc, pi->cpuSets), a);
@@ -495,6 +496,7 @@ DeviceCPU::DeviceCPU(const rapidjson::Value& val) :
     m_pProcInfo->hybrid = JSON::safeGetBool(val, "Hybrid").value_or(false);
     m_pProcInfo->flagsUI64 = JSON::safeGetUI64(val, "FeatureFlagsUI64").value_or(0);
     m_pProcInfo->cpuid_1_eax = JSON::safeGetUI32(val, "CPUID_1_EAX").value_or(0);
+    m_pProcInfo->microcodeRevision = JSON::safeGetUI32(val, "microcodeRevision").value_or(0);
 
     if (val.HasMember("cpuSets") && val["cpuSets"].IsObject())
     {

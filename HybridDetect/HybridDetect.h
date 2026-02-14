@@ -383,6 +383,7 @@ typedef struct _PROCESSOR_INFO
 	bool								hybrid = false;
 	bool								turboBoost = false;
 	bool								turboBoost3_0 = false;
+	unsigned							microcodeRevision;
 	std::vector<GROUP_INFO>				groups;
 	std::vector<NUMA_NODE_INFO>			nodes;
 	std::vector<CACHE_INFO>				caches;
@@ -856,6 +857,30 @@ inline void UpdateProcessorInfo(PROCESSOR_INFO& procInfo)
 #endif
 }
 
+inline bool GetMicrocodeRevision(uint32_t& microcodeRevision)
+{
+	bool success = false;
+
+	// Set a default value in case regkey queries fail.
+	microcodeRevision = 0;
+
+#ifdef HYBRIDDETECT_OS_WIN
+	HKEY hKey;
+	uint64_t updateRevision = 0u;
+	uint32_t entryLengthInBytes = sizeof(updateRevision);
+
+	if (ERROR_SUCCESS == RegOpenKeyExA(HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &hKey)) {
+		if (ERROR_SUCCESS == RegGetValueA(hKey, nullptr, "Update Revision", RRF_RT_REG_BINARY, nullptr, (PVOID)&updateRevision, (LPDWORD)&entryLengthInBytes)) {
+			microcodeRevision = static_cast<uint32_t>(updateRevision >> (entryLengthInBytes == sizeof(uint64_t)) * 32u);
+			success = true;
+		}
+
+		RegCloseKey(hKey);
+	}
+#endif
+	return success;
+}
+
 // Calls CPUID & GetLogicalProcessors & CallNTPowerInformation to fill in PROCESSOR_INFO
 inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 {
@@ -994,6 +1019,8 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 		procInfo.turboBoost = bits[1];
 		procInfo.turboBoost3_0 = bits[14];
 	}
+
+	GetMicrocodeRevision(procInfo.microcodeRevision);
 
 #ifdef HYBRIDDETECT_OS_WIN
 	DWORD_PTR           affinityMask;

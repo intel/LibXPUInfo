@@ -1755,6 +1755,10 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 			ostr << std::endl;
 #else
 			ostr << "cpuid.1.eax = 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << basicCPUID << std::dec << std::endl;
+			if (m_pProcInfo->IsIntel() && m_pProcInfo->microcodeRevision)
+			{
+				ostr << std::right << std::setfill(' ') << std::setw(3+12+2+24+4) << "Microcode revision = 0x" << std::hex << std::setw(4) << std::right << std::setfill('0') << m_pProcInfo->microcodeRevision << std::dec << std::endl;
+			}
 #endif
 			ostr << std::setfill(' ');
 		}
