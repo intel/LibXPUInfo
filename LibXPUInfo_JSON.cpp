@@ -257,6 +257,8 @@ DevicePtr Device::deserialize(const rapidjson::Value& val)
             newDev->m_props.pDriverInfo->DriverVersion = safeGetWString(valDI, "DriverVersion");
             newDev->m_props.pDriverInfo->DriverInfSection = safeGetWString(valDI, "DriverInfSection");
             newDev->m_props.pDriverInfo->DeviceInstanceId = safeGetWString(valDI, "DeviceInstanceId");
+            newDev->m_props.pDriverInfo->EnumeratorName = safeGetWString(valDI, "EnumeratorName");
+            newDev->m_props.pDriverInfo->DeviceService = safeGetWString(valDI, "DeviceService");
 
             if (valDI.HasMember("LocationInfo"))
             {
@@ -328,6 +330,8 @@ rapidjson::Value Device::serialize(AllocatorType& a)
         curDI.AddMember("DriverInfSection", XI::convert(pDI->DriverInfSection), a);
         curDI.AddMember("DeviceInstanceId", XI::convert(pDI->DeviceInstanceId), a);
         curDI.AddMember("LocationInfo", pDI->LocationInfo.serialize(a), a);
+        curDI.AddMember("EnumeratorName", XI::convert(pDI->EnumeratorName), a);
+        curDI.AddMember("DeviceService", XI::convert(pDI->DeviceService), a);
 #ifdef _WIN32
         FILETIME ftime;
         ftime = pDI->DriverDate;

@@ -131,6 +131,10 @@ void XPUInfo::initDXCore(bool updateOnly)
             // HardwareID
             DXCoreHardwareID hwID;
             THROW_IF_FAILED(currAdapter->GetProperty(DXCoreAdapterProperty::HardwareID, &hwID));
+            if ((hwID.vendorID == 0x1414) && (hwID.deviceID == 0x8c))
+            {
+                return; // Skip "Microsoft Basic Render Driver"
+            }
 
             LUID curLUID{};
             THROW_IF_FAILED(currAdapter->GetProperty(DXCoreAdapterProperty::InstanceLuid, &curLUID));
@@ -178,7 +182,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                 {
                     printf("Description: %s (%s), LUID=0x%llx, Version %hu.%hu.%hu.%hu\n", driverDescription.c_str(),
                         isIntegratedValid ? (isIntegrated ? "Integrated" : "Discrete") : "UNKNOWN_UMA",
-                        *(uint64_t*)&curLUID,
+                        LuidToUI64(curLUID),
                         driverVersion[3],
                         driverVersion[2],
                         driverVersion[1],

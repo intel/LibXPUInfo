@@ -107,9 +107,10 @@ namespace //private
 {
 	bool getInfoForClass(const GUID* devClass, std::vector<DriverInfoPtr>& outInfos)
 	{
+		// We need to include all Enumerator classes, 
+		//   then filter out non-GPU devices under SWD or USB
 		HDEVINFO m_info = SetupDiGetClassDevsW(devClass,
-			L"PCI", // Filter out remote desktop which is "SWD"
-			nullptr, DIGCF_PRESENT);
+			nullptr, nullptr, DIGCF_PRESENT);
 		HYBRIDDETECT_DEBUG_REQUIRE(m_info != INVALID_HANDLE_VALUE);
 
 		SP_DEVINFO_DATA devInfoData;
@@ -130,26 +131,9 @@ namespace //private
 				dStr << L" with " << numKeys << L" keys";
 			}
 
-			DEVPROPTYPE PropType;
 			DWORD nameSize = 0;
 			std::vector<wchar_t> tempStr;
 			tempStr.resize(256);
-
-			/*
-			if (SetupDiGetDevicePropertyW(
-				m_info,
-				&devInfoData,
-				&DEVPKEY_Device_EnumeratorName,
-				&PropType,
-				(PBYTE)tempStr.data(),
-				(DWORD)tempStr.size(),
-				&nameSize,
-				0))
-			{
-				// Should be PCI unless filter above changed
-				dStr << L" at \"" << tempStr.data() << L"\"";
-			}
-			*/
 
 			if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_DriverDesc, curInfo->DriverDesc))
 			{
@@ -169,11 +153,31 @@ namespace //private
 				dStr << L",(DEVPKEY_Device_DeviceDesc: " << GetErrorCodeStr(err) << ")";
 			}
 
+			/* If you are iterating via SetupDiGetClassDevs, pull the DEVPKEY_Device_EnumeratorName property. 
+			   If the class is GUID_DEVCLASS_DISPLAY but the enumerator string isn't "PCI", you can confidently 
+			   flag it as a virtual adapter.*/
+			XI::WString& enumeratorName = curInfo->EnumeratorName;
+			if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_EnumeratorName, enumeratorName))
+			{
+				dStr << L", " << enumeratorName;
+				if (enumeratorName == L"SWD")
+				{
+					dStr << L", SKIPPED\n";
+					continue; // Skip software devices like "Microsoft Basic Render Driver"
+				}
+			}
+			else
+			{
+				DWORD err = GetLastError();
+				dStr << L",(DEVPKEY_Device_EnumeratorName: " << GetErrorCodeStr(err) << ")";
+			}
+
 			if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_DriverVersion, curInfo->DriverVersion))
 			{
 				dStr << L", " << curInfo->DriverVersion;
 			}
 
+			DEVPROPTYPE PropType;
 			FILETIME fileTime{};
 			SYSTEMTIME sysTime{};
 			if (SetupDiGetDevicePropertyW(
@@ -229,34 +233,19 @@ namespace //private
 				dStr << L"(" << tempStr.data() << L") ";
 			}
 
-			/*
-			if (SetupDiGetDevicePropertyW(
-				m_info,
-				&devInfoData,
-				&DEVPKEY_Device_Service,
-				&PropType,
-				(PBYTE)tempStr.data(),
-				(DWORD)tempStr.size(),
-				&nameSize,
-				0))
+			XI::WString& deviceService = curInfo->DeviceService;
+			if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_Service, deviceService))
 			{
-				// With filter as PCI, should never be "SWD" or other indicator of software service
-				dStr << L" service =  \"" << tempStr.data() << L"\"";
+				dStr << L", service = \"" << deviceService << L"\"";
 			}
-			*/
 
-			if (SetupDiGetDevicePropertyW(
-				m_info,
-				&devInfoData,
-				&DEVPKEY_Device_LocationInfo,
-				&PropType,
-				(PBYTE)tempStr.data(),
-				(DWORD)tempStr.size(),
-				&nameSize,
-				0))
+			XI::WString deviceLocation;
+			if ((enumeratorName == L"PCI") && 
+				sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_LocationInfo, deviceLocation)
+				)
 			{
-				dStr << L" at \"" << tempStr.data() << L"\"";
-				bool locValid = curInfo->LocationInfo.GetFromWStr(tempStr.data());
+				dStr << L" at \"" << deviceLocation << L"\"";
+				bool locValid = curInfo->LocationInfo.GetFromWStr(deviceLocation);
 				if (!locValid)
 				{
 					dStr << " ** Error parsing location!\n";
@@ -271,7 +260,7 @@ namespace //private
 			}
 
 			LUID curLUID{};
-			HYBRIDDETECT_DEBUG_REQUIRE(*(UI64*)&curInfo->DeviceLUID == 0ULL);
+			HYBRIDDETECT_DEBUG_REQUIRE(LuidToUI64(curInfo->DeviceLUID) == 0ULL);
 			if (SetupDiGetDevicePropertyW(
 				m_info,
 				&devInfoData,
@@ -283,8 +272,27 @@ namespace //private
 				0) && (nameSize == sizeof(LUID)))
 			{
 				curInfo->DeviceLUID = curLUID;
-				dStr << ", LUID = " << std::hex << *(UI64*)&curLUID << std::dec;
+				XI::UI64 luidUI64 = LuidToUI64(curLUID);
+				dStr << ", LUID = " << std::hex << luidUI64 << std::dec;
+				if (!luidUI64)
+				{
+					dStr << L", SKIPPED\n";
+					continue;
+				}
 			}
+			else
+			{
+				dStr << L", Non-Display, SKIPPED\n";
+				continue;
+			}
+
+#ifdef _DEBUG
+            if (enumeratorName != L"PCI")
+            {
+                dStr << L" ** Device 0x" << std::hex << LuidToUI64(curLUID) << std::dec <<
+                    L" not a PCI device ** (" << enumeratorName << L")" << std::endl;
+            }
+#endif
 
 			outInfos.emplace_back(std::move(curInfo));
 			dStr << std::endl;

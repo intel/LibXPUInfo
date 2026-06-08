@@ -226,15 +226,18 @@ void XPUInfo::initNVML()
     nvmlReturn_t result = nvmlInit();
 #endif
 
+    constexpr bool printToConsole = false;
+
     if (NVML_SUCCESS == result)
     {
         UI32 device_count=0;
         result = nvmlDeviceGetCount(&device_count);
+        DebugStream dStr(printToConsole);
+        dStr << "NVML: Initialized" << std::endl;
+
         if (NVML_SUCCESS == result)
         {
-#ifndef __linux__
-            m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
-#endif
+            dStr << "NVML:\tDevice count: " << device_count << std::endl;
             for (UI32 i = 0; i < device_count; ++i)
             {
                 nvmlDevice_t device = nullptr;
@@ -257,7 +260,8 @@ void XPUInfo::initNVML()
                         {
                             pciAddr.function = atoi(funcStr.c_str());
                         }
-
+                        dStr << "NVML:\t\tDevice " << i << ": " << pciAddr.domain << ":" << pciAddr.bus << ":" << pciAddr.device << "." << pciAddr.function
+                            << " (PCI ID: " << std::hex << pci.pciDeviceId << std::dec << ")" << std::endl;
 #ifdef __linux__
 // Add to devices
 						DXGI_ADAPTER_DESC1 desc1{};
@@ -328,12 +332,35 @@ void XPUInfo::initNVML()
 							}
 						}
 #else
-                        for (auto& [luid, dev] : m_Devices)
+                        int numnVidiaDevices = 0;
+                        for (auto& devPair : m_Devices)
                         {
-                            if (dev->getProperties().PCIAddress == pciAddr)
+                            auto& dev = devPair.second;
+                            if (dev->IsVendor(kVendorId_nVidia))
                             {
-                                dev->initNVMLDevice(device);
-                                break;
+                                ++numnVidiaDevices;
+
+                                if (dev->getProperties().PCIAddress == pciAddr)
+                                {
+                                    dev->initNVMLDevice(device);
+                                    m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
+                                    break;
+                                }
+                            }
+                        }
+                        // If 1 nVidia device and PCI address did not match, assume it is the correct device
+                        if ((device_count == 1) && (numnVidiaDevices==1) && !(m_UsedAPIs & API_TYPE_NVML))
+                        {
+                            dStr << "NVML:\t\tFound " << numnVidiaDevices << " nVidia devices, but none matched NVML PCI info!" << std::endl;
+                            for (auto& devPair : m_Devices)
+                            {
+                                auto& dev = devPair.second;
+                                if (dev->IsVendor(kVendorId_nVidia))
+                                {
+                                    dev->initNVMLDevice(device);
+                                    m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
+                                    break;
+                                }
                             }
                         }
 #endif
@@ -344,7 +371,6 @@ void XPUInfo::initNVML()
 #ifndef __linux__
         else
         {
-            DebugStream dStr(true);
             dStr << "Failed to query device count: " << nvmlErrorString(result) << std::endl;
         }
 #endif

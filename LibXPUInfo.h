@@ -381,6 +381,8 @@ namespace XI
         WString DriverVersion;
         WString DriverInfSection; // DEVPKEY_Device_DriverInfSection
         WString DeviceInstanceId; // DEVPKEY_Device_InstanceId, to correlate with WMI data
+        WString EnumeratorName;   // DEVPKEY_Device_EnumeratorName
+        WString DeviceService;    // DEVPKEY_Device_Service
         PCIAddressType LocationInfo;
 #ifdef _WIN32
         FILETIME DriverDate = {};   // When driver was created/published
@@ -389,6 +391,7 @@ namespace XI
         static float DriverAgeInYears(const FILETIME& inFileTime, SYSTEMTIME& outSysTime);
 #endif
         float DriverAgeInYears() const;
+        bool isValidXPU() const; 
     };
     typedef std::shared_ptr<DriverInfo> DriverInfoPtr;
 
