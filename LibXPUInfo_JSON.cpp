@@ -92,6 +92,7 @@ bool XPUInfo::serialize(rapidjson::Document& doc)
         objCPU.AddMember("Hybrid", pi->hybrid, a);
         objCPU.AddMember("FeatureFlagsUI64", pi->flagsUI64, a);
         objCPU.AddMember("CPUID_1_EAX", pi->cpuid_1_eax, a);
+        objCPU.AddMember("microcodeRevision", pi->microcodeRevision, a);
 
         // cpuSets: std::map<unsigned, std::vector<ULONG>>
         objCPU.AddMember("cpuSets", serializeMapToJson(doc, pi->cpuSets), a);
@@ -256,6 +257,8 @@ DevicePtr Device::deserialize(const rapidjson::Value& val)
             newDev->m_props.pDriverInfo->DriverVersion = safeGetWString(valDI, "DriverVersion");
             newDev->m_props.pDriverInfo->DriverInfSection = safeGetWString(valDI, "DriverInfSection");
             newDev->m_props.pDriverInfo->DeviceInstanceId = safeGetWString(valDI, "DeviceInstanceId");
+            newDev->m_props.pDriverInfo->EnumeratorName = safeGetWString(valDI, "EnumeratorName");
+            newDev->m_props.pDriverInfo->DeviceService = safeGetWString(valDI, "DeviceService");
 
             if (valDI.HasMember("LocationInfo"))
             {
@@ -327,6 +330,8 @@ rapidjson::Value Device::serialize(AllocatorType& a)
         curDI.AddMember("DriverInfSection", XI::convert(pDI->DriverInfSection), a);
         curDI.AddMember("DeviceInstanceId", XI::convert(pDI->DeviceInstanceId), a);
         curDI.AddMember("LocationInfo", pDI->LocationInfo.serialize(a), a);
+        curDI.AddMember("EnumeratorName", XI::convert(pDI->EnumeratorName), a);
+        curDI.AddMember("DeviceService", XI::convert(pDI->DeviceService), a);
 #ifdef _WIN32
         FILETIME ftime;
         ftime = pDI->DriverDate;
@@ -495,6 +500,7 @@ DeviceCPU::DeviceCPU(const rapidjson::Value& val) :
     m_pProcInfo->hybrid = JSON::safeGetBool(val, "Hybrid").value_or(false);
     m_pProcInfo->flagsUI64 = JSON::safeGetUI64(val, "FeatureFlagsUI64").value_or(0);
     m_pProcInfo->cpuid_1_eax = JSON::safeGetUI32(val, "CPUID_1_EAX").value_or(0);
+    m_pProcInfo->microcodeRevision = JSON::safeGetUI32(val, "microcodeRevision").value_or(0);
 
     if (val.HasMember("cpuSets") && val["cpuSets"].IsObject())
     {
