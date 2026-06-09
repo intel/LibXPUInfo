@@ -8,9 +8,7 @@
    */
 #ifdef XPUINFO_USE_NVML
 #include "LibXPUInfo.h"
-#ifndef __linux__
 #include "DebugStream.h"
-#endif
 #include "LibXPUInfo_Util.h"
 #include "nvml.h"
 #ifdef _WIN32
@@ -368,12 +366,10 @@ void XPUInfo::initNVML()
                 }
             }
         }
-#ifndef __linux__
         else
         {
             dStr << "Failed to query device count: " << nvmlErrorString(result) << std::endl;
         }
-#endif
     }
 
 }
