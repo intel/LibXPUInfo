@@ -668,13 +668,23 @@ void XPUInfo::initDXGI(APIType initMask)
 {
     DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
-    dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+    //dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG; // Enable for debug layer
+	constexpr bool printToConsole = true;
+#else
+	constexpr bool printToConsole = false;
 #endif
 
     WRL::ComPtr<IDXGIFactory4> currentFactory;
-    CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(currentFactory.GetAddressOf())); // List of devices created here - need to re-init if devices change
-    WRL::ComPtr<IDXGIAdapter1> adapter;
+    HRESULT hr = CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(currentFactory.GetAddressOf())); // List of devices created here - need to re-init if devices change
+	if (FAILED(hr))
+	{
+        DebugStream dStr(printToConsole);
+        dStr << "Failed to create DXGI Factory, HRESULT = 0x" << std::hex << hr << std::dec << std::endl;
+        return;
+	}
+    XPUINFO_REQUIRE(!!currentFactory);
 
+    WRL::ComPtr<IDXGIAdapter1> adapter;
     for (UINT adapterIndex = 0;
         currentFactory->EnumAdapters1(adapterIndex, &adapter) != DXGI_ERROR_NOT_FOUND;
         ++adapterIndex)
@@ -683,18 +693,17 @@ void XPUInfo::initDXGI(APIType initMask)
         HRESULT hres = adapter->GetDesc1(&desc);
         if (SUCCEEDED(hres))
         {
-            if ((desc.VendorId == 0x1414) && (desc.DeviceId == 0x8c))
-            {
-                continue; // Skip "Microsoft Basic Render Driver"
-            }
+			if ((desc.VendorId == 0x1414) && (desc.DeviceId == 0x8c))
+			{
+				continue; // Skip "Microsoft Basic Render Driver"
+			}
             else
             {
 				{
 					DebugStreamW dStr(false);
-					dStr << L"Adapter " << adapterIndex << L": " << desc.Description << L", Vendor = " << std::hex << desc.VendorId << std::dec << std::endl;
+					dStr << L"DXGI Adapter " << adapterIndex << L": " << desc.Description << L", Vendor = " << std::hex << desc.VendorId << std::dec << std::endl;
 				}
-				//LARGE_INTEGER ver;
-				//hres = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &ver); // Essentially the DX10 driver version - seems to be valid even for RDP virtual adapter
+
 				DevicePtr newDevice(new Device(adapterIndex, &desc));
 				if (!!newDevice && newDevice->driverVersion().Valid())
 				{
@@ -720,14 +729,14 @@ void XPUInfo::initDXGI(APIType initMask)
     }
 
 	// Show displays connected
-#if 0
+#if 0 && defined(_DEBUG)
 	{
 		std::ostream& dStr = std::cout;
 		int maxDevNum = 0;
 		DISPLAY_DEVICEA tempDD, monitor;
 		ZeroMemory(&tempDD, sizeof(DISPLAY_DEVICEA));
 		tempDD.cb = sizeof(DISPLAY_DEVICEA);
-		monitor.cb = sizeof(DISPLAY_DEVICEA);
+		monitor.cb = sizeof(DISPLAY_DEVICEA);	
 		DISPLAY_DEVICEA tempDD2;
 		ZeroMemory(&tempDD2, sizeof(DISPLAY_DEVICEA));
 		tempDD2.cb = sizeof(DISPLAY_DEVICEA);
@@ -995,11 +1004,12 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 #ifdef XPUINFO_USE_SETUPAPI
 	if (initMask & API_TYPE_SETUPAPI)
 	{
-		m_pSetupInfo.reset(new SetupDeviceInfo);
+		m_pSetupInfo = std::make_shared<SetupDeviceInfo>();
 		bool bSDIMatchFound = false;
-		for (auto& devPair : m_Devices)
+		//for (auto& devPair : m_Devices)
+		for (decltype(m_Devices)::const_iterator it = m_Devices.begin(); it != m_Devices.end();)
 		{
-			auto& device = devPair.second;
+			auto& device = it->second;
 			DriverInfoPtr pSDI = m_pSetupInfo->getByLUID(device->getLUID());
 			if (!pSDI)
 			{
@@ -1017,6 +1027,12 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 			}
 			if (pSDI)
 			{
+				if (!pSDI->isValidXPU())
+				{
+					// Remove this device!
+					it = m_Devices.erase(it);
+					continue;
+				}
 				if (!device->m_props.pDriverInfo)
 				{
 					device->m_props.pDriverInfo = pSDI;
@@ -1052,7 +1068,8 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 					}
 				}
 			}
-		}
+			++it;
+		} // devices
 		if (bSDIMatchFound)
 		{
 			m_UsedAPIs = m_UsedAPIs | API_TYPE_SETUPAPI;
@@ -1278,6 +1295,15 @@ float DriverInfo::DriverAgeInYears() const
 }
 #endif
 
+bool DriverInfo::isValidXPU() const
+{
+#ifdef _WIN32
+	return XI::LuidToUI64(DeviceLUID) && (EnumeratorName == L"PCI");
+#else
+	return true;
+#endif
+}
+
 std::ostream& operator<<(std::ostream& ostr, const DevicePtr& xiDev)
 {
 	if (!!xiDev)
@@ -1403,6 +1429,10 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 		if (devProps.pDriverInfo->DeviceInstanceId.length())
 		{
 			ostr << "\tDevice Instance ID: " << XI::convert(devProps.pDriverInfo->DeviceInstanceId) << std::endl;
+		}
+		if (devProps.pDriverInfo->DeviceService.length())
+		{
+			ostr << "\tDevice Service: " << XI::convert(devProps.pDriverInfo->DeviceService) << std::endl;
 		}
 	}
 
@@ -1737,6 +1767,10 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 			ostr << std::endl;
 #else
 			ostr << "cpuid.1.eax = 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << basicCPUID << std::dec << std::endl;
+			if (m_pProcInfo->IsIntel() && m_pProcInfo->microcodeRevision)
+			{
+				ostr << std::right << std::setfill(' ') << std::setw(3+12+2+24+4) << "Microcode revision = 0x" << std::hex << std::setw(4) << std::right << std::setfill('0') << m_pProcInfo->microcodeRevision << std::dec << std::endl;
+			}
 #endif
 			ostr << std::setfill(' ');
 		}
@@ -1847,7 +1881,10 @@ DXCoreAdapterMemoryBudget XI::Device::getMemUsage() const
 #ifdef XPUINFO_USE_DXCORE
 	if (XPUInfo::hasDXCore())
 	{
-		return getMemUsage_DXCORE();
+		if (getCurrentAPIs() & XI::APIType::API_TYPE_DXCORE)
+		{
+			return getMemUsage_DXCORE();
+		}
 	}
 #endif
 #endif
