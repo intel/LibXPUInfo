@@ -382,16 +382,7 @@ int printXPUInfo(int argc, char* argv[])
         if (!testIndividual)
         {
             XI::Timer timer;
-#ifdef _WIN32
-            APIType apis = APIType((XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
-                | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
-                | XI::API_TYPE_LEVELZERO \
-                | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS) | API_TYPE_WMI);
-#elif defined(__linux__)
-            APIType apis = XI::API_TYPE_NVML;
-#else
-            APIType apis = XI::API_TYPE_METAL;
-#endif
+            APIType apis = XPUINFO_INIT_ALL_APIS;
             apis |= additionalAPIs;
             if (apiMask != XI::API_TYPE_UNKNOWN)
             {

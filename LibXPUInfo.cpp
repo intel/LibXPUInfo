@@ -30,7 +30,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 namespace WRL = Microsoft::WRL;
 #endif
 
@@ -392,12 +392,12 @@ bool PCIAddressType::GetFromWStr(const WString& inStr)
 // From https://github.com/GameTechDev/gpudetect/blob/master/GPUDetect.cpp#L448
 // Get driver version from LUID and registry
 DeviceDriverVersion::DeviceDriverVersion(LUID 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 	inLuid
 #endif
 	) : mRawVersion(0ULL)
 {
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 	HKEY dxKeyHandle = nullptr;
 	DWORD numOfAdapters = 0;
 
@@ -668,7 +668,7 @@ bool RuntimeVersion::operator==(const RuntimeVersion& l) const
 	return !operator!=(l);
 }
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 void XPUInfo::initDXGI(APIType initMask)
 {
     DWORD dxgiFactoryFlags = 0;
@@ -717,6 +717,7 @@ void XPUInfo::initDXGI(APIType initMask)
 					if (!(m_UsedAPIs & API_TYPE_DXGI))
 						m_UsedAPIs = m_UsedAPIs | API_TYPE_DXGI;
 
+#if defined(_M_AMD64) || defined(_M_IX86)
 					if ((initMask & API_TYPE_DX11_INTEL_PERF_COUNTER) && 
 						newDevice->IsVendor(kVendorId_Intel)) // Early-out for non-Intel devices
 					{
@@ -728,6 +729,7 @@ void XPUInfo::initDXGI(APIType initMask)
 							m_UsedAPIs = m_UsedAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
 						}
 					}
+#endif
 				}
             }
         }
@@ -961,7 +963,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 #endif
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 	if (initMask & (API_TYPE_DXGI | API_TYPE_DX11_INTEL_PERF_COUNTER))
 	{
 		initDXGI(initMask); // Must be first
@@ -1280,7 +1282,7 @@ const DevicePtr XPUInfo::getDeviceByIndex(UI32 inIndex) const
 	return DevicePtr();
 }
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 float DriverInfo::SystemTimeToYears(const SYSTEMTIME& inSysTime) 
 {
     float years = inSysTime.wYear + inSysTime.wMonth / 12.0f + inSysTime.wDay / 365.25f;
@@ -1316,7 +1318,7 @@ float DriverInfo::DriverAgeInYears() const
 bool DriverInfo::isValidXPU() const
 {
 #ifdef _WIN32
-	return XI::LuidToUI64(DeviceLUID) && (EnumeratorName == L"PCI");
+	return XI::LuidToUI64(DeviceLUID) && ((EnumeratorName == L"PCI") || (EnumeratorName == L"ACPI"));
 #else
 	return true;
 #endif
@@ -1349,7 +1351,7 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
     }
 	if (devProps.pDriverInfo)
 	{
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 		SYSTEMTIME sysTime;
 		float driverAge = devProps.pDriverInfo->DriverAgeInYears(devProps.pDriverInfo->DriverDate, sysTime);
 		if (!std::signbit(driverAge)) // not negative

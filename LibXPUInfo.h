@@ -269,10 +269,15 @@ namespace XI
     // WMI takes more time to initialize than others, 
     // so it is not included in this default all-API macro
     // If WMI is desired, use APIType(XPUINFO_INIT_ALL_APIS | API_TYPE_WMI)
+#ifndef _M_ARM64
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
     | XI::API_TYPE_LEVELZERO \
     | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS)
+#else
+#define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML)
+#endif
 #elif defined(__linux__)
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML
 #else
@@ -412,9 +417,10 @@ namespace XI
     };
     typedef std::pair<IntelGfxFamily, std::string> IntelGfxFamilyNamePair;
 
-    const UINT kVendorId_Intel = 0x8086;
-    const UINT kVendorId_nVidia = 0x10de;
-    const UINT kVendorId_AMD = 0x1002;
+    constexpr UINT kVendorId_Intel = 0x8086;
+    constexpr UINT kVendorId_nVidia = 0x10de;
+    constexpr UINT kVendorId_AMD = 0x1002;
+    constexpr UINT kVendorId_Qualcomm = 'Q' | ('C' << 8) | ('O' << 16) | ('M' << 24);
 
     // Properties that are frequently used or common to most devices
     struct XPUINFO_EXPORT DeviceProperties
