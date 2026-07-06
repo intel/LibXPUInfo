@@ -338,7 +338,7 @@ void XPUInfo::initNVML()
                             {
                                 ++numnVidiaDevices;
 
-                                if (dev->getProperties().PCIAddress == pciAddr)
+                                if (dev->getProperties().PCIAddress == pciAddr || dev->getProperties().UMA == UMA_INTEGRATED)
                                 {
                                     dev->initNVMLDevice(device);
                                     m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
