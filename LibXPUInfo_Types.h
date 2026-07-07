@@ -4,6 +4,7 @@
 
 #include <string>
 #include <memory>
+#include <cstdint>
 
 // ** Fwd Decl **
 // Level Zero
@@ -52,10 +53,10 @@ typedef struct DXGI_ADAPTER_DESC1
 
 struct DXCoreAdapterMemoryBudget
 {
-    uint64_t budget;
-    uint64_t currentUsage;
-    uint64_t availableForReservation;
-    uint64_t currentReservation;
+    std::uint64_t budget;
+    std::uint64_t currentUsage;
+    std::uint64_t availableForReservation;
+    std::uint64_t currentReservation;
 };
 #endif
 
