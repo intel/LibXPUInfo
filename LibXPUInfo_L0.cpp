@@ -723,11 +723,8 @@ void TelemetryTracker::InitL0()
 				{
 					if (domain_props.type == ZES_FREQ_DOMAIN_GPU)
 					{
-						if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL_L0))
-						{
-							m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY);
-                            m_freqHandlesL0.emplace(std::make_pair(freqHandlesL0[i], TELEMETRYITEM_FREQUENCY));
-						}
+						m_ResultMask = (TelemetryItem)(m_ResultMask | TELEMETRYITEM_FREQUENCY);
+                        m_freqHandlesL0.emplace(std::make_pair(freqHandlesL0[i], TELEMETRYITEM_FREQUENCY));
 					}
 					else if (domain_props.type == ZES_FREQ_DOMAIN_MEDIA)
 					{
@@ -792,8 +789,8 @@ bool TelemetryTracker::RecordL0(TimedRecord& rec)
 {
 	bool bUpdate = false;
 
-	// Get Freq from L0 if no IGCL
-    if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL) && m_freqHandlesL0.size())
+	// Get Freq from L0
+    if (m_freqHandlesL0.size())
     {
         for (const auto [freqHandle, telemItem] : m_freqHandlesL0)
 		{

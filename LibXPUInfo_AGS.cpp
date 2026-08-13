@@ -10,9 +10,17 @@
 #include "external\AGS_SDK\ags_lib\inc\amd_ags.h"
 #pragma warning(pop)
 #ifdef NDEBUG
+#ifdef _DLL // Assumes MSVC compiler
 #pragma comment(lib, "amd_ags_x64_2022_MD.lib")
 #else
+#pragma comment(lib, "amd_ags_x64_2022_MT.lib")
+#endif
+#else
+#ifdef _DLL // Assumes MSVC compiler
 #pragma comment(lib, "amd_ags_x64_2022_MDd.lib")
+#else
+#pragma comment(lib, "amd_ags_x64_2022_MTd.lib")
+#endif
 #endif
 
 namespace
