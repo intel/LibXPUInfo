@@ -1752,12 +1752,14 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 			ostr << "\t" << m_pProcInfo->vendorID << ": ";
 			if (m_pProcInfo->IsIntel())
 			{
-				const int family = (basicCPUID >> 8) & 0xf;
+				const int baseFamily = (basicCPUID >> 8) & 0xf;
+				const int extFamily = (basicCPUID >> 20) & 0xff;
+				const int family = (baseFamily == 0xf) ? (baseFamily + extFamily) : baseFamily;
 				const int extModel = ((basicCPUID & 0xf0000) >> 12) | ((basicCPUID & 0xf0) >> 4);
 				const int stepping = basicCPUID & 0xf;
 
 				ostr << "Family = " << family;
-				if (family == 6)
+				if (family == 6 || baseFamily == 0xf)
 				{
 					ostr << ", ExtModel = 0x" << std::hex << std::setw(2) << std::right << std::setfill('0') << extModel << std::dec;
 				}
