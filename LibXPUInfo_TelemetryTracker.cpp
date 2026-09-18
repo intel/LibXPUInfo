@@ -251,7 +251,7 @@ TelemetryTracker::TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod
 #if defined(_WIN32) && !defined(_M_ARM64)
 	InitPDH();
 
-	if (m_Device->getCurrentAPIs() & (API_TYPE_IGCL|API_TYPE_LEVELZERO|API_TYPE_DXCORE))
+	if (m_Device->getCurrentAPIs() & (API_TYPE_LEVELZERO|API_TYPE_DXCORE))
 	{
 		bool collectingOverTime = ((m_ControlMask & TELEMETRYITEM_PEAKUSAGE_ONLY) == 0);
 		if (collectingOverTime)
@@ -274,19 +274,8 @@ TelemetryTracker::TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod
 		}
 	}
 
-	if ((m_Device->getCurrentAPIs() & API_TYPE_IGCL) == 0)
-	{
-		BOOL bRet = QueryPerformanceFrequency((LARGE_INTEGER*)&m_timestamp_freq);
-		XPUINFO_REQUIRE(bRet);
-	}
-
-#ifdef XPUINFO_USE_IGCL
-    if ((m_Device->getCurrentAPIs() & (API_TYPE_IGCL|API_TYPE_IGCL_L0)) == (API_TYPE_IGCL|API_TYPE_IGCL_L0))
-	{
-		InitIGCL();
-	}
-#endif
-
+	BOOL bRet = QueryPerformanceFrequency((LARGE_INTEGER*)&m_timestamp_freq);
+	XPUINFO_REQUIRE(bRet);
 #endif // Win32
 
 #ifdef XPUINFO_USE_LEVELZERO
@@ -422,16 +411,6 @@ void TelemetryTracker::RecordNow()
 	const bool collectingOverTime = ((m_ControlMask & TELEMETRYITEM_PEAKUSAGE_ONLY) == 0);
 	std::lock_guard<std::mutex> lock(m_RecordMutex); // for now, only support one at a time
 
-	// Frequency, throttleReason (L0, IGCL)
-	// Memory (VRAM) read/write/timestamp (IGCL)
-	// Engine Utilization (IGCL, PDH/perfmon)
-	// PCIe bandwidth (IGCL, L0 zes_pci_state_t, zes_pci_stats_t)
-
-	// IGCL:
-	// * Freq
-	// * VRAM Read BW
-	// * VRAM Write BW
-
 	if (m_Device->getCurrentAPIs() & API_TYPE_DXCORE)
 	{
 		bUpdate = RecordMemoryUsage(rec) || bUpdate;
@@ -443,13 +422,6 @@ void TelemetryTracker::RecordNow()
 
 	if (collectingOverTime)
 	{
-#ifdef XPUINFO_USE_IGCL
-		if (m_Device->getCurrentAPIs() & API_TYPE_IGCL)
-		{
-			bUpdate = RecordIGCL(rec) || bUpdate;
-		}
-#endif // XPUINFO_USE_IGCL
-
 #ifdef XPUINFO_USE_LEVELZERO
 		if (m_Device->getCurrentAPIs() & API_TYPE_LEVELZERO)
 		{
@@ -468,10 +440,7 @@ void TelemetryTracker::RecordNow()
 
 	if (bUpdate)
 	{
-		if (!(m_Device->getCurrentAPIs() & API_TYPE_IGCL)) // Need CPU timestamp
-		{
-			RecordCPUTimestamp(rec);
-		}
+		RecordCPUTimestamp(rec);
 
 		if (collectingOverTime)
 		{

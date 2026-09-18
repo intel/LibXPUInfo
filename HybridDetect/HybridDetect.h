@@ -87,7 +87,6 @@
 #else
 typedef unsigned long ULONG;
 typedef unsigned long long ULONG64;
-typedef size_t SIZE_T;
 typedef unsigned char BYTE;
 typedef void* HANDLE;
 #endif
@@ -200,6 +199,7 @@ inline std::uint64_t xgetbv_asm(int xcrReg)
 #define LEAF_EXTENDED_STATE						0x0D        // Processor Extended State Enumeration Main Leaf (EAX = 0DH, ECX = 0)
 #define LEAF_FREQUENCY_INFORMATION				0x16        // Processor Frequency Information Leaf  function 0x16 only works on Skylake or newer.
 #define LEAF_HYBRID_INFORMATION					0x1A        // Hybrid Information Sub - leaf(EAX = 1AH, ECX = 0)
+#define LEAF_CONVERGED_VECTOR_ISA				0x24        // Converged Vector ISA Sub-leaf (EAX = 24H, ECX = 0)
 #define LEAF_EXTENDED_INFORMATION_0				0x80000000  // Extended Function CPUID Information
 #define LEAF_EXTENDED_INFORMATION_1				0x80000001  // Extended Function CPUID Information
 #define LEAF_EXTENDED_BRAND_STRING_1			0x80000002  // Extended Function CPUID Information
@@ -338,10 +338,13 @@ struct FeatureFlags
 	unsigned AVX512BW : 1;	// 30
 	unsigned AVX512VL : 1;	// 31
 
+    unsigned AVX10_Version : 8;
+	unsigned APX : 1;
 
 	// Derived
 	unsigned OS_Supports_YMM : 1;
 	unsigned OS_Supports_ZMM : 1;
+	unsigned OS_Supports_APX : 1;
 
 	bool AVX_Supported() const
 	{
@@ -365,6 +368,16 @@ struct FeatureFlags
 		return OS_Supports_ZMM && AVX512F && AVX512VL && AVX512BW && AVX512DQ && AVX512CD;
 	}
 
+    // Return value of 0 means AVX10 is not supported
+    int AVX10Version() const
+    {
+        return AVX10_Version;
+    }
+
+    bool APX_Supported() const
+    {
+        return APX && OS_Supports_APX;
+    }
 };
 
 // Struct to store Processor information
@@ -481,7 +494,7 @@ inline bool CallCPUID(unsigned function, std::array<unsigned, 4>& registers, uns
 }
 
 template<typename T>
-T* AdvanceBytes(T* p, SIZE_T cb)
+T* AdvanceBytes(T* p, size_t cb)
 {
 	return reinterpret_cast<T*>(reinterpret_cast<BYTE*>(p) + cb);
 }
@@ -971,8 +984,13 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 				procInfo.flags.OS_Supports_ZMM = 1;
 			}
 		}
+		if (xcr0 & (1 << 19))
+		{
+			procInfo.flags.OS_Supports_APX = 1;
+		}
 	}
-
+    HYBRID_DETECT_TRACE(4, "=== OS_Supports_YMM = %d, OS_Supports_ZMM = %d, OS_Supports_APX = %d", 
+		procInfo.flags.OS_Supports_YMM, procInfo.flags.OS_Supports_ZMM, procInfo.flags.OS_Supports_APX);
 	CallCPUID(LEAF_EXTENDED_FEATURE_FLAGS, cpuInfo, 0, CPUIDFunctionMax);
 	{
 		bits = cpuInfo[CPUID_EBX];
@@ -1019,6 +1037,20 @@ inline void GetProcessorInfo(PROCESSOR_INFO& procInfo)
 		procInfo.turboBoost = bits[1];
 		procInfo.turboBoost3_0 = bits[14];
 	}
+
+	bool avx10Supported = false;
+	if (CallCPUID(LEAF_EXTENDED_FEATURE_FLAGS, cpuInfo, 1, CPUIDFunctionMax))
+	{
+		bits = cpuInfo[CPUID_EDX];
+		avx10Supported = bits[19] != 0;
+		procInfo.flags.APX = bits[21] != 0;
+	}
+	HYBRID_DETECT_TRACE(4, "=== avx10Supported = %d, apx = %d", avx10Supported, procInfo.flags.APX);
+	if (avx10Supported && CallCPUID(LEAF_CONVERGED_VECTOR_ISA, cpuInfo, 0, CPUIDFunctionMax))
+	{
+		procInfo.flags.AVX10_Version = cpuInfo[CPUID_EBX] & 0xFF;
+	}
+    HYBRID_DETECT_TRACE(4, "=== AVX10_Version = %d", procInfo.flags.AVX10_Version);
 
 	GetMicrocodeRevision(procInfo.microcodeRevision);
 

@@ -89,7 +89,7 @@ void Device::initOpenCLDevice(cl_platform_id inPlatform, cl_device_id inDevice, 
 		}
 	}
 
-	{ // IGCL may be wrong with old drivers, so allow CL to fix it
+	{
 		cl_bool isUMA = 0;
 		err = clDevice.getInfo<cl_bool>(CL_DEVICE_HOST_UNIFIED_MEMORY, &isUMA);
 		if (CL_SUCCESS == err)

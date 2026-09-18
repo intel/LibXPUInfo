@@ -4,9 +4,6 @@
 [submodule "external/OpenCL-CLHPP"]
 	path = external/OpenCL-CLHPP
 	url = https://github.com/KhronosGroup/OpenCL-CLHPP.git
-[submodule "external/IGCL"]
-	path = external/IGCL
-	url = https://github.com/intel/drivers.gpu.control-library
 [submodule "external/level-zero"]
 	path = external/level-zero
 	url = https://github.com/oneapi-src/level-zero

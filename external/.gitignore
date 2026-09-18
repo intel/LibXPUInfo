@@ -1,5 +1,6 @@
 NVML/*
 !NVML/README.txt
+AGS_SDK
 level-zero-build
 OpenCL-Headers-build
 OpenCL-Headers-install

@@ -215,7 +215,6 @@ int runTelemetry(XI::UI32 telemInterval_ms, XI::UI32 telem_gpu_idx, bool peakOnl
     APIType apis = APIType(XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
         | XI::API_TYPE_DX11_INTEL_PERF_COUNTER \
         | XI::API_TYPE_LEVELZERO \
-        | XI::API_TYPE_IGCL_L0 | XI::API_TYPE_IGCL \
         | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML);
 
     XI::XPUInfo xi(apis, runtimes);
@@ -317,10 +316,6 @@ int printXPUInfo(int argc, char* argv[])
         {
             peakOnly = true;
         }
-        else if (arg == "-igcl_l0_enable")
-        {
-            additionalAPIs |= XI::API_TYPE_IGCL_L0;
-        }
         // If specified, this takes precedence over additionalAPIs
         else if ((arg == "-apis") && (a+1 < argc))
         {
@@ -329,7 +324,7 @@ int printXPUInfo(int argc, char* argv[])
             istr >> std::hex >> inMask;
             if (!istr.bad())
             {
-                apiMask = static_cast<APIType>(inMask);
+                apiMask = static_cast<APIType>(inMask & ~XI::API_TYPE_DESERIALIZED); // Don't allow deserialized flag to be set
             }
         }
 #ifdef _WIN32
@@ -382,16 +377,7 @@ int printXPUInfo(int argc, char* argv[])
         if (!testIndividual)
         {
             XI::Timer timer;
-#ifdef _WIN32
-            APIType apis = APIType((XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
-                | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
-                | XI::API_TYPE_LEVELZERO \
-                | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML) | API_TYPE_WMI);
-#elif defined(__linux__)
-            APIType apis = XI::API_TYPE_NVML;
-#else
-            APIType apis = XI::API_TYPE_METAL;
-#endif
+            APIType apis = XPUINFO_INIT_ALL_APIS | API_TYPE_WMI;
             apis |= additionalAPIs;
             if (apiMask != XI::API_TYPE_UNKNOWN)
             {
@@ -420,7 +406,6 @@ int printXPUInfo(int argc, char* argv[])
             apiVec.push_back(APIType(XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI));
             apiVec.push_back(APIType(XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI | XI::API_TYPE_LEVELZERO));
             apiVec.push_back(APIType(XI::API_TYPE_DXCORE | XI::API_TYPE_SETUPAPI));
-            apiVec.push_back(APIType(XI::API_TYPE_DXCORE | XI::API_TYPE_IGCL));
             apiVec.push_back(APIType(XI::API_TYPE_DXCORE | XI::API_TYPE_OPENCL));
             apiVec.push_back(APIType(XI::API_TYPE_DXCORE | XI::API_TYPE_LEVELZERO));
             apiVec.push_back(APIType(XI::API_TYPE_DXCORE | XI::API_TYPE_NVML));

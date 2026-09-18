@@ -53,11 +53,10 @@
     #include <dxgi1_4.h>
 #endif // _WIN32
 #include "LibXPUInfo_Version.h"
-#include <string>
+#include "LibXPUInfo_Types.h"
 #include <vector>
 #include <map>
 #include <unordered_map>
-#include <memory>
 #include <iostream>
 #include <mutex>
 #include <limits>
@@ -131,71 +130,8 @@ typedef HANDLE       PDH_HQUERY;
 #include "rapidjson/document.h"
 #endif
 
-/*
-A list GPU, their type (i.e. discrete, integrated), model number, name, memory, and optional addition information like cores,...  
-If this list then the only plausiable way to run the ML pipeline will OpenVINO-CPU, ORT-CPU.
-Given a GPU entry from this list, it will tell us <hardware, framework> to run this on.  
-    Hardware: CPU, iGPU, DiscreteGPU, CPU.  
-    Framework is OpenVINO, OpenVINO-CPU, ORT-CPU, TensorRT.
-*/
-
 // NVML docs at https://developer.nvidia.com/nvidia-management-library-nvml
-// TODO: For AMD, see https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK, https://github.com/GPUOpen-Tools/gpu_performance_api, https://gpuopen.com/gpuperfapi/
-// 
-
-// ** Fwd Decl **
-// IGCL
-typedef struct _ctl_device_adapter_handle_t* ctl_device_adapter_handle_t;
-typedef struct _ctl_freq_handle_t* ctl_freq_handle_t;
-
-// Level Zero
-typedef struct _ze_driver_handle_t* ze_driver_handle_t;
-typedef struct _ze_device_handle_t* ze_device_handle_t;
-typedef struct _zes_freq_handle_t* zes_freq_handle_t;
-typedef struct _zes_engine_handle_t* zes_engine_handle_t;
-typedef struct _ze_device_properties_t ze_device_properties_t;
-typedef struct _ze_driver_extension_properties_t ze_driver_extension_properties_t;
-
-// OpenCL
-typedef struct _cl_platform_id* cl_platform_id;
-typedef struct _cl_device_id* cl_device_id;
-
-#if defined(_WIN32) || defined(__linux__)
-// NVML
-typedef struct nvmlDevice_st* nvmlDevice_t;
-#endif
-
-#ifdef _WIN32
-// SetupAPI
-typedef PVOID HDEVINFO;
-#else
-// Windows types used for cross-OS compatibility
-typedef union {std::uint64_t ui64;} LUID; // Union primarily to make it a different type than XI::UI64 for overloading
-typedef std::uint32_t UINT;
-typedef std::uint32_t DWORD;
-typedef wchar_t WCHAR;
-typedef struct DXGI_ADAPTER_DESC1
-{
-    WCHAR Description[ 128 ];
-    UINT VendorId;
-    UINT DeviceId;
-    UINT SubSysId;
-    UINT Revision;
-    SIZE_T DedicatedVideoMemory;
-    SIZE_T DedicatedSystemMemory;
-    SIZE_T SharedSystemMemory;
-    LUID AdapterLuid;
-    UINT Flags;
-}   DXGI_ADAPTER_DESC1;
-
-struct DXCoreAdapterMemoryBudget
-{
-    uint64_t budget;
-    uint64_t currentUsage;
-    uint64_t availableForReservation;
-    uint64_t currentReservation;
-};
-#endif
+// For AMD, see https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK, https://github.com/GPUOpen-Tools/gpu_performance_api, https://gpuopen.com/gpuperfapi/
 
 namespace XI
 {
@@ -205,104 +141,6 @@ namespace XI
         using AllocatorType = decltype(std::declval<rapidjson::Document>().GetAllocator());
     }
 #endif
-
-    using String = std::string;
-    using WString = std::wstring;
-    using UI64 = std::uint64_t;
-    using UI32 = std::uint32_t;
-    using UI16 = std::uint16_t;
-    using U8 = unsigned char;
-    using I64 = std::int64_t;
-    using I32 = std::int32_t;
-    using I16 = std::int16_t;
-    using I8 = char;
-    class SystemInfo; // Fwd decl
-    class L0_Extensions; // Fwd decl
-
-    template <typename T>
-    using SharedPtr = std::shared_ptr<T>;
-
-    struct XPUINFO_EXPORT NoCopyAssign
-    {
-        NoCopyAssign() {};
-        NoCopyAssign(const NoCopyAssign&) = delete;
-        NoCopyAssign& operator=(const NoCopyAssign&) = delete;
-    };
-
-    enum DeviceType : UI32
-    {
-        DEVICE_TYPE_UNKNOWN = 0,
-        DEVICE_TYPE_CPU     = 1,
-        DEVICE_TYPE_GPU     = 1 << 1,
-        DEVICE_TYPE_NPU     = 1 << 2,
-        DEVICE_TYPE_OTHER   = 1 << 3,
-    };
-    std::ostream& operator<<(std::ostream& s, DeviceType t);
-
-    enum APIType : UI32
-    {
-        API_TYPE_UNKNOWN =                  0,
-        API_TYPE_DXGI =                     1,
-        API_TYPE_DX11_INTEL_PERF_COUNTER =  1 << 1,
-        API_TYPE_IGCL =                     1 << 2,
-        API_TYPE_OPENCL =                   1 << 3,
-        API_TYPE_LEVELZERO =                1 << 4,
-        API_TYPE_SETUPAPI =                 1 << 5,
-        API_TYPE_DXCORE =                   1 << 6,
-        API_TYPE_NVML =                     1 << 7,
-        API_TYPE_METAL =                    1 << 8,
-        API_TYPE_WMI =                      1 << 9,
-        API_TYPE_DESERIALIZED =             1 << 10,
-        API_TYPE_IGCL_L0 =                  1 << 11, // Allow IGCL to use L0.  Once L0 issue with ZE_INIT_FLAG_VPU_ONLY is resolved, this can be removed.
-        API_TYPE_LAST =                     1 << 12,
-    };
-    inline APIType operator|=(APIType& a, APIType b) {
-        a = static_cast<APIType>(a | b);
-        return a;
-    }
-
-#ifdef _WIN32
-    // WMI takes more time to initialize than others, 
-    // so it is not included in this default all-API macro
-    // If WMI is desired, use APIType(XPUINFO_INIT_ALL_APIS | API_TYPE_WMI)
-#define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
-    | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_IGCL | XI::API_TYPE_OPENCL \
-    | XI::API_TYPE_LEVELZERO \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML)
-#elif defined(__linux__)
-#define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML
-#else
-#define XPUINFO_INIT_ALL_APIS XI::API_TYPE_METAL
-#endif
-
-    inline APIType operator|(APIType l, APIType r)
-    {
-        return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
-    }
-    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
-
-    enum UMAType : UI32
-    {
-        UMA_UNKNOWN =       0,
-        UMA_INTEGRATED =    1,
-        NONUMA_DISCRETE =   1 << 1
-    };
-
-    template <typename T>
-    inline double BtoGB(T n)
-    {
-        return (double(n) / (1024.0 * 1024 * 1024));
-    }
-    template <typename T>
-    inline double BtoKB(T n)
-    {
-        return (double(n) / 1024.0);
-    }
-
-    struct IGCLAdapterProperties;
-    typedef SharedPtr<IGCLAdapterProperties> IGCLAdapterPropertiesPtr;
-    struct IGCLPciProperties;
-    typedef SharedPtr<IGCLPciProperties> IGCLPciPropertiesPtr;
 
     // Helper class to get driver version with given adapter luid.
     class XPUINFO_EXPORT DeviceDriverVersion
@@ -390,27 +228,6 @@ namespace XI
         bool isValidXPU() const; 
     };
     typedef std::shared_ptr<DriverInfo> DriverInfoPtr;
-
-    enum class IntelGfxFamily : UI32
-    {
-        iUnknown,
-        iGen9_Generic,
-        iGen11_Generic,
-        iGen12LP_Generic,
-        iGen12HP_DG2,
-        iXe_S, // MTL-U, ARL-S, ARL-U
-        iXe_L_MeteorLakeH,
-        iXe_L_ArrowLakeH,
-        iXe2_Generic,
-        iXe2_LunarLake,
-        iXe2_BattleMage,
-        iXe3_Generic
-    };
-    typedef std::pair<IntelGfxFamily, std::string> IntelGfxFamilyNamePair;
-
-    const UINT kVendorId_Intel = 0x8086;
-    const UINT kVendorId_nVidia = 0x10de;
-    const UINT kVendorId_AMD = 0x1002;
 
     // Properties that are frequently used or common to most devices
     struct XPUINFO_EXPORT DeviceProperties
@@ -541,6 +358,12 @@ namespace XI
         std::shared_ptr<HybridDetect::PROCESSOR_INFO> m_pProcInfo;
     };
 
+    typedef std::unique_ptr<AGSGPUInfo> AGSGPUInfoPtr;
+#ifdef XPUINFO_USE_AGS
+    XPUINFO_EXPORT
+    const char* getGenerationName_AGS(XI::I32 agsAsicFamily);
+#endif
+
     class Device;
     typedef std::shared_ptr<Device> DevicePtr;
 
@@ -561,7 +384,6 @@ namespace XI
         friend class XPUInfo;
         const DeviceProperties& getProperties() const { return m_props; };
         APIType getCurrentAPIs() const { return validAPIs; }
-        ctl_device_adapter_handle_t getHandle_IGCL() const { return m_hIGCLAdapter; }
         ze_device_handle_t getHandle_L0() const { return m_L0Device; }
 #ifdef XPUINFO_USE_NVML
         nvmlDevice_t getHandle_NVML() const { return m_nvmlDevice; }
@@ -581,8 +403,12 @@ namespace XI
         bool operator==(const Device& dev) const;
 #if XPUINFO_HAS_CPP17
         std::optional<IntelGfxFamilyNamePair> getIntelGfxFamilyName() const;
+        // Newer devices have a higher value of IntelGfxArchitecture
+        std::optional<IntelGfxArchitecture> getIntelGfxArchitecture() const;
+        std::optional<IntelNPUArchitecture> getIntelNPUArchitecture() const;
 #endif
-
+        static std::string getIntelGfxArchitectureName(IntelGfxArchitecture arch);
+        static std::string getIntelNPUArchitectureName(IntelNPUArchitecture arch);
     protected:
         APIType validAPIs = API_TYPE_UNKNOWN;
         DeviceProperties m_props;
@@ -596,11 +422,6 @@ namespace XI
         // Level Zero
         void initL0Device(ze_device_handle_t inL0Device, const ze_device_properties_t& device_properties, const L0_Extensions& exts);
         ze_device_handle_t m_L0Device = nullptr;
-
-        // IGCL
-        void initIGCLDevice(ctl_device_adapter_handle_t inHandle, IGCLAdapterPropertiesPtr& inPropsPtr);
-        ctl_device_adapter_handle_t m_hIGCLAdapter = nullptr;
-        String m_IGCLAdapterName;
 
         // OpenCL
         void initOpenCLDevice(cl_platform_id inPlatform, cl_device_id inDevice, const std::string& inExtensions);
@@ -620,6 +441,11 @@ namespace XI
 #ifdef XPUINFO_USE_NVML
         void initNVMLDevice(nvmlDevice_t device);
         nvmlDevice_t m_nvmlDevice = nullptr;
+#endif
+
+        // AGS
+#ifdef XPUINFO_USE_AGS
+        void initAGSDevice(int agsAdapterIndex, const AGSGPUInfoPtr& pAGSAdapterInfo);
 #endif
     };
     XPUINFO_EXPORT std::ostream& operator<<(std::ostream& ostr, const Device& xi);
@@ -652,7 +478,7 @@ namespace XI
             TELEMETRYITEM_MEDIA_ACTIVITY = 1 << 5,
 
             TELEMETRYITEM_MEMORY_USAGE = 1 << 6,
-            TELEMETRYITEM_TIMESTAMP_DOUBLE = 1 << 7, // Use double (i.e. from IGCL), else use UI64 from CPU
+            TELEMETRYITEM_TIMESTAMP_DOUBLE = 1 << 7, // Use double, else use UI64 from CPU
 
             TELEMETRYITEM_FREQUENCY_MEDIA = 1 << 8,
             TELEMETRYITEM_FREQUENCY_MEMORY = 1 << 9,
@@ -662,7 +488,7 @@ namespace XI
             // Flags that modify behavior
             TELEMETRYITEM_PEAKUSAGE_ONLY = 1U << 31 // If set, only peak usage is recorded, no over-time data
 
-            // TODO: PCI bandwidth?  Neither IGCL nor L0 working now.  Can derive from micro+mem_bw, though.
+            // TODO: PCI bandwidth?  L0 not working now.  Can derive from micro+mem_bw, though.
         };
 
         TelemetryTracker(const DevicePtr& deviceToTrack, UI32 msPeriod, 
@@ -777,11 +603,8 @@ namespace XI
 #endif
 
         void InitL0();
-        void InitIGCL();
-
         void RecordNow();
         bool RecordMemoryUsage(TimedRecord& rec);
-        bool RecordIGCL(TimedRecord& rec);
         bool RecordNVML(TimedRecord& rec);
         bool RecordL0(TimedRecord& rec);
         bool RecordCPUTimestamp(TimedRecord& rec);
@@ -814,9 +637,6 @@ namespace XI
         typedef std::unique_ptr<engineActivityL0, engineActivityL0Deleter> engineActivityL0Ptr;
         std::unordered_map<zes_engine_handle_t, engineActivityL0Ptr> m_engineHandlesL0;
 #endif
-
-        // IGCL, ctlFrequencyGetState
-        ctl_freq_handle_t m_IGCL_MemFreqHandle = nullptr;
     };
 
     class XPUINFO_EXPORT TelemetryTrackerWithScopedLog : public TelemetryTracker
@@ -852,14 +672,6 @@ namespace XI
     public:
         const APIType kAPIType = API_TYPE_LEVELZERO;
         typedef ze_device_handle_t API_handle_type;
-    };
-
-    template <>
-    class API_Traits<API_TYPE_IGCL>
-    {
-    public:
-        const APIType kAPIType = API_TYPE_IGCL;
-        typedef ctl_device_adapter_handle_t API_handle_type;
     };
     
     class XPUINFO_EXPORT SetupDeviceInfo
@@ -1085,8 +897,8 @@ namespace XI
         void initCPU();
 #ifdef _WIN32
         void initDXGI(APIType initMask);
-        void initIGCL(bool useL0);
         void initOpenCL();
+        void initAGS();
         void initWMI();
 #elif __APPLE__
         void initMetal();

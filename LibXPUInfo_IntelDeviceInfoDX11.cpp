@@ -35,6 +35,7 @@ namespace WRL = Microsoft::WRL;
 #endif
 #define DXTRACE_ERR(msg, hr) { XI::DebugStreamT dStr(false); dStr << (msg) << ": " << (hr) << std::endl; }
 
+#ifndef _M_ARM64
 namespace
 {
 	// New device dependent structure
@@ -324,11 +325,17 @@ namespace
 		return GGF_SUCCESS;
 	}
 } // private
-
+#endif // _M_ARM64
 namespace XI
 {
-void Device::initDXIntelPerfCounter(IDXGIAdapter1* pAdapter)
+// Disabled for ARM platforms since no Intel GPUs
+void Device::initDXIntelPerfCounter(IDXGIAdapter1* 
+#ifndef _M_ARM64
+	pAdapter
+#endif
+)
 {
+#ifndef _M_ARM64
 	// Retrieve Intel device information
 	IntelDeviceInfoHeader	intelDeviceInfoHeader = { 0 };
 	byte					intelDeviceInfoBuffer[1024];	// enough space to allow some future expansion
@@ -381,6 +388,7 @@ void Device::initDXIntelPerfCounter(IDXGIAdapter1* pAdapter)
 	{
 		dStr << __FUNCTION__ << "ERROR: UNKOWN ERROR\n";
 	}
+#endif // !_M_ARM64
 }
 
 } // XI
