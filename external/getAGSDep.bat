@@ -8,6 +8,8 @@ set _EXTPATH=%~dp0
 set AGS_SDK_BASE_NAME=https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK/archive/refs/tags
 set AGS_SDK_VER=6.3.0
 
+pushd %_EXTPATH%
+
 if NOT EXIST AGS_SDK.zip curl.exe -L -o AGS_SDK.zip %AGS_SDK_BASE_NAME%/v%AGS_SDK_VER%.zip
 @if %ERRORLEVEL% neq 0 goto ERROR
 c:\Windows\System32\tar.exe xvf AGS_SDK.zip
@@ -20,4 +22,5 @@ exit /B %ERRORLEVEL%
 :AGS_SDK_DONE
 :END
 
+popd
 @endlocal
