@@ -30,7 +30,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 namespace WRL = Microsoft::WRL;
 #endif
 
@@ -110,7 +110,7 @@ namespace XI
 	};
 	union ipvUnion
 	{
-		UI32 ipVersion = 0; // From OpenCL, L0, or IGCL
+		UI32 ipVersion = 0; // From OpenCL or L0
 		ipvParts ipv;
 	};
 	struct GenName {
@@ -121,65 +121,152 @@ namespace XI
 	};
 
 #define MAKE_FAMILY_NAME_PAIR(x) {IntelGfxFamily::i##x, #x}
-	static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
-		MAKE_FAMILY_NAME_PAIR(Gen9_Generic),
-		MAKE_FAMILY_NAME_PAIR(Gen11_Generic),
-		MAKE_FAMILY_NAME_PAIR(Gen12LP_Generic),
-		MAKE_FAMILY_NAME_PAIR(Gen12HP_DG2),
-		MAKE_FAMILY_NAME_PAIR(Xe_S),
-		MAKE_FAMILY_NAME_PAIR(Xe_L_MeteorLakeH),
-		MAKE_FAMILY_NAME_PAIR(Xe_L_ArrowLakeH),
-		MAKE_FAMILY_NAME_PAIR(Xe2_Generic),
-		MAKE_FAMILY_NAME_PAIR(Xe2_LunarLake),
-		MAKE_FAMILY_NAME_PAIR(Xe2_BattleMage),
-		MAKE_FAMILY_NAME_PAIR(Xe3_Generic)
-	};
+    static const std::unordered_map<IntelGfxFamily, std::string> S_IntelGfxFamilyNameMap {
+        MAKE_FAMILY_NAME_PAIR(Gen9_Generic),
+        MAKE_FAMILY_NAME_PAIR(Gen11_Generic),
+        MAKE_FAMILY_NAME_PAIR(Gen12LP_Generic),
+        MAKE_FAMILY_NAME_PAIR(Gen12HP_DG2),
+        MAKE_FAMILY_NAME_PAIR(Xe_S),
+        MAKE_FAMILY_NAME_PAIR(Xe_L_MeteorLakeH),
+        MAKE_FAMILY_NAME_PAIR(Xe_L_ArrowLakeH),
+        MAKE_FAMILY_NAME_PAIR(Xe2_Generic),
+        MAKE_FAMILY_NAME_PAIR(Xe2_LunarLake),
+        MAKE_FAMILY_NAME_PAIR(Xe2_BattleMage),
+        MAKE_FAMILY_NAME_PAIR(Xe3_Generic),
+        MAKE_FAMILY_NAME_PAIR(Xe3_PantherLake),
+        MAKE_FAMILY_NAME_PAIR(Xe3_NovaLake),
+        MAKE_FAMILY_NAME_PAIR(Xe3p_Generic),
+        MAKE_FAMILY_NAME_PAIR(Xe3p_NovaLakeP),
+    };
 
-	IntelGfxFamily getIntelGfxFamily(ipvParts ipv)
-	{
-		IntelGfxFamily outFamily = IntelGfxFamily::iUnknown;
-		switch (ipv.architecture)
-		{
-		case 9:  outFamily = IntelGfxFamily::iGen9_Generic; break;
-		case 11: outFamily = IntelGfxFamily::iGen11_Generic; break;
-		case 12:
-			outFamily = IntelGfxFamily::iGen12LP_Generic;
-			if (ipv.release > 50 && ipv.release <= 59)
-				outFamily = IntelGfxFamily::iGen12HP_DG2;
-			else if (ipv.release == 70) // MTL-U, ARL-S, ARL-U
-				outFamily = IntelGfxFamily::iXe_S;
-			else if (ipv.release == 71)
-				outFamily = IntelGfxFamily::iXe_L_MeteorLakeH;
-			else if (ipv.release == 74)
-				outFamily = IntelGfxFamily::iXe_L_ArrowLakeH;
-			break;
-		case 20: outFamily = IntelGfxFamily::iXe2_Generic; break;
-		case 30: outFamily = IntelGfxFamily::iXe3_Generic; break;
-		default: outFamily = IntelGfxFamily::iUnknown; break;
-		}
-		return outFamily;
-	}
+#define MAKE_GPUARCH_NAME_PAIR(x) {IntelGfxArchitecture::i##x, #x}
+	static const std::unordered_map<IntelGfxArchitecture, std::string> S_IntelGfxArchitectureNameMap{
+        MAKE_GPUARCH_NAME_PAIR(Gen9),
+        MAKE_GPUARCH_NAME_PAIR(Gen11),
+        MAKE_GPUARCH_NAME_PAIR(Gen12orXe),
+        MAKE_GPUARCH_NAME_PAIR(Xe2),
+        MAKE_GPUARCH_NAME_PAIR(Xe3),
+        MAKE_GPUARCH_NAME_PAIR(Xe3p),
+    };
+
+    IntelGfxFamily getIntelGfxFamily(ipvParts ipv)
+    {
+        IntelGfxFamily outFamily = IntelGfxFamily::iUnknown;
+        switch (ipv.architecture)
+        {
+        case 9:  outFamily = IntelGfxFamily::iGen9_Generic; break;
+        case 11: outFamily = IntelGfxFamily::iGen11_Generic; break;
+        case 12:
+            outFamily = IntelGfxFamily::iGen12LP_Generic;
+            if (ipv.release > 50 && ipv.release <= 59)
+                outFamily = IntelGfxFamily::iGen12HP_DG2;
+            else if (ipv.release == 70) // MTL-U, ARL-S, ARL-U
+                outFamily = IntelGfxFamily::iXe_S;
+            else if (ipv.release == 71)
+                outFamily = IntelGfxFamily::iXe_L_MeteorLakeH;
+            else if (ipv.release == 74)
+                outFamily = IntelGfxFamily::iXe_L_ArrowLakeH;
+            break;
+        case 20: outFamily = IntelGfxFamily::iXe2_Generic; break;
+        case 30: 
+            outFamily = IntelGfxFamily::iXe3_Generic;
+            if ((ipv.release == 0x4) || (ipv.release == 0x5))
+                outFamily = IntelGfxFamily::iXe3_NovaLake;
+            else if ((ipv.release == 0) || (ipv.release == 1))
+                outFamily = IntelGfxFamily::iXe3_PantherLake;
+            break;
+        case 35: outFamily = IntelGfxFamily::iXe3p_Generic; 
+            if ((ipv.release == 10) && (ipv.revision == 0))
+                outFamily = IntelGfxFamily::iXe3p_NovaLakeP; // Placeholder for future Xe3+ devices
+            break;
+        default: outFamily = IntelGfxFamily::iUnknown; break;
+        }
+        return outFamily;
+    }
 
 #if XPUINFO_HAS_CPP17
-	std::optional<IntelGfxFamilyNamePair> Device::getIntelGfxFamilyName() const
-	{
-		if (IsVendor(kVendorId_Intel) && getType()==DEVICE_TYPE_GPU)
-		{
-			ipvUnion ipvu;
-			ipvu.ipVersion = m_props.DeviceIPVersion;
-			if (ipvu.ipVersion)
-			{
-				auto ipFamily = getIntelGfxFamily(ipvu.ipv);
-				auto ipfIter = S_IntelGfxFamilyNameMap.find(ipFamily);
-				if (ipfIter != S_IntelGfxFamilyNameMap.end())
-				{
-					return *ipfIter;
-				}
-			}
-		}
-		return std::nullopt;
-	}
+    std::optional<IntelGfxFamilyNamePair> Device::getIntelGfxFamilyName() const
+    {
+        if (IsVendor(kVendorId_Intel) && getType()==DEVICE_TYPE_GPU)
+        {
+            ipvUnion ipvu;
+            ipvu.ipVersion = m_props.DeviceIPVersion;
+            if (ipvu.ipVersion)
+            {
+                auto ipFamily = getIntelGfxFamily(ipvu.ipv);
+                auto ipfIter = S_IntelGfxFamilyNameMap.find(ipFamily);
+                if (ipfIter != S_IntelGfxFamilyNameMap.end())
+                {
+                    return *ipfIter;
+                }
+            }
+        }
+        return std::nullopt;
+    }
+
+    IntelGfxArchitecture getIntelGfxArchitectureFromGen(const UI32 gen);
+    std::optional<IntelGfxArchitecture> Device::getIntelGfxArchitecture() const
+    {
+        if (IsVendor(kVendorId_Intel) && getType() == DEVICE_TYPE_GPU)
+        {
+            ipvUnion ipvu;
+            ipvu.ipVersion = m_props.DeviceIPVersion; // Requires L0 or OpenCL - needed for forward compatibility with future devices
+            if (ipvu.ipVersion)
+            {
+                return static_cast<IntelGfxArchitecture>(ipvu.ipv.architecture);
+            }
+            else if (m_props.DeviceGenerationAPI == API_TYPE_DX11_INTEL_PERF_COUNTER)
+            {
+                // Look up in S_GenNameMap, not forward compatible with future devices, but better than nothing
+                auto arch = getIntelGfxArchitectureFromGen(m_props.DeviceGenerationID);
+                if (arch != IntelGfxArchitecture::iUnknown)
+                {
+                    return arch;
+                }
+            }
+        }
+        return std::nullopt;
+    }
+
+    std::optional<IntelNPUArchitecture> Device::getIntelNPUArchitecture() const
+    {
+        if (IsVendor(kVendorId_Intel) && getType() == DEVICE_TYPE_NPU 
+			&& (m_props.DeviceGenerationAPI == API_TYPE_SETUPAPI))
+        {
+            switch (static_cast<UI32>(m_props.DeviceGenerationID))
+            {
+            case 0x80000000: return IntelNPUArchitecture::NPU_2_7;
+            case 0x80000002: return IntelNPUArchitecture::NPU_4;
+            case 0x80000003: return IntelNPUArchitecture::NPU_5;
+            case 0x80000004: return IntelNPUArchitecture::NPU_6;
+            default: return std::nullopt;
+            }
+        }
+        return std::nullopt;
+    }
 #endif
+
+    std::string Device::getIntelGfxArchitectureName(IntelGfxArchitecture arch)
+    {
+        auto iter = S_IntelGfxArchitectureNameMap.find(arch);
+        if (iter != S_IntelGfxArchitectureNameMap.end())
+        {
+            return iter->second;
+        }
+        return "Unknown";
+    }
+
+	std::string Device::getIntelNPUArchitectureName(IntelNPUArchitecture arch)
+	{
+        switch (arch)
+        {
+        case IntelNPUArchitecture::NPU_2_7: return "NPU2.7";
+        case IntelNPUArchitecture::NPU_4: return "NPU4";
+        case IntelNPUArchitecture::NPU_5: return "NPU5";
+        case IntelNPUArchitecture::NPU_6: return "NPU6";
+        default: return "Unknown";
+        }
+	}
 
 	/* This table is purposefully internal to LibXPUInfo. 
 	*  Design goal is to expose information without creating end-user dependency.
@@ -202,14 +289,16 @@ namespace XI
 		{1273, "Arrow Lake",  "iARL", 0x3118004},
 		{1274, "Battlemage", "BMG_", 0x5004000},
 		{1275, "Lunar Lake", "iLNL", 0x5010001},
-		{1275, "Lunar Lake", "LNL_", 0x5010001}, // TODO: Remove one of these when no longer needed
-		{1275, "Lunar Lake", "LNL_", 0x5010004}, // TODO: Remove one of these when no longer needed
+		{1275, "Lunar Lake", "LNL_", 0x5010001}, {1275, "Lunar Lake", "LNL_", 0x5010004},
 		{1300, "Panther Lake", "PTL_", 0x07800004},
+        {1340, "Nova Lake", "NVL_", 0x7814001}, {1340, "Nova Lake", "NVL_", 0x7814004},
+		{1360, "Nova Lake-P", "NVL_IG_D75F", 0x8c28000},
 		// Devices with no "Intel Device Information" value have negative values
 		{0x80000000, "NPU2.7", "mtl_w" },
 		{0x80000000, "NPU2.7", "NPU2_7" },
 		{0x80000002, "NPU4", "NPU4" },
 		{0x80000003, "NPU5", "NPU5" },
+		{0x80000004, "NPU6", "NPU6" },
 	};
 	static const int S_numGenNames = sizeof(S_GenNameMap)/sizeof(GenName);
 
@@ -217,9 +306,9 @@ namespace XI
 	// Could be used as member of DeviceProperties, but relying on this creates an end-user dependency on having table updated
 	UI32 getIDIGenFromIPVersion(const UI32 IPVersion)
 	{
-		for (int i = 0; i < S_numGenNames; ++i)
+		for (int i = S_numGenNames - 1; i >= 0; --i)
 		{
-			if (S_GenNameMap[i].ipVersion == IPVersion)
+			if (S_GenNameMap[i].ipvu.ipVersion == IPVersion)
 			{
 				return S_GenNameMap[i].gen;
 			}
@@ -227,6 +316,18 @@ namespace XI
 		return 0;
 	}
 #endif
+    IntelGfxArchitecture getIntelGfxArchitectureFromGen(const UI32 gen)
+    {
+        for (int i = S_numGenNames - 1; i >= 0; --i)
+        {
+            if (S_GenNameMap[i].gen == gen)
+            {
+                return S_GenNameMap[i].ipvu.ipv.architecture == 0 ? IntelGfxArchitecture::iUnknown : 
+                    static_cast<IntelGfxArchitecture>(S_GenNameMap[i].ipvu.ipv.architecture);
+            }
+        }
+        return IntelGfxArchitecture::iUnknown;
+    }
 
 	static const std::unordered_map<XI::UI32, XI::String> S_nVArchNames =
 	{
@@ -270,11 +371,6 @@ namespace XI
 				apiNames.push_back("Intel Device Information");
 				break;
 #endif
-#ifdef XPUINFO_USE_IGCL
-			case API_TYPE_IGCL:
-				apiNames.push_back("IGCL");
-				break;
-#endif
 #ifdef XPUINFO_USE_LEVELZERO
 			case API_TYPE_LEVELZERO:
 				apiNames.push_back("Level Zero");
@@ -295,6 +391,11 @@ namespace XI
 				apiNames.push_back("NVML");
 				break;
 #endif
+#ifdef XPUINFO_USE_AGS
+			case API_TYPE_AGS:
+				apiNames.push_back("AGS");
+				break;
+#endif
 #ifdef __APPLE__
             case API_TYPE_METAL:
                 apiNames.push_back("Metal");
@@ -304,11 +405,6 @@ namespace XI
 			case API_TYPE_WMI:
 				apiNames.push_back("WMI");
 				break;
-#endif
-#ifdef XPUINFO_USE_IGCL
-			case API_TYPE_IGCL_L0:
-                apiNames.push_back("IGCL_L0");
-                break;
 #endif
 			case API_TYPE_DESERIALIZED:
 				apiNames.push_back("Deserialized");
@@ -387,12 +483,12 @@ bool PCIAddressType::GetFromWStr(const WString& inStr)
 // From https://github.com/GameTechDev/gpudetect/blob/master/GPUDetect.cpp#L448
 // Get driver version from LUID and registry
 DeviceDriverVersion::DeviceDriverVersion(LUID 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 	inLuid
 #endif
 	) : mRawVersion(0ULL)
 {
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 	HKEY dxKeyHandle = nullptr;
 	DWORD numOfAdapters = 0;
 
@@ -663,7 +759,7 @@ bool RuntimeVersion::operator==(const RuntimeVersion& l) const
 	return !operator!=(l);
 }
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 void XPUInfo::initDXGI(APIType initMask)
 {
     DWORD dxgiFactoryFlags = 0;
@@ -712,6 +808,7 @@ void XPUInfo::initDXGI(APIType initMask)
 					if (!(m_UsedAPIs & API_TYPE_DXGI))
 						m_UsedAPIs = m_UsedAPIs | API_TYPE_DXGI;
 
+#if defined(_M_AMD64) || defined(_M_IX86)
 					if ((initMask & API_TYPE_DX11_INTEL_PERF_COUNTER) && 
 						newDevice->IsVendor(kVendorId_Intel)) // Early-out for non-Intel devices
 					{
@@ -723,6 +820,7 @@ void XPUInfo::initDXGI(APIType initMask)
 							m_UsedAPIs = m_UsedAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
 						}
 					}
+#endif
 				}
             }
         }
@@ -919,6 +1017,12 @@ const char* DeviceProperties::getDeviceGenerationName() const
 			return it->second.c_str();
 		}
 	}
+#ifdef XPUINFO_USE_AGS
+	else if (DeviceGenerationAPI == API_TYPE_AGS)
+	{
+        return getGenerationName_AGS(DeviceGenerationID);
+	}
+#endif
 	return nullptr;
 }
 
@@ -950,7 +1054,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 #endif
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 	if (initMask & (API_TYPE_DXGI | API_TYPE_DX11_INTEL_PERF_COUNTER))
 	{
 		initDXGI(initMask); // Must be first
@@ -964,10 +1068,10 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 #endif
 
-#ifdef XPUINFO_USE_IGCL
-	if (initMask & API_TYPE_IGCL)
+#ifdef XPUINFO_USE_AGS
+	if (initMask & API_TYPE_AGS)
 	{
-		initIGCL((initMask & API_TYPE_IGCL_L0) != 0);
+		initAGS();
 	}
 #endif
     
@@ -1104,10 +1208,6 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
     }
 #endif
     
-	// D3D12 CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE1) has UMA flags
-    // L0 has integrated flag, num EUs, clockRate in ze_device_properties_t
-    // TODO: Use IGCL ctl_power_properties_t or ctlPowerGetLimits() for TDP info if not using API_TYPE_DX11_INTEL_PERF_COUNTER
-
 	if (initMask & API_TYPE_DXGI)
 	{
 		finalInitDXGI();
@@ -1182,24 +1282,6 @@ bool XPUInfo::getDevice<API_TYPE_LEVELZERO>(UI64 inLUID, typename API_Traits<API
 	return false;
 }
 
-template <>
-bool XPUInfo::getDevice<API_TYPE_IGCL>(UI64 inLUID, typename API_Traits<API_TYPE_IGCL>::API_handle_type* outTypePtr)
-{
-	if (outTypePtr)
-	{
-		auto it = m_Devices.find(inLUID);
-		if (it != m_Devices.end())
-		{
-			if (it->second->m_hIGCLAdapter)
-			{
-				*outTypePtr = it->second->m_hIGCLAdapter;
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 DevicePtr XPUInfo::getDeviceInternal(UI64 inLUID)
 {
 	auto it = m_Devices.find(inLUID);
@@ -1262,7 +1344,7 @@ const DevicePtr XPUInfo::getDeviceByIndex(UI32 inIndex) const
 	return DevicePtr();
 }
 
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 float DriverInfo::SystemTimeToYears(const SYSTEMTIME& inSysTime) 
 {
     float years = inSysTime.wYear + inSysTime.wMonth / 12.0f + inSysTime.wDay / 365.25f;
@@ -1298,7 +1380,7 @@ float DriverInfo::DriverAgeInYears() const
 bool DriverInfo::isValidXPU() const
 {
 #ifdef _WIN32
-	return XI::LuidToUI64(DeviceLUID) && (EnumeratorName == L"PCI");
+	return XI::LuidToUI64(DeviceLUID) && ((EnumeratorName == L"PCI") || (EnumeratorName == L"ACPI"));
 #else
 	return true;
 #endif
@@ -1331,7 +1413,7 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
     }
 	if (devProps.pDriverInfo)
 	{
-#if defined(_WIN32) && !defined(_M_ARM64)
+#if defined(_WIN32)
 		SYSTEMTIME sysTime;
 		float driverAge = devProps.pDriverInfo->DriverAgeInYears(devProps.pDriverInfo->DriverDate, sysTime);
 		if (!std::signbit(driverAge)) // not negative
@@ -1470,15 +1552,23 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	}
 	if (devProps.DeviceGenerationAPI != API_TYPE_UNKNOWN)
 	{
-		ostr << "\tGenerationAPI = " << devProps.DeviceGenerationAPI << std::endl;
+		ostr << "\tGenerationAPI: " << devProps.DeviceGenerationAPI << std::endl;
 	}
 	if (devProps.DeviceGenerationID != -1)
 	{
-		ostr << "\tGeneration = ";
+		ostr << "\tGeneration: ";
 		const char* genName = devProps.getDeviceGenerationName();
+		if (genName)
+		{
+			ostr << genName;
+		}
 		if (devProps.DeviceGenerationID >= 0)
 		{
 			bool bUseHex = (devProps.DeviceGenerationAPI != API_TYPE_DX11_INTEL_PERF_COUNTER);
+			if (genName)
+			{
+				ostr << "(";
+			}
 			if (bUseHex)
 				ostr << std::hex << "0x";
 			ostr << devProps.DeviceGenerationID;
@@ -1486,7 +1576,7 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 				ostr << std::dec;
 			if (genName)
 			{
-				ostr << ", ";
+				ostr << ")";
 			}
 		}
 		else if (devProps.DeviceGenerationID < 0)
@@ -1498,19 +1588,19 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 				{
 					if (S_GenNameMap[i].ipvu.ipVersion)
 					{
+						if (genName)
+						{
+							ostr << "(";
+						}
 						ostr << std::hex << "0x" << S_GenNameMap[i].ipvu.ipVersion << std::dec;
 						if (genName)
 						{
-							ostr << ", ";
+							ostr << ")";
 						}
 					}
 					break;
 				}
 			}
-		}
-		if (genName)
-		{
-			ostr << genName;
 		}
 		ostr << std::endl;
 	}
@@ -1518,16 +1608,25 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	{
 		{
 			SaveRestoreIOSFlags sr(ostr);
-			ostr << "\tIP Version: 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << devProps.DeviceIPVersion;
+			ostr << "\tIP Version: 0x" << std::hex << std::setw(8) << std::right << std::setfill('0') << devProps.DeviceIPVersion << std::endl;
 		}
 #if XPUINFO_HAS_CPP17
-		auto IntelFamilyName = xiDev.getIntelGfxFamilyName();
-		if (IntelFamilyName.has_value())
+		auto intelFamilyName = xiDev.getIntelGfxFamilyName();
+		auto intelGPUArch = xiDev.getIntelGfxArchitecture();
+		if (intelFamilyName.has_value() && intelGPUArch.has_value())
 		{
-			ostr << ", " << IntelFamilyName->second;
+			ostr << "\tIntel GPU Architecture, Family: " << Device::getIntelGfxArchitectureName(intelGPUArch.value()) << "(" << static_cast<UI32>(intelGPUArch.value()) << "), "
+				<< intelFamilyName->second << "(" << static_cast<UI32>(intelFamilyName->first) << ")\n";
 		}
 #endif
-		ostr << std::endl;
+	}
+	if (xiDev.IsVendor(kVendorId_Intel) && (xiDev.getType() == DEVICE_TYPE_NPU))
+	{
+		auto npuArch = xiDev.getIntelNPUArchitecture();
+		if (npuArch.has_value())
+		{
+			ostr << "\tIntel NPU Architecture: " << Device::getIntelNPUArchitectureName(npuArch.value()) << "(" << static_cast<UI32>(npuArch.value()) << ")" << std::endl;
+		}
 	}
 	if (xiDev.IsVendor(kVendorId_Intel) && (devProps.VendorFlags.IntelFeatureFlags.FLAG_DP4A | devProps.VendorFlags.IntelFeatureFlags.FLAG_DPAS))
 	{
@@ -1663,6 +1762,19 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 #if HYBRIDDETECT_CPU_X86_64
 		// AVX512, AVX2, F16C, AVX, AES, SSE4.1
 		ostr << "\tFeatures: ";
+		if (m_pProcInfo->flags.APX_Supported())
+		{
+            ostr << "APX ";
+		}
+		else if (m_pProcInfo->flags.APX)
+		{
+			ostr << "APX (HW, but not OS) ";
+		}
+		auto avx10_version = m_pProcInfo->flags.AVX10Version();
+		if (avx10_version)
+		{
+            ostr << "AVX10." << avx10_version << " ";
+		}
 		if (m_pProcInfo->flags.AVX512_SKX_Supported())
 		{
 			ostr << "(AVX512_SKX) ";
@@ -1752,12 +1864,16 @@ void DeviceCPU::printInfo(std::ostream& ostr, const SystemInfo* pSysInfo) const
 			ostr << "\t" << m_pProcInfo->vendorID << ": ";
 			if (m_pProcInfo->IsIntel())
 			{
-				const int family = (basicCPUID >> 8) & 0xf;
+				const int baseFamily = (basicCPUID >> 8) & 0xf;
+				const int extFamily = (basicCPUID >> 20) & 0xFF;
+
+				const int family =
+					(baseFamily == 0xF) ? (baseFamily + extFamily) : baseFamily;
 				const int extModel = ((basicCPUID & 0xf0000) >> 12) | ((basicCPUID & 0xf0) >> 4);
 				const int stepping = basicCPUID & 0xf;
 
 				ostr << "Family = " << family;
-				if (family == 6)
+				if (family >= 6)
 				{
 					ostr << ", ExtModel = 0x" << std::hex << std::setw(2) << std::right << std::setfill('0') << extModel << std::dec;
 				}

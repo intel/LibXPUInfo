@@ -31,6 +31,8 @@ LibXPUInfo coalesces multiple APIs to provide multi-vendor, cross-platform devic
 * Windows
   * If you want to use nVidia NVML and accept [NVML license](https://developer.download.nvidia.com/compute/cuda/redist/cuda_nvml_dev/LICENSE.txt), run external\getNVMLDep.bat
     * If you do not want to use NVML, remove XPUINFO_USE_NVML from preprocessor arguments for LibXPUInfo.vcxproj
+  * If you want to use the AMD AGS SDK and accept the [AGS_SDK license](https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK/blob/master/LICENSE.txt), run external\getAGSDep.bat
+    * If you do not want to use AGS, remove XPUINFO_USE_AGS from preprocessor arguments for LibXPUInfo.vcxproj
   * If you want to use OpenCL and accept related Apache-2.0 licenses, run **external/buildExternalDeps_OCL.bat**
   * If you want to use Level Zero and accept related MIT license, run **external/buildExternalDeps_L0.bat**
     * See above note regarding Spectre-mitigated libs
