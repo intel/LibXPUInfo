@@ -155,13 +155,6 @@ namespace XI
         bool mValid = false;
     };
 
-	struct L0Enum
-	{
-		L0Enum() : driver(nullptr) {};
-		ze_driver_handle_t driver;
-		std::vector<ze_device_handle_t> devices;
-	};
-
     struct XPUINFO_EXPORT DriverInfo
     {
         LUID DeviceLUID = {};

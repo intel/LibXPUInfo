@@ -48,7 +48,14 @@ typedef struct _ze_intel_device_module_dp_exp_properties_t {
     ze_intel_device_module_dp_exp_flags_t flags;                                    ///< [out] 0 (none) or a valid combination of ::ze_intel_device_module_dp_flag_t
 } ze_intel_device_module_dp_exp_properties_t;
 
-}
+struct L0Enum
+{
+	L0Enum() : driver(nullptr) {};
+	ze_driver_handle_t driver;
+	std::vector<ze_device_handle_t> devices;
+};
+
+} // private
 
 namespace XI
 {
