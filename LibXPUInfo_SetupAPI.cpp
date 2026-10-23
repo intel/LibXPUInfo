@@ -105,48 +105,49 @@ namespace XI
 {
 namespace //private
 {
-	// Helper function to extract the PCI Domain (Segment) from a Location Path string
-	DWORD GetPciDomainFromLocationPath(const wchar_t* path) {
-		std::wstring s(path);
-		size_t rootStart = s.find(L"PCIROOT(");
-		if (rootStart == std::wstring::npos) return 0; // Default to Domain 0 if not explicitly defined
-
-		size_t numStart = rootStart + 8; // Length of "PCIROOT("
-		size_t numEnd = s.find(L")", numStart);
-		if (numEnd == std::wstring::npos) return 0;
-
-		std::wstring domainStr = s.substr(numStart, numEnd - numStart);
-		try {
-			// Parse the domain (can be hex if formatted with '0x', or base 10)
-			return std::stoul(domainStr, nullptr, 0);
-		}
-		catch (...) {
-			return 0;
-		}
-	}
-
-	// Function to query the PCI Segment/Domain for a given DevInfo element
-	bool QueryDevicePciDomain(HDEVINFO devInfo, SP_DEVINFO_DATA* devData, UI32& outDomain) {
-		DEVPROPTYPE propType;
+	bool QueryDevicePciAddress(HDEVINFO devInfo, SP_DEVINFO_DATA* devData, PCIAddressType& outAddr) {
+		DEVPROPTYPE propType = 0;
+		UINT32 rawBusNumber = 0;
 		DWORD requiredSize = 0;
 
-		// 1. Check buffer size needed for the DEVPKEY_Device_LocationPaths property
-		SetupDiGetDevicePropertyW(devInfo, devData, &DEVPKEY_Device_LocationPaths,
-			&propType, nullptr, 0, &requiredSize, 0);
-
-		if (requiredSize == 0) return false;
-
-		std::vector<BYTE> buffer(requiredSize);
-		if (SetupDiGetDevicePropertyW(devInfo, devData, &DEVPKEY_Device_LocationPaths,
-			&propType, buffer.data(), requiredSize, nullptr, 0)) {
-			if (propType == DEVPROP_TYPE_STRING_LIST) {
-				// Location paths is a MULTI_SZ string array; we extract the first string
-				const wchar_t* locationPath = reinterpret_cast<const wchar_t*>(buffer.data());
-				outDomain = GetPciDomainFromLocationPath(locationPath);
-				return true;
-			}
+		// 1. Query DEVPKEY_Device_BusNumber (Type: DEVPROP_TYPE_UINT32)
+		if (!SetupDiGetDevicePropertyW(
+			devInfo,
+			devData,
+			&DEVPKEY_Device_BusNumber,
+			&propType,
+			reinterpret_cast<PBYTE>(&rawBusNumber),
+			sizeof(rawBusNumber),
+			&requiredSize,
+			0) || propType != DEVPROP_TYPE_UINT32) {
+			return false;
 		}
-		return false; // Fallback to false
+
+		// 2. Query DEVPKEY_Device_Address (Type: DEVPROP_TYPE_UINT32)
+		UINT32 rawAddress = 0;
+		if (!SetupDiGetDevicePropertyW(
+			devInfo,
+			devData,
+			&DEVPKEY_Device_Address,
+			&propType,
+			reinterpret_cast<PBYTE>(&rawAddress),
+			sizeof(rawAddress),
+			&requiredSize,
+			0) || propType != DEVPROP_TYPE_UINT32) {
+			return false;
+		}
+
+		// Windows pci.sys packs the 16-bit PCI Segment (Domain) in bits [23:8]
+		// and the 8-bit PCI Bus Number in bits [7:0] of DEVPKEY_Device_BusNumber.
+		outAddr.domain = (rawBusNumber >> 8) & 0xFFFF;
+		outAddr.bus = rawBusNumber & 0xFF;
+
+		// DEVPKEY_Device_Address packs the 16-bit Device (Slot) in the upper word
+		// and the 16-bit Function in the lower word.
+		outAddr.device = (rawAddress >> 16) & 0xFFFF;
+		outAddr.function = rawAddress & 0xFFFF;
+
+		return true;
 	}
 
 	bool getInfoForClass(const GUID* devClass, std::vector<DriverInfoPtr>& outInfos)
@@ -285,24 +286,15 @@ namespace //private
 
 			if (enumeratorName == L"PCI")
 			{
-				XI::WString deviceLocation;
-				// DEVPKEY_Device_LocationPaths
-				UI32 domain = 0;
-				auto hasDomain = QueryDevicePciDomain(m_info, &devInfoData, domain);
-                if (!hasDomain)
-                {
-                    dStr << " ** Error querying PCI Domain!\n";
-                    continue;
-                }
-				if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_LocationInfo, deviceLocation))
+				// Software or virtual adapters (such as Microsoft Basic Render Driver or Remote Desktop Display adapters) 
+				// do not have a DEVPKEY_Device_BusNumber property; SetupDiGetDevicePropertyW will return FALSE with 
+				// GetLastError() == ERROR_NOT_FOUND (1168), which safely filters them out.
+				bool hasPciAddr = QueryDevicePciAddress(m_info, &devInfoData, curInfo->LocationInfo);
+
+				if (!hasPciAddr || !curInfo->LocationInfo.valid())
 				{
-					dStr << L" at \"" << deviceLocation << L"\"";
-					bool locValid = curInfo->LocationInfo.GetFromWStr(deviceLocation, domain);
-					if (!locValid)
-					{
-						dStr << " ** Error parsing location!\n";
-						continue;
-					}
+					// Only warn here, filter out in DriverInfo::isValidXPU()
+					dStr << L" ** Error parsing PCI Address!\n";
 				}
 			}
 			

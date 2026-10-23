@@ -1381,7 +1381,9 @@ float DriverInfo::DriverAgeInYears() const
 bool DriverInfo::isValidXPU() const
 {
 #ifdef _WIN32
-	return XI::LuidToUI64(DeviceLUID) && ((EnumeratorName == L"PCI") || (EnumeratorName == L"ACPI"));
+	return XI::LuidToUI64(DeviceLUID) && 
+		(((EnumeratorName == L"PCI") && LocationInfo.valid())
+			|| (EnumeratorName == L"ACPI"));
 #else
 	return true;
 #endif
