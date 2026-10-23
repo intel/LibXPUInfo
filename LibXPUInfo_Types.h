@@ -6,6 +6,10 @@
 #include <memory>
 #include <cstdint>
 
+#ifdef XPUINFO_USE_RAPIDJSON
+#include "rapidjson/document.h"
+#endif
+
 // ** Fwd Decl **
 // Level Zero
 typedef struct _ze_driver_handle_t* ze_driver_handle_t;
@@ -62,6 +66,13 @@ struct DXCoreAdapterMemoryBudget
 
 namespace XI
 {
+#ifdef XPUINFO_USE_RAPIDJSON
+    namespace JSON
+    {
+        using AllocatorType = decltype(std::declval<rapidjson::Document>().GetAllocator());
+    }
+#endif
+
     using String = std::string;
     using WString = std::wstring;
     using UI64 = std::uint64_t;
@@ -209,4 +220,48 @@ namespace XI
     constexpr UINT kVendorId_nVidia = 0x10de;
     constexpr UINT kVendorId_AMD = 0x1002;
     constexpr UINT kVendorId_Qualcomm = 'Q' | ('C' << 8) | ('O' << 16) | ('M' << 24);
+
+    inline UI64 LuidToUI64(void* pluid)
+    {
+        return *(reinterpret_cast<UI64*>(pluid));
+    }
+
+    inline UI64 LuidToUI64(const LUID& luid)
+    {
+        return LuidToUI64(const_cast<LUID*>(&luid));
+    }
+
+    struct XPUINFO_EXPORT ResizableBARStatus
+    {
+        bool valid = false;
+        bool supported = false;
+        bool enabled = false;
+    };
+
+    struct XPUINFO_EXPORT PCIAddressType
+    {
+        UI32 domain;
+        UI32 bus;
+        UI32 device;
+        UI32 function;
+        PCIAddressType(UI32 dom = -1, UI32 b = -1, UI32 dev = -1, UI32 f = -1) :
+            domain(dom), bus(b), device(dev), function(f) {}
+        bool valid() const;
+
+        [[deprecated("Deprecated: Parsing PCI location from strings is no longer used")]]
+        bool GetFromWStr(const WString& inStr);
+#ifdef XPUINFO_USE_RAPIDJSON
+        PCIAddressType(const rapidjson::Value& val); // deserialize
+        rapidjson::Value serialize(JSON::AllocatorType& a) const;
+#endif
+        bool operator==(const PCIAddressType& inRHS) const;
+        // For std::ostream and std::wostream
+        template <typename CharT, typename Traits>
+        friend std::basic_ostream<CharT, Traits>& operator<<(
+            std::basic_ostream<CharT, Traits>& ostr, const PCIAddressType& xi)
+        {
+            ostr << xi.domain << ostr.widen(':') << xi.bus << ostr.widen(':') << xi.device << ostr.widen(':') << xi.function;
+            return ostr;
+        }
+    };
 } // namespace XI
