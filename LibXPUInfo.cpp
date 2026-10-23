@@ -481,6 +481,15 @@ bool PCIAddressType::GetFromWStr(const WString& inStr, UI32 inDomain)
 	return false;
 }
 
+template <typename CharT, typename Traits>
+std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& ostr, const PCIAddressType& xi)
+{
+	ostr << xi.domain << ostr.widen(':') << xi.bus << ostr.widen(':') << xi.device << ostr.widen(':') << xi.function;
+	return ostr;
+}
+template std::ostream& operator<<(std::ostream& ostr, const PCIAddressType& xi);
+template std::wostream& operator<<(std::wostream& ostr, const PCIAddressType& xi);
+
 // From https://github.com/GameTechDev/gpudetect/blob/master/GPUDetect.cpp#L448
 // Get driver version from LUID and registry
 DeviceDriverVersion::DeviceDriverVersion(LUID 
@@ -1523,7 +1532,7 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 
 	if (devProps.PCIAddress.valid())
 	{
-		ostr << "\tPCI Domain:Bus:Device:Function: " << devProps.PCIAddress.domain << ":" << devProps.PCIAddress.bus << ":" << devProps.PCIAddress.device << ":" << devProps.PCIAddress.function << std::endl;
+		ostr << "\tPCI Domain:Bus:Device:Function: " << devProps.PCIAddress << std::endl;
 	}
 
 	if (devProps.FreqMaxMHz != -1)

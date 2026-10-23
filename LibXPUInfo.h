@@ -199,12 +199,18 @@ namespace XI
         PCIAddressType(UI32 dom=-1, UI32 b=-1, UI32 dev=-1, UI32 f=-1):
             domain(dom), bus(b), device(dev), function(f) {}
         bool valid() const;
-        bool GetFromWStr(const WString& inStr, UI32 inDomain);
+
+        [[deprecated("No longer used, did not support PCI Segment (Domain)")]]
+        bool GetFromWStr(const WString& inStr, UI32 inDomain=0);
 #ifdef XPUINFO_USE_RAPIDJSON
         PCIAddressType(const rapidjson::Value& val); // deserialize
         rapidjson::Value serialize(JSON::AllocatorType& a) const;
 #endif
         bool operator==(const PCIAddressType& inRHS) const;
+        // For std::ostream and std::wostream
+        template <typename CharT, typename Traits>
+        friend std::basic_ostream<CharT, Traits>& operator<<(
+            std::basic_ostream<CharT, Traits>& ostr, const PCIAddressType& xi);
     };
 
     struct XPUINFO_EXPORT DriverInfo
