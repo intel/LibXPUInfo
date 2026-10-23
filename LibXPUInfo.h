@@ -200,8 +200,8 @@ namespace XI
             domain(dom), bus(b), device(dev), function(f) {}
         bool valid() const;
 
-        [[deprecated("No longer used, did not support PCI Segment (Domain)")]]
-        bool GetFromWStr(const WString& inStr, UI32 inDomain=0);
+        [[deprecated("Deprecated: Parsing PCI location from strings is no longer used")]]
+        bool GetFromWStr(const WString& inStr);
 #ifdef XPUINFO_USE_RAPIDJSON
         PCIAddressType(const rapidjson::Value& val); // deserialize
         rapidjson::Value serialize(JSON::AllocatorType& a) const;
