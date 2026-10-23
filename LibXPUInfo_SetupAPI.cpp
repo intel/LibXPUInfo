@@ -105,6 +105,50 @@ namespace XI
 {
 namespace //private
 {
+	// Helper function to extract the PCI Domain (Segment) from a Location Path string
+	DWORD GetPciDomainFromLocationPath(const wchar_t* path) {
+		std::wstring s(path);
+		size_t rootStart = s.find(L"PCIROOT(");
+		if (rootStart == std::wstring::npos) return 0; // Default to Domain 0 if not explicitly defined
+
+		size_t numStart = rootStart + 8; // Length of "PCIROOT("
+		size_t numEnd = s.find(L")", numStart);
+		if (numEnd == std::wstring::npos) return 0;
+
+		std::wstring domainStr = s.substr(numStart, numEnd - numStart);
+		try {
+			// Parse the domain (can be hex if formatted with '0x', or base 10)
+			return std::stoul(domainStr, nullptr, 0);
+		}
+		catch (...) {
+			return 0;
+		}
+	}
+
+	// Function to query the PCI Segment/Domain for a given DevInfo element
+	bool QueryDevicePciDomain(HDEVINFO devInfo, SP_DEVINFO_DATA* devData, UI32& outDomain) {
+		DEVPROPTYPE propType;
+		DWORD requiredSize = 0;
+
+		// 1. Check buffer size needed for the DEVPKEY_Device_LocationPaths property
+		SetupDiGetDevicePropertyW(devInfo, devData, &DEVPKEY_Device_LocationPaths,
+			&propType, nullptr, 0, &requiredSize, 0);
+
+		if (requiredSize == 0) return false;
+
+		std::vector<BYTE> buffer(requiredSize);
+		if (SetupDiGetDevicePropertyW(devInfo, devData, &DEVPKEY_Device_LocationPaths,
+			&propType, buffer.data(), requiredSize, nullptr, 0)) {
+			if (propType == DEVPROP_TYPE_STRING_LIST) {
+				// Location paths is a MULTI_SZ string array; we extract the first string
+				const wchar_t* locationPath = reinterpret_cast<const wchar_t*>(buffer.data());
+				outDomain = GetPciDomainFromLocationPath(locationPath);
+				return true;
+			}
+		}
+		return false; // Fallback to false
+	}
+
 	bool getInfoForClass(const GUID* devClass, std::vector<DriverInfoPtr>& outInfos)
 	{
 		// We need to include all Enumerator classes, 
@@ -239,20 +283,29 @@ namespace //private
 				dStr << L", service = \"" << deviceService << L"\"";
 			}
 
-			XI::WString deviceLocation;
-			if ((enumeratorName == L"PCI") && 
-				sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_LocationInfo, deviceLocation)
-				)
+			if (enumeratorName == L"PCI")
 			{
-				dStr << L" at \"" << deviceLocation << L"\"";
-				bool locValid = curInfo->LocationInfo.GetFromWStr(deviceLocation);
-				if (!locValid)
+				XI::WString deviceLocation;
+				// DEVPKEY_Device_LocationPaths
+				UI32 domain = 0;
+				auto hasDomain = QueryDevicePciDomain(m_info, &devInfoData, domain);
+                if (!hasDomain)
+                {
+                    dStr << " ** Error querying PCI Domain!\n";
+                    continue;
+                }
+				if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_LocationInfo, deviceLocation))
 				{
-					dStr << " ** Error parsing location!\n";
-					continue;
+					dStr << L" at \"" << deviceLocation << L"\"";
+					bool locValid = curInfo->LocationInfo.GetFromWStr(deviceLocation, domain);
+					if (!locValid)
+					{
+						dStr << " ** Error parsing location!\n";
+						continue;
+					}
 				}
 			}
-
+			
 			// For Intel, this might be an unofficial way to find the "GT Generation"
 			if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_DriverInfSection, curInfo->DriverInfSection))
 			{

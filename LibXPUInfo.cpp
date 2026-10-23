@@ -452,11 +452,12 @@ bool PCIAddressType::valid() const
 	return isValidPCIAddr(*this);
 }
 
-bool PCIAddressType::GetFromWStr(const WString& inStr)
+bool PCIAddressType::GetFromWStr(const WString& inStr, UI32 inDomain)
 {
 	// PCI bus 0, device 2, function 0
+	// Domain needs to be parsed separately
 	std::wistringstream ins(inStr);
-	domain = 0;
+	domain = inDomain;
 	WString tStr;
 	ins >> tStr;
 	ins >> tStr;

@@ -199,7 +199,7 @@ namespace XI
         PCIAddressType(UI32 dom=-1, UI32 b=-1, UI32 dev=-1, UI32 f=-1):
             domain(dom), bus(b), device(dev), function(f) {}
         bool valid() const;
-        bool GetFromWStr(const WString& inStr);
+        bool GetFromWStr(const WString& inStr, UI32 inDomain);
 #ifdef XPUINFO_USE_RAPIDJSON
         PCIAddressType(const rapidjson::Value& val); // deserialize
         rapidjson::Value serialize(JSON::AllocatorType& a) const;
