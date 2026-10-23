@@ -477,6 +477,7 @@
     <ClInclude Include="LibXPUInfo_JSON.h" />
     <ClInclude Include="LibXPUInfo_Types.h" />
     <ClInclude Include="LibXPUInfo_Util.h" />
+    <ClInclude Include="LibXPUInfo_Version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DebugStream.cpp" />
