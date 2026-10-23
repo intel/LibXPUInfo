@@ -22,39 +22,25 @@
 #endif
 
 #if XPUINFO_USE_D3DKMT
+#ifndef XPUINFO_USE_D3DKMT_VERBOSE
+#ifdef _DEBUG
 #define XPUINFO_USE_D3DKMT_VERBOSE 1
-typedef UINT D3DKMT_HANDLE;
-typedef LONG NTSTATUS;
+#else
+#define XPUINFO_USE_D3DKMT_VERBOSE 0
+#endif // _DEBUG
+#endif
+
+#ifndef NTSTATUS
+#define NTSTATUS LONG
+#endif
+#ifndef STATUS_SUCCESS
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+#endif
 
-struct D3DKMT_OPENADAPTERFROMLUID {
-	LUID          AdapterLuid;
-	D3DKMT_HANDLE hAdapter;
-};
-
-struct D3DKMT_CLOSEADAPTER {
-	D3DKMT_HANDLE hAdapter;
-};
-
-// KMTQAITYPE_ADAPTERADDRESS is index 6 in KMTQUERYADAPTERINFOTYPE
-constexpr UINT KMTQAITYPE_ADAPTERADDRESS = 6;
-
-struct D3DKMT_QUERYADAPTERINFO {
-	D3DKMT_HANDLE hAdapter;
-	UINT          Type;
-	VOID* pPrivateDriverData;
-	UINT          PrivateDriverDataSize;
-};
-
-struct D3DKMT_ADAPTERADDRESS {
-	UINT BusNumber;
-	UINT DeviceNumber;
-	UINT FunctionNumber;
-};
-
-typedef NTSTATUS(APIENTRY* PFN_D3DKMTOpenAdapterFromLuid)(D3DKMT_OPENADAPTERFROMLUID*);
-typedef NTSTATUS(APIENTRY* PFN_D3DKMTQueryAdapterInfo)(const D3DKMT_QUERYADAPTERINFO*);
-typedef NTSTATUS(APIENTRY* PFN_D3DKMTCloseAdapter)(const D3DKMT_CLOSEADAPTER*);
+#include <d3dkmthk.h> // From Windows Driver Kit (WDK) or Windows SDK
+using PFN_D3DKMTOpenAdapterFromLuid = NTSTATUS(APIENTRY*)(D3DKMT_OPENADAPTERFROMLUID*);
+using PFN_D3DKMTQueryAdapterInfo = NTSTATUS(APIENTRY*)(const D3DKMT_QUERYADAPTERINFO*);
+using PFN_D3DKMTCloseAdapter = NTSTATUS(APIENTRY*)(const D3DKMT_CLOSEADAPTER*);
 #endif // XPUINFO_USE_D3DKMT
 
 namespace
@@ -144,8 +130,13 @@ namespace
 	bool GetAdapterPciAddress_D3DKMT(
 		LUID adapterLuid, XI::PCIAddressType& outPciAddr)
 	{
+        bool gdi32Loaded = false;
 		HMODULE hGdi32 = GetModuleHandleW(L"gdi32.dll");
-		if (!hGdi32) hGdi32 = LoadLibraryW(L"gdi32.dll");
+		if (!hGdi32)
+		{
+			hGdi32 = LoadLibraryW(L"gdi32.dll");
+			gdi32Loaded = true;
+		}
 		if (!hGdi32) return false;
 
 		auto pfnOpen = (PFN_D3DKMTOpenAdapterFromLuid)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromLuid");
@@ -169,6 +160,10 @@ namespace
 		D3DKMT_CLOSEADAPTER closeInfo = { openInfo.hAdapter };
 		pfnClose(&closeInfo);
 
+		if (gdi32Loaded)
+		{
+			FreeLibrary(hGdi32);
+		}
 		if (status != STATUS_SUCCESS) return false;
 
 		outPciAddr.domain = (addr.BusNumber >> 8) & 0xFFFF;
