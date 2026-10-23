@@ -401,7 +401,7 @@ namespace //private
 				if (!hasPciAddr || !curInfo->LocationInfo.valid())
 				{
 					// Only warn here, filter out in DriverInfo::isValidXPU()
-					dStr << L" ** Error parsing PCI Address! Result: " << curInfo->LocationInfo << std::endl;
+					dStr << L" ** Error querying PCI Address! Result: " << curInfo->LocationInfo << std::endl;
 				}
 				else
 				{
