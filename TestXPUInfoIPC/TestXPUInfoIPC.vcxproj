@@ -343,9 +343,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\arm64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration);$(SolutionDir)ARM64\Debug</AdditionalLibraryDirectories>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
+      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\NVML\lib\arm64;$(OutDir)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>nvml.dll;dxcore.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDynamic|x64'">
@@ -378,10 +378,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>testxpuinfoipc_shared.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(OutDir)</AdditionalLibraryDirectories>
-      <DelayLoadDLLs>
-      </DelayLoadDLLs>
+      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\NVML\lib\arm64;$(OutDir)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>nvml.dll;dxcore.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -423,9 +422,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
-      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(SolutionDir)x64\Release</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>nvml.dll;dxcore.dll</DelayLoadDLLs>
+      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\NVML\lib\arm64;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
@@ -469,9 +468,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
-      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\arm64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(SolutionDir)ARM64\ReleaseStatic</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>nvml.dll;dxcore.dll</DelayLoadDLLs>
+      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\NVML\lib\arm64;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDynamic|x64'">
@@ -514,10 +513,9 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>
-      </DelayLoadDLLs>
-      <AdditionalDependencies>testxpuinfoipc_shared.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(OutDir)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>nvml.dll;dxcore.dll</DelayLoadDLLs>
+      <AdditionalDependencies>testxpuinfoipc_shared.lib;dxcore.lib;d3d11.lib;dxgi.lib;LibXPUInfo.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\NVML\lib\arm64;$(OutDir)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
