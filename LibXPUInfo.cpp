@@ -761,7 +761,11 @@ bool RuntimeVersion::operator==(const RuntimeVersion& l) const
 }
 
 #if defined(_WIN32)
-void XPUInfo::initDXGI(APIType initMask)
+void XPUInfo::initDXGI(APIType 
+#if defined(_M_AMD64) || defined(_M_IX86)
+	initMask
+#endif
+)
 {
     DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
