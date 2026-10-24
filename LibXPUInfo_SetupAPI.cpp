@@ -17,6 +17,32 @@
 
 #pragma comment (lib, "Setupapi.lib")
 
+#ifndef XPUINFO_USE_D3DKMT
+#define XPUINFO_USE_D3DKMT 1
+#endif
+
+#if XPUINFO_USE_D3DKMT
+#ifndef XPUINFO_USE_D3DKMT_VERBOSE
+#ifdef _DEBUG
+#define XPUINFO_USE_D3DKMT_VERBOSE 1
+#else
+#define XPUINFO_USE_D3DKMT_VERBOSE 0
+#endif // _DEBUG
+#endif
+
+#ifndef NTSTATUS
+#define NTSTATUS LONG
+#endif
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+#endif
+
+#include <d3dkmthk.h> // From Windows Driver Kit (WDK) or Windows SDK
+using PFN_D3DKMTOpenAdapterFromLuid = NTSTATUS(APIENTRY*)(D3DKMT_OPENADAPTERFROMLUID*);
+using PFN_D3DKMTQueryAdapterInfo = NTSTATUS(APIENTRY*)(const D3DKMT_QUERYADAPTERINFO*);
+using PFN_D3DKMTCloseAdapter = NTSTATUS(APIENTRY*)(const D3DKMT_CLOSEADAPTER*);
+#endif // XPUINFO_USE_D3DKMT
+
 namespace
 {
     // Found here, but not sure where they got it: https://wine-devel.winehq.narkive.com/vKO2Bkgj/patch-1-2-dxgi-tests-add-test-for-enumerating-display-adapters-using-setupapi
@@ -99,7 +125,100 @@ namespace
 		}
 		return bRet;
 	}
-}
+
+#if XPUINFO_USE_D3DKMT
+	bool GetAdapterPciAddress_D3DKMT(
+		LUID adapterLuid, XI::PCIAddressType& outPciAddr)
+	{
+        bool gdi32Loaded = false;
+		HMODULE hGdi32 = GetModuleHandleW(L"gdi32.dll");
+		if (!hGdi32)
+		{
+			hGdi32 = LoadLibraryW(L"gdi32.dll");
+			gdi32Loaded = true;
+		}
+		if (!hGdi32) return false;
+
+		auto pfnOpen = (PFN_D3DKMTOpenAdapterFromLuid)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromLuid");
+		auto pfnQuery = (PFN_D3DKMTQueryAdapterInfo)GetProcAddress(hGdi32, "D3DKMTQueryAdapterInfo");
+		auto pfnClose = (PFN_D3DKMTCloseAdapter)GetProcAddress(hGdi32, "D3DKMTCloseAdapter");
+		if (!pfnOpen || !pfnQuery || !pfnClose) return false;
+
+		D3DKMT_OPENADAPTERFROMLUID openInfo = { adapterLuid, 0 };
+		if (pfnOpen(&openInfo) != STATUS_SUCCESS) return false;
+
+		D3DKMT_ADAPTERADDRESS addr = {};
+		D3DKMT_QUERYADAPTERINFO queryInfo = {};
+		queryInfo.hAdapter = openInfo.hAdapter;
+		// See https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/d3dkmthk/ne-d3dkmthk-_kmtqueryadapterinfotype
+		queryInfo.Type = KMTQAITYPE_ADAPTERADDRESS;
+		queryInfo.pPrivateDriverData = &addr;
+		queryInfo.PrivateDriverDataSize = sizeof(addr);
+
+		NTSTATUS status = pfnQuery(&queryInfo);
+
+		D3DKMT_CLOSEADAPTER closeInfo = { openInfo.hAdapter };
+		pfnClose(&closeInfo);
+
+		if (gdi32Loaded)
+		{
+			FreeLibrary(hGdi32);
+		}
+		if (status != STATUS_SUCCESS) return false;
+
+		outPciAddr.domain = (addr.BusNumber >> 8) & 0xFFFF;
+		outPciAddr.bus = addr.BusNumber & 0xFF;
+		outPciAddr.device = addr.DeviceNumber;
+		outPciAddr.function = addr.FunctionNumber;
+		return true;
+	}
+#endif // XPUINFO_USE_D3DKMT
+
+	bool QueryDevicePciAddress(HDEVINFO devInfo, SP_DEVINFO_DATA* devData, XI::PCIAddressType& outAddr) {
+		DEVPROPTYPE propType = 0;
+		UINT32 rawBusNumber = 0;
+		DWORD requiredSize = 0;
+
+		// 1. Query DEVPKEY_Device_BusNumber (Type: DEVPROP_TYPE_UINT32)
+		if (!SetupDiGetDevicePropertyW(
+			devInfo,
+			devData,
+			&DEVPKEY_Device_BusNumber,
+			&propType,
+			reinterpret_cast<PBYTE>(&rawBusNumber),
+			sizeof(rawBusNumber),
+			&requiredSize,
+			0) || propType != DEVPROP_TYPE_UINT32) {
+			return false;
+		}
+
+		// 2. Query DEVPKEY_Device_Address (Type: DEVPROP_TYPE_UINT32)
+		UINT32 rawAddress = 0;
+		if (!SetupDiGetDevicePropertyW(
+			devInfo,
+			devData,
+			&DEVPKEY_Device_Address,
+			&propType,
+			reinterpret_cast<PBYTE>(&rawAddress),
+			sizeof(rawAddress),
+			&requiredSize,
+			0) || propType != DEVPROP_TYPE_UINT32) {
+			return false;
+		}
+
+		// Windows pci.sys packs the 16-bit PCI Segment (Domain) in bits [23:8]
+		// and the 8-bit PCI Bus Number in bits [7:0] of DEVPKEY_Device_BusNumber.
+		outAddr.domain = (rawBusNumber >> 8) & 0xFFFF;
+		outAddr.bus = rawBusNumber & 0xFF;
+
+		// DEVPKEY_Device_Address packs the 16-bit Device (Slot) in the upper word
+		// and the 16-bit Function in the lower word.
+		outAddr.device = (rawAddress >> 16) & 0xFFFF;
+		outAddr.function = rawAddress & 0xFFFF;
+
+		return true;
+	}
+} // private
 
 namespace XI
 {
@@ -239,20 +358,6 @@ namespace //private
 				dStr << L", service = \"" << deviceService << L"\"";
 			}
 
-			XI::WString deviceLocation;
-			if ((enumeratorName == L"PCI") && 
-				sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_LocationInfo, deviceLocation)
-				)
-			{
-				dStr << L" at \"" << deviceLocation << L"\"";
-				bool locValid = curInfo->LocationInfo.GetFromWStr(deviceLocation);
-				if (!locValid)
-				{
-					dStr << " ** Error parsing location!\n";
-					continue;
-				}
-			}
-
 			// For Intel, this might be an unofficial way to find the "GT Generation"
 			if (sdiGetProp(m_info, tempStr, &devInfoData, &DEVPKEY_Device_DriverInfSection, curInfo->DriverInfSection))
 			{
@@ -286,13 +391,48 @@ namespace //private
 				continue;
 			}
 
-#ifdef _DEBUG
-            if (enumeratorName != L"PCI")
-            {
-                dStr << L" ** Device 0x" << std::hex << LuidToUI64(curLUID) << std::dec <<
-                    L" not a PCI device ** (" << enumeratorName << L")" << std::endl;
-            }
+			if (enumeratorName == L"PCI")
+			{
+				// Software or virtual adapters (such as Microsoft Basic Render Driver or Remote Desktop Display adapters) 
+				// do not have a DEVPKEY_Device_BusNumber property; SetupDiGetDevicePropertyW will return FALSE with 
+				// GetLastError() == ERROR_NOT_FOUND (1168), which safely filters them out.
+				bool hasPciAddr = QueryDevicePciAddress(m_info, &devInfoData, curInfo->LocationInfo);
+
+				if (!hasPciAddr || !curInfo->LocationInfo.valid())
+				{
+					// Only warn here, filter out in DriverInfo::isValidXPU()
+					dStr << L" ** Error querying PCI Address! Result: " << curInfo->LocationInfo << std::endl;
+				}
+				else
+				{
+					dStr << L", PCI Address = " << curInfo->LocationInfo;
+#if XPUINFO_USE_D3DKMT
+					// Verify SetupAPI PCI Address matches D3DKMT PCI Address for this LUID
+					XI::PCIAddressType d3dkmtAddr;
+					if (GetAdapterPciAddress_D3DKMT(curInfo->DeviceLUID, d3dkmtAddr))
+					{
+						if (!(d3dkmtAddr == curInfo->LocationInfo))
+						{
+							std::wostringstream errStr;
+							errStr << L" ** D3DKMT PCI Address mismatch! SetupAPI: " << curInfo->LocationInfo <<
+								L", D3DKMT: " << d3dkmtAddr << std::endl;
+							dStr << errStr.str();
+#if XPUINFO_USE_D3DKMT_VERBOSE
+							std::wcerr << L"**WARNING** For Adapter \"" << curInfo->DriverDesc << L"\" LUID 0x" 
+								<< std::hex << LuidToUI64(curInfo->DeviceLUID) << std::dec << L": " << errStr.str();
 #endif
+						}
+					}
+					else
+					{
+#if XPUINFO_USE_D3DKMT_VERBOSE
+                        std::wcerr << L"**WARNING** For Adapter \"" << curInfo->DriverDesc << L"\" LUID 0x" 
+							<< std::hex << LuidToUI64(curInfo->DeviceLUID) << std::dec << L": D3DKMT failed to get PCI Address!" << std::endl;
+#endif
+					}
+#endif
+				}
+			}
 
 			outInfos.emplace_back(std::move(curInfo));
 			dStr << std::endl;

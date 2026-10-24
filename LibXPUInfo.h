@@ -126,22 +126,11 @@ typedef HANDLE       PDH_HCOUNTER;
 typedef HANDLE       PDH_HQUERY;
 #endif
 
-#ifdef XPUINFO_USE_RAPIDJSON
-#include "rapidjson/document.h"
-#endif
-
 // NVML docs at https://developer.nvidia.com/nvidia-management-library-nvml
 // For AMD, see https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK, https://github.com/GPUOpen-Tools/gpu_performance_api, https://gpuopen.com/gpuperfapi/
 
 namespace XI
 {
-#ifdef XPUINFO_USE_RAPIDJSON
-    namespace JSON
-    {
-        using AllocatorType = decltype(std::declval<rapidjson::Document>().GetAllocator());
-    }
-#endif
-
     // Helper class to get driver version with given adapter luid.
     class XPUINFO_EXPORT DeviceDriverVersion
     {
@@ -164,47 +153,6 @@ namespace XI
         bool CompareGE(const DeviceDriverVersion& rhs) const; // return (*this >= rhs)
         std::uint64_t mRawVersion;
         bool mValid = false;
-    };
-
-	struct L0Enum
-	{
-		L0Enum() : driver(nullptr) {};
-		ze_driver_handle_t driver;
-		std::vector<ze_device_handle_t> devices;
-	};
-
-    inline UI64 LuidToUI64(void* pluid)
-    {
-        return *(reinterpret_cast<UI64*>(pluid));
-    }
-
-    inline UI64 LuidToUI64(const LUID& luid)
-    {
-        return LuidToUI64(const_cast<LUID*>(&luid));
-    }
-
-    struct XPUINFO_EXPORT ResizableBARStatus
-    {
-        bool valid = false;
-        bool supported = false;
-        bool enabled = false;
-    };
-
-    struct XPUINFO_EXPORT PCIAddressType
-    {
-        UI32 domain;
-        UI32 bus;
-        UI32 device;
-        UI32 function;
-        PCIAddressType(UI32 dom=-1, UI32 b=-1, UI32 dev=-1, UI32 f=-1):
-            domain(dom), bus(b), device(dev), function(f) {}
-        bool valid() const;
-        bool GetFromWStr(const WString& inStr);
-#ifdef XPUINFO_USE_RAPIDJSON
-        PCIAddressType(const rapidjson::Value& val); // deserialize
-        rapidjson::Value serialize(JSON::AllocatorType& a) const;
-#endif
-        bool operator==(const PCIAddressType& inRHS) const;
     };
 
     struct XPUINFO_EXPORT DriverInfo
