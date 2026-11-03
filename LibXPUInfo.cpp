@@ -452,6 +452,7 @@ bool PCIAddressType::valid() const
 	return isValidPCIAddr(*this);
 }
 
+// Deprecated: Using other methods that include domain also.
 bool PCIAddressType::GetFromWStr(const WString& inStr)
 {
 	// PCI bus 0, device 2, function 0
@@ -760,7 +761,11 @@ bool RuntimeVersion::operator==(const RuntimeVersion& l) const
 }
 
 #if defined(_WIN32)
-void XPUInfo::initDXGI(APIType initMask)
+void XPUInfo::initDXGI(APIType 
+#if defined(_M_AMD64) || defined(_M_IX86)
+	initMask
+#endif
+)
 {
     DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
@@ -1380,7 +1385,9 @@ float DriverInfo::DriverAgeInYears() const
 bool DriverInfo::isValidXPU() const
 {
 #ifdef _WIN32
-	return XI::LuidToUI64(DeviceLUID) && ((EnumeratorName == L"PCI") || (EnumeratorName == L"ACPI"));
+	return XI::LuidToUI64(DeviceLUID) && 
+		(((EnumeratorName == L"PCI") && LocationInfo.valid())
+			|| (EnumeratorName == L"ACPI"));
 #else
 	return true;
 #endif
@@ -1520,7 +1527,7 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 
 	if (devProps.PCIAddress.valid())
 	{
-		ostr << "\tPCI Domain:Bus:Device:Function: " << devProps.PCIAddress.domain << ":" << devProps.PCIAddress.bus << ":" << devProps.PCIAddress.device << ":" << devProps.PCIAddress.function << std::endl;
+		ostr << "\tPCI Domain:Bus:Device:Function: " << devProps.PCIAddress << std::endl;
 	}
 
 	if (devProps.FreqMaxMHz != -1)

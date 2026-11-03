@@ -1,6 +1,8 @@
 // Copyright (C) 2024 Intel Corporation
 // SPDX-License-Identifier: Apache-2.0
-
+//
+// Shared utility functions for LibXPUInfo - not generally intended 
+// for external use, but may be useful for clients of LibXPUInfo.
 #pragma once
 #include "LibXPUInfo.h"
 #ifndef XPUINFO_USE_STD_CHRONO
