@@ -243,12 +243,14 @@ namespace XI
                 }
                 int cudaComputeCapability_Major;
                 int cudaComputeCapability_Minor;
+                int cudaOrdinal; // Index of the device in the CUDA API, -1 if unknown
             } nVidia;
         } VendorSpecific;
 
         I8 IsHighPerformance = -1;  // Only 1 Device will be set.  From DXCore.
         I8 IsMinimumPower = -1;     // Only 1 Device will be set.  From DXCore.
         I8 IsDetachable = -1;       // From DXCore
+        I8 IsMultiGPUDevice = -1;
 
         // From WMI
         String VideoMode;
@@ -387,7 +389,7 @@ namespace XI
 
         // NVML
 #ifdef XPUINFO_USE_NVML
-        void initNVMLDevice(nvmlDevice_t device);
+        void initNVMLDevice(nvmlDevice_t device, UI32 cuda_ordinal);
         nvmlDevice_t m_nvmlDevice = nullptr;
 #endif
 
