@@ -1461,6 +1461,10 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	{
 		ostr << ", Detachable";
 	}
+	if (devProps.IsMultiGPUDevice > 0)
+	{
+		ostr << ", MultiGPUDevice";
+	}
 	ostr << std::endl;
 	if ((devProps.DedicatedMemorySize != XI::UI64(-1LL)) /*&& (devProps.DedicatedMemorySize > 0ULL)*/)
 	{
@@ -1650,6 +1654,10 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 		if (ccc > 0)
 		{
 			ostr << "\tCUDA Compute Capability: " << ccc << std::endl;
+		}
+		if (devProps.VendorSpecific.nVidia.cudaOrdinal >= 0)
+		{
+			ostr << "\tCUDA Ordinal: " << devProps.VendorSpecific.nVidia.cudaOrdinal << std::endl;
 		}
 	}
 	if (devProps.NumComputeUnits != -1)
