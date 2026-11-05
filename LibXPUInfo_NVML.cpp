@@ -143,9 +143,9 @@ void Device::initNVMLDevice(nvmlDevice_t device, UI32 cuda_ordinal)
 
     unsigned int isMultiGpu;
     result = nvmlDeviceGetMultiGpuBoard(device, &isMultiGpu);
-
-    if (result == NVML_SUCCESS && isMultiGpu == 1) {
-        updateIfDstNotSet(m_props.IsMultiGPUDevice, I8(1));
+    if (result == NVML_SUCCESS)
+    {
+        updateIfDstNotSet(m_props.IsMultiGPUDevice, I8(isMultiGpu != 0 ? 1 : 0));
     }
 
     // Currently only for multi-instance GPU (MIG)
