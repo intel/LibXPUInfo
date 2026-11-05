@@ -1206,6 +1206,23 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 #endif
 
+#ifdef XPUINFO_USE_CUDA
+    // Run this after nVidia devices are added to m_Devices by DXGI/DXCore or by NVML on Linux
+	if (initMask & API_TYPE_CUDA)
+	{
+		// Only run if at least 1 nVidia GPU found - delay-loading nvcuda.dll
+		for (const auto& [luid, dev] : m_Devices)
+		{
+			if (dev->IsVendor(kVendorId_nVidia))
+			{
+				initCUDA();
+				break;
+			}
+		}
+	}
+#endif
+
+
 #ifdef __APPLE__
     if (initMask & API_TYPE_METAL)
     {

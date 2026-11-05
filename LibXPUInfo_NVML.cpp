@@ -24,7 +24,7 @@
 
 namespace XI
 {
-void Device::initNVMLDevice(nvmlDevice_t device, UI32 cuda_ordinal)
+void Device::initNVMLDevice(nvmlDevice_t device)
 {
     nvmlReturn_t result;
     char name[NVML_DEVICE_NAME_BUFFER_SIZE];
@@ -137,8 +137,6 @@ void Device::initNVMLDevice(nvmlDevice_t device, UI32 cuda_ordinal)
     {
         m_props.VendorSpecific.nVidia.cudaComputeCapability_Major = cccMajor;
         m_props.VendorSpecific.nVidia.cudaComputeCapability_Minor = cccMinor;
-        // Only set when other related calls are working
-        updateIfDstNotSet(m_props.VendorSpecific.nVidia.cudaOrdinal, (int)cuda_ordinal);
     }
 
     unsigned int isMultiGpu;
@@ -334,7 +332,7 @@ void XPUInfo::initNVML()
 							auto insertResult = m_Devices.insert(std::make_pair(newDevice->getLUID(), newDevice));
 							if (insertResult.second)
 							{
-								insertResult.first->second->initNVMLDevice(device, i);
+								insertResult.first->second->initNVMLDevice(device);
 								m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
 							}
 						}
@@ -349,7 +347,7 @@ void XPUInfo::initNVML()
 
                                 if (dev->getProperties().PCIAddress == pciAddr)
                                 {
-                                    dev->initNVMLDevice(device, i);
+                                    dev->initNVMLDevice(device);
                                     m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
                                     break;
                                 }
@@ -364,7 +362,7 @@ void XPUInfo::initNVML()
                                 auto& dev = devPair.second;
                                 if (dev->IsVendor(kVendorId_nVidia))
                                 {
-                                    dev->initNVMLDevice(device, i);
+                                    dev->initNVMLDevice(device);
                                     m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
                                     break;
                                 }

@@ -16,6 +16,9 @@
     <Filter Include="NVML">
       <UniqueIdentifier>{b16fb5e7-45db-40ed-ab60-417d71c8dc8b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CUDA">
+      <UniqueIdentifier>{c27fb5e7-45db-40ed-ab60-417d71c8dc8c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LibXPUInfo.h">
@@ -89,5 +92,11 @@
     <ClCompile Include="LibXPUInfo_AGS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LibXPUInfo_CUDA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".github\copilot-instructions.md" />
   </ItemGroup>
 </Project>

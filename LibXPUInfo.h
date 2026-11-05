@@ -389,7 +389,7 @@ namespace XI
 
         // NVML
 #ifdef XPUINFO_USE_NVML
-        void initNVMLDevice(nvmlDevice_t device, UI32 cuda_ordinal);
+        void initNVMLDevice(nvmlDevice_t device);
         nvmlDevice_t m_nvmlDevice = nullptr;
 #endif
 
@@ -857,6 +857,9 @@ namespace XI
         void initL0();
         void initNVML();
         void shutdownNVML();
+#endif
+#ifdef XPUINFO_USE_CUDA
+        void initCUDA();
 #endif
         void finalInitDXGI();
         DeviceMap m_Devices;

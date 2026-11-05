@@ -120,7 +120,8 @@ namespace XI
         API_TYPE_WMI =                      1 << 9,
         API_TYPE_DESERIALIZED =             1 << 10,
         API_TYPE_AGS =                      1 << 12,
-        API_TYPE_LAST =                     1 << 13,
+        API_TYPE_CUDA =                     1 << 13,
+        API_TYPE_LAST =                     1 << 14,
 
         // Removed:
         //API_TYPE_IGCL =                     1 << 2,
@@ -139,10 +140,10 @@ namespace XI
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_OPENCL \
     | XI::API_TYPE_LEVELZERO \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS | XI::API_TYPE_CUDA)
 #else
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_CUDA)
 #endif
 #elif defined(__linux__)
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML

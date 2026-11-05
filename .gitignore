@@ -8,3 +8,4 @@ BuildExternalDeps/NVML.zip
 *.o
 bin
 
+external/CUDA
