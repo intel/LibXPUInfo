@@ -1,5 +1,5 @@
 @setlocal
-set _EXTPATH=%~dp0
+@set _EXTPATH=%~dp0
 
 @REM %_EXTPATH%\CUDA is a pre-created folder containing just the CUDA Driver API header + import lib.
 @REM This avoids requiring a full CUDA Toolkit install - cuda.h and cuda.lib are lightweight
@@ -19,15 +19,16 @@ c:\Windows\System32\tar.exe xvf CUDART.zip
 @if %ERRORLEVEL% neq 0 goto ERROR
 if NOT EXIST %_EXTPATH%\CUDA\include mkdir %_EXTPATH%\CUDA\include
 @if %ERRORLEVEL% neq 0 goto ERROR
-copy %CUDA_BASE_NAME%\include\cuda.h %_EXTPATH%\CUDA\include\cuda.h
+copy /y %CUDA_BASE_NAME%\include\cuda.h %_EXTPATH%\CUDA\include\cuda.h
 @if %ERRORLEVEL% neq 0 goto ERROR
 if NOT EXIST %_EXTPATH%\CUDA\lib\x64 mkdir %_EXTPATH%\CUDA\lib\x64
 @if %ERRORLEVEL% neq 0 goto ERROR
-copy %CUDA_BASE_NAME%\lib\x64\cuda.lib %_EXTPATH%\CUDA\lib\x64\cuda.lib
+copy /y %CUDA_BASE_NAME%\lib\x64\cuda.lib %_EXTPATH%\CUDA\lib\x64\cuda.lib
 @if %ERRORLEVEL% neq 0 goto ERROR
 rmdir /s /q %CUDA_BASE_NAME%
 del CUDART.zip
 
+@goto CUDA_DONE
 :ERROR
 exit /B %ERRORLEVEL%
 :CUDA_DONE
