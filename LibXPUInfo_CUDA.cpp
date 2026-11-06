@@ -34,7 +34,9 @@ static CUresult safeCuInit()
     {
         result = cuInit(0);
     }
-    __except (GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)
+    __except (
+        ((GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_MOD_NOT_FOUND)) ||
+         (GetExceptionCode() == VcppException(ERROR_SEVERITY_ERROR, ERROR_PROC_NOT_FOUND)))
         ? EXCEPTION_EXECUTE_HANDLER
         : EXCEPTION_CONTINUE_SEARCH)
     {
