@@ -34,6 +34,7 @@ LibXPUInfo coalesces multiple APIs to provide multi-vendor, cross-platform devic
   * If you want to use the nVidia CUDA Driver API to obtain a reliable CUDA device ordinal and accept the [CUDART license](https://developer.download.nvidia.com/compute/cuda/redist/cuda_cudart/LICENSE.txt), run external\getCUDADep.bat
     * This only requires the lightweight cuda.h header and cuda.lib stub (no CUDA Toolkit install needed); at runtime it delay-loads nvcuda.dll, which ships with the NVIDIA display driver.
     * This feature is opt-in: add XPUINFO_USE_CUDA to preprocessor arguments for LibXPUInfo.vcxproj after running the script above.
+    * The project files are not configured to support XPUINFO_USE_CUDA on ARM64 targets - users needing that should manually acquire the ARM64 lib and point the linker to it. 
   * If you want to use the AMD AGS SDK and accept the [AGS_SDK license](https://github.com/GPUOpen-LibrariesAndSDKs/AGS_SDK/blob/master/LICENSE.txt), run external\getAGSDep.bat
     * If you do not want to use AGS, remove XPUINFO_USE_AGS from preprocessor arguments for LibXPUInfo.vcxproj
   * If you want to use OpenCL and accept related Apache-2.0 licenses, run **external/buildExternalDeps_OCL.bat**
