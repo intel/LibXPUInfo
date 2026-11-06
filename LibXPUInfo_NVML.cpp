@@ -139,6 +139,13 @@ void Device::initNVMLDevice(nvmlDevice_t device)
         m_props.VendorSpecific.nVidia.cudaComputeCapability_Minor = cccMinor;
     }
 
+    unsigned int isMultiGpu;
+    result = nvmlDeviceGetMultiGpuBoard(device, &isMultiGpu);
+    if (result == NVML_SUCCESS)
+    {
+        updateIfDstNotSet(m_props.IsMultiGPUDevice, I8(isMultiGpu != 0 ? 1 : 0));
+    }
+
     // Currently only for multi-instance GPU (MIG)
 #if 0
     nvmlDeviceAttributes_t devAttrs{};

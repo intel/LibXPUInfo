@@ -391,6 +391,11 @@ namespace XI
 				apiNames.push_back("NVML");
 				break;
 #endif
+#ifdef XPUINFO_USE_CUDA
+			case API_TYPE_CUDA:
+				apiNames.push_back("CUDA");
+				break;
+#endif
 #ifdef XPUINFO_USE_AGS
 			case API_TYPE_AGS:
 				apiNames.push_back("AGS");
@@ -1206,6 +1211,23 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 #endif
 
+#ifdef XPUINFO_USE_CUDA
+    // Run this after nVidia devices are added to m_Devices by DXGI/DXCore or by NVML on Linux
+	if (initMask & API_TYPE_CUDA)
+	{
+		// Only run if at least 1 nVidia GPU found - delay-loading nvcuda.dll
+		for (const auto& [luid, dev] : m_Devices)
+		{
+			if (dev->IsVendor(kVendorId_nVidia))
+			{
+				initCUDA();
+				break;
+			}
+		}
+	}
+#endif
+
+
 #ifdef __APPLE__
     if (initMask & API_TYPE_METAL)
     {
@@ -1461,6 +1483,10 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	{
 		ostr << ", Detachable";
 	}
+	if (devProps.IsMultiGPUDevice > 0)
+	{
+		ostr << ", MultiGPUDevice";
+	}
 	ostr << std::endl;
 	if ((devProps.DedicatedMemorySize != XI::UI64(-1LL)) /*&& (devProps.DedicatedMemorySize > 0ULL)*/)
 	{
@@ -1650,6 +1676,10 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 		if (ccc > 0)
 		{
 			ostr << "\tCUDA Compute Capability: " << ccc << std::endl;
+		}
+		if (devProps.VendorSpecific.nVidia.cudaOrdinal >= 0)
+		{
+			ostr << "\tCUDA Ordinal: " << devProps.VendorSpecific.nVidia.cudaOrdinal << std::endl;
 		}
 	}
 	if (devProps.NumComputeUnits != -1)
