@@ -16,9 +16,6 @@
     <Filter Include="NVML">
       <UniqueIdentifier>{b16fb5e7-45db-40ed-ab60-417d71c8dc8b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="CUDA">
-      <UniqueIdentifier>{c27fb5e7-45db-40ed-ab60-417d71c8dc8c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LibXPUInfo.h">
