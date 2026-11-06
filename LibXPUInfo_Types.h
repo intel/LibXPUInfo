@@ -136,6 +136,10 @@ namespace XI
     // WMI takes more time to initialize than others, 
     // so it is not included in this default all-API macro
     // If WMI is desired, use APIType(XPUINFO_INIT_ALL_APIS | API_TYPE_WMI)
+
+    // Any API listed in XPUINFO_INIT_ALL_APIS but not supported by current build 
+    // configuration or system will be silently skipped. The preproc branch for ARM64
+    // vs x64 here is just to clarify APIs that are not supported on ARM64.
 #ifndef _M_ARM64
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_OPENCL \
