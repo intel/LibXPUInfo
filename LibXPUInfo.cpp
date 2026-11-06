@@ -391,6 +391,11 @@ namespace XI
 				apiNames.push_back("NVML");
 				break;
 #endif
+#ifdef XPUINFO_USE_CUDA
+			case API_TYPE_CUDA:
+				apiNames.push_back("CUDA");
+				break;
+#endif
 #ifdef XPUINFO_USE_AGS
 			case API_TYPE_AGS:
 				apiNames.push_back("AGS");
