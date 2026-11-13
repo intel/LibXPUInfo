@@ -165,8 +165,36 @@ namespace XI
     {
         UMA_UNKNOWN =       0,
         UMA_INTEGRATED =    1,
-        NONUMA_DISCRETE =   1 << 1
+        NONUMA_DISCRETE =   1 << 1,
+        UMATYPE_COMPARISON_MASK = 0x3,
+        // For testing additional bits, use getUMAType* functions
+        CACHE_COHERENT_UMA_KNOWN = 1 << 2,
+        CACHE_COHERENT_UMA = 1 << 3
     };
+    // Restrict (in)equality comparisons to first 2 bits for backward compatibility with existing code that uses UMAType as a 2-bit enum
+    inline constexpr bool operator==(UMAType l, UMAType r)
+    {
+        return static_cast<UI32>(l&UMATYPE_COMPARISON_MASK) == static_cast<UI32>(r&UMATYPE_COMPARISON_MASK);
+    }
+    inline constexpr bool operator!=(UMAType l, UMAType r)
+    {
+        return static_cast<UI32>(l & UMATYPE_COMPARISON_MASK) != static_cast<UI32>(r & UMATYPE_COMPARISON_MASK);
+    }
+    inline constexpr UMAType operator|(UMAType l, UMAType r)
+    {
+        return static_cast<UMAType>(static_cast<UI32>(l) | static_cast<UI32>(r));
+    }
+    inline constexpr UMAType operator|=(UMAType& l, UMAType r)
+    {
+        l = l | r;
+        return l;
+    }
+    inline constexpr I8 getUMATypeCacheCoherent(UMAType uma)
+    {
+        constexpr UMAType mask = (UMA_INTEGRATED | CACHE_COHERENT_UMA);
+        return ((uma & CACHE_COHERENT_UMA_KNOWN) ? 
+            (uma & mask) == mask : I8(-1));
+    }
 
     template <typename T>
     inline double BtoGB(T n)

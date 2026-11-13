@@ -201,11 +201,8 @@ namespace XI
 
         // Implementation characteristics
         UMAType UMA = UMA_UNKNOWN;
-#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
         // From D3D12_FEATURE_DATA_ARCHITECTURE (requires DXCore path). -1 unknown, 0 false, 1 true
-        I8 D3D12ArchUMA = -1;
-        I8 D3D12ArchCacheCoherentUMA = -1;
-#endif
+        I8 ArchCacheCoherentUMA = -1;
         I32 FreqMaxMHz = -1;
         I32 FreqMinMHz = -1;
         I32 DeviceGenerationID = -1;

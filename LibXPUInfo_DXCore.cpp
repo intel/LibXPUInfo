@@ -342,8 +342,12 @@ void Device::initD3D12Architecture(IUnknown* pAdapter)
         D3D12_FEATURE_DATA_ARCHITECTURE arch{}; // NodeIndex 0
         if (SUCCEEDED(d3d12Device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE, &arch, sizeof(arch))))
         {
-            m_props.D3D12ArchUMA = I8(arch.UMA ? 1 : 0);
-            m_props.D3D12ArchCacheCoherentUMA = I8(arch.CacheCoherentUMA ? 1 : 0);
+            XPUINFO_REQUIRE_MSG((m_props.UMA != UMAType::UMA_INTEGRATED) ^ (!!arch.UMA), "UMA mismatch between DXCore and D3D12");
+            m_props.UMA |= UMAType::CACHE_COHERENT_UMA_KNOWN;
+            if (arch.CacheCoherentUMA)
+            {
+                m_props.UMA |= UMAType::CACHE_COHERENT_UMA;
+            }
         }
     }
 }

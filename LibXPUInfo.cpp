@@ -1469,7 +1469,28 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	ostr << "\tType: " << xiDev.getType();
 	if (devProps.UMA != XI::UMA_UNKNOWN)
 	{
-		ostr << ", " << ((devProps.UMA == XI::UMA_INTEGRATED) ? "Integrated" : "Discrete");
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+		if (devProps.UMA == XI::UMA_INTEGRATED)
+		{
+            I8 cacheCoherent = XI::getUMATypeCacheCoherent(devProps.UMA);
+			if (cacheCoherent > 0)
+			{
+				ostr << ", Integrated/" << ((cacheCoherent == 1) ? "CacheCoherentUMA" : "NonCacheCoherentUMA");
+            }
+			else
+			{
+				ostr << ", Integrated/UMA";
+			}
+		}
+		else
+		{
+			ostr << ", Discrete";
+		}
+#else
+		{
+			ostr << ", " << ((devProps.UMA == XI::UMA_INTEGRATED) ? "Integrated/UMA" : "Discrete");
+		}
+#endif
 	}
 	if (devProps.IsHighPerformance > 0)
 	{
@@ -1488,13 +1509,6 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 		ostr << ", MultiGPUDevice";
 	}
 	ostr << std::endl;
-#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
-	if (devProps.D3D12ArchUMA >= 0)
-	{
-		ostr << "\tD3D12 Architecture: UMA = " << (devProps.D3D12ArchUMA ? "true" : "false")
-			<< ", CacheCoherentUMA = " << (devProps.D3D12ArchCacheCoherentUMA ? "true" : "false") << std::endl;
-	}
-#endif
 	if ((devProps.DedicatedMemorySize != XI::UI64(-1LL)) /*&& (devProps.DedicatedMemorySize > 0ULL)*/)
 	{
 		ostr << "\tMemory (MB): Dedicated = " << devProps.DedicatedMemorySize / (1024ULL * 1024);
@@ -2207,6 +2221,19 @@ SystemMemoryInfo::SystemMemoryInfo()
 	}
 }
 #endif // XPUINFO_USE_SYSTEMEMORYINFO
+
+// Type tests
+namespace {
+	constexpr UMAType testIntegrated = UMA_INTEGRATED;
+	constexpr UMAType testIntegratedCacheCoherent = UMA_INTEGRATED | CACHE_COHERENT_UMA_KNOWN | CACHE_COHERENT_UMA;
+	constexpr UMAType testIntegratedNonCacheCoherent = UMA_INTEGRATED | CACHE_COHERENT_UMA_KNOWN;
+	static_assert((testIntegratedCacheCoherent == testIntegratedNonCacheCoherent) 
+		&& (testIntegratedCacheCoherent == testIntegrated), "Test equality");
+	static_assert(!(testIntegratedCacheCoherent != testIntegratedNonCacheCoherent), "Test inequality");
+	static_assert(getUMATypeCacheCoherent(testIntegratedCacheCoherent) == I8(1));
+	static_assert(getUMATypeCacheCoherent(testIntegratedNonCacheCoherent) == I8(0));
+	static_assert(getUMATypeCacheCoherent(testIntegrated) == I8(-1));
+}
 
 } // XI
 
