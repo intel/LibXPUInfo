@@ -13,7 +13,7 @@
 
 /* These macros need to be set the same for both LibXPUInfo and clients:
 *  XPUINFO_USE_RAPIDJSON, XPUINFO_USE_RUNTIMEVERSIONINFO,
-*  XPUINFO_USE_SYSTEMEMORYINFO, 
+*  XPUINFO_USE_SYSTEMEMORYINFO, XPUINFO_DEV_D3D12_ARCHITECTURE (development only),
 *  
 *  These do not have a direct impact on behavior of class LibXPUInfo, but should still be set the same:
 *  XPUINFO_USE_TELEMETRYTRACKER, XPUINFO_USE_IPC
@@ -201,6 +201,11 @@ namespace XI
 
         // Implementation characteristics
         UMAType UMA = UMA_UNKNOWN;
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+        // From D3D12_FEATURE_DATA_ARCHITECTURE (requires DXCore path). -1 unknown, 0 false, 1 true
+        I8 D3D12ArchUMA = -1;
+        I8 D3D12ArchCacheCoherentUMA = -1;
+#endif
         I32 FreqMaxMHz = -1;
         I32 FreqMinMHz = -1;
         I32 DeviceGenerationID = -1;
@@ -383,6 +388,9 @@ namespace XI
 #ifdef _WIN32
         void initDXCoreDevice(winrt::com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHighPerf, bool bMinPower);
         winrt::com_ptr<IDXCoreAdapter> m_pDXCoreAdapter;
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+        void initD3D12Architecture(IUnknown* pAdapter);
+#endif
 #endif
         DXCoreAdapterMemoryBudget getMemUsage_DXCORE() const;
         DXCoreAdapterMemoryBudget getMemUsage_Metal() const;

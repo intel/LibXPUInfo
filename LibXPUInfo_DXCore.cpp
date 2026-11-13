@@ -25,6 +25,9 @@ using namespace winrt;
 #endif
 
 #include <array>
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+#include <d3d12.h>
+#endif
 // Note: dxcore.dll needs to be delay-loaded
 //#pragma comment(lib, "dxcore.lib")
 
@@ -309,7 +312,42 @@ void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHig
     updateIfDstNotSet(m_props.IsHighPerformance, I8(bHighPerf));
     updateIfDstNotSet(m_props.IsMinimumPower, I8(bMinPower));
     updateIfDstNotSet(m_props.IsDetachable, I8(isDetachable));
+
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+    if (getType() == DEVICE_TYPE_GPU)
+    {
+        initD3D12Architecture(pDXCoreAdapter.get());
+    }
+#endif
 }
+
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+void Device::initD3D12Architecture(IUnknown* pAdapter)
+{
+    // d3d12.dll is loaded at runtime to avoid a link-time dependency; intentionally not freed.
+    HMODULE hD3D12 = LoadLibraryExW(L"d3d12.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    if (!hD3D12)
+    {
+        return;
+    }
+    auto pfnCreateDevice = reinterpret_cast<decltype(&D3D12CreateDevice)>(GetProcAddress(hD3D12, "D3D12CreateDevice"));
+    if (!pfnCreateDevice)
+    {
+        return;
+    }
+
+    com_ptr<ID3D12Device> d3d12Device;
+    if (SUCCEEDED(pfnCreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(d3d12Device.put()))))
+    {
+        D3D12_FEATURE_DATA_ARCHITECTURE arch{}; // NodeIndex 0
+        if (SUCCEEDED(d3d12Device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE, &arch, sizeof(arch))))
+        {
+            m_props.D3D12ArchUMA = I8(arch.UMA ? 1 : 0);
+            m_props.D3D12ArchCacheCoherentUMA = I8(arch.CacheCoherentUMA ? 1 : 0);
+        }
+    }
+}
+#endif // XPUINFO_DEV_D3D12_ARCHITECTURE
 
 DXCoreAdapterMemoryBudget Device::getMemUsage_DXCORE() const
 {

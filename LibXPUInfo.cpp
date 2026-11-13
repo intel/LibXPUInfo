@@ -1488,6 +1488,13 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 		ostr << ", MultiGPUDevice";
 	}
 	ostr << std::endl;
+#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
+	if (devProps.D3D12ArchUMA >= 0)
+	{
+		ostr << "\tD3D12 Architecture: UMA = " << (devProps.D3D12ArchUMA ? "true" : "false")
+			<< ", CacheCoherentUMA = " << (devProps.D3D12ArchCacheCoherentUMA ? "true" : "false") << std::endl;
+	}
+#endif
 	if ((devProps.DedicatedMemorySize != XI::UI64(-1LL)) /*&& (devProps.DedicatedMemorySize > 0ULL)*/)
 	{
 		ostr << "\tMemory (MB): Dedicated = " << devProps.DedicatedMemorySize / (1024ULL * 1024);
