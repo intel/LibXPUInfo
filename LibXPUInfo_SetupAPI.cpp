@@ -18,7 +18,10 @@
 #pragma comment (lib, "Setupapi.lib")
 
 #ifndef XPUINFO_USE_D3DKMT
+#ifdef _DEBUG
+// Only used to verify that the PCI address returned by SetupAPI matches the one returned by D3DKMT
 #define XPUINFO_USE_D3DKMT 1
+#endif
 #endif
 
 #if XPUINFO_USE_D3DKMT
