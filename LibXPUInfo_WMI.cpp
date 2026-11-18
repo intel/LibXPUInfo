@@ -511,12 +511,13 @@ SystemInfo::SystemInfo()
 #endif
 }
 
-void XPUInfo::initWMI()
+// Called asynchronousely, so don't set any member variables here, just return the data to the caller
+std::shared_ptr<SystemInfo> XPUInfo::initWMI() const
 {
+    std::shared_ptr<SystemInfo> pSystemInfo;
     try
     {
-        m_pSystemInfo.reset(new SystemInfo);
-        m_UsedAPIs = m_UsedAPIs | API_TYPE_WMI;
+        pSystemInfo.reset(new SystemInfo);
     }
     catch (const std::exception& e)
     {
@@ -526,11 +527,12 @@ void XPUInfo::initWMI()
     {
     }
 
-    if (!(m_UsedAPIs & API_TYPE_WMI))
+    if (!pSystemInfo)
     {
         std::cout << "WMI Init Failed!\n";
     }
 
+    return pSystemInfo;
 }
 #endif // _WIN32 only
 

@@ -121,9 +121,10 @@ namespace XI
         API_TYPE_DESERIALIZED =             1 << 10,
         API_TYPE_AGS =                      1 << 12,
         API_TYPE_CUDA =                     1 << 13,
-        API_TYPE_LAST =                     1 << 14,
+        API_TYPE_D3D12 =                    1 << 14,
+        API_TYPE_LAST =                     1 << 15,
 
-        // Removed:
+        // Removed - avoid reuse:
         //API_TYPE_IGCL =                     1 << 2,
         //API_TYPE_IGCL_L0 =                  1 << 11, // Allow IGCL to use L0.  Once L0 issue with ZE_INIT_FLAG_VPU_ONLY is resolved, this can be removed.
     };
@@ -144,10 +145,11 @@ namespace XI
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_OPENCL \
     | XI::API_TYPE_LEVELZERO \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS | XI::API_TYPE_CUDA)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS | XI::API_TYPE_CUDA \
+    | XI::API_TYPE_D3D12)
 #else
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_CUDA)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_CUDA | XI::API_TYPE_D3D12)
 #endif
 #elif defined(__linux__)
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML
@@ -158,6 +160,10 @@ namespace XI
     inline APIType operator|(APIType l, APIType r)
     {
         return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
+    }
+    inline APIType operator&(APIType l, APIType r)
+    {
+        return static_cast<APIType>(static_cast<UI32>(l) & static_cast<UI32>(r));
     }
     XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
 

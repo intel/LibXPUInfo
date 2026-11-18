@@ -772,6 +772,7 @@
   <ItemGroup>
     <ClCompile Include="DebugStream.cpp" />
     <ClCompile Include="LibXPUInfo_AGS.cpp" />
+    <ClCompile Include="LibXPUInfo_D3D12.cpp" />
     <ClCompile Include="LibXPUInfo_IntelDeviceInfoDX11.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">NotUsing</PrecompiledHeader>

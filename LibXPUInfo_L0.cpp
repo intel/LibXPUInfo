@@ -95,7 +95,7 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 	if (inL0Device)
 	{
 		m_L0Device = inL0Device;
-		validAPIs = validAPIs | API_TYPE_LEVELZERO;
+		m_validAPIs = m_validAPIs | API_TYPE_LEVELZERO;
 
 		updateIfDstNotSet(m_props.ComputeUnitSIMDWidth, (I32)device_properties.physicalEUSimdWidth);
 		I32 numEUs = device_properties.numSlices * device_properties.numSubslicesPerSlice * device_properties.numEUsPerSubslice;

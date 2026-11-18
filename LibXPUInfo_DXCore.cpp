@@ -25,9 +25,6 @@ using namespace winrt;
 #endif
 
 #include <array>
-#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
-#include <d3d12.h>
-#endif
 // Note: dxcore.dll needs to be delay-loaded
 //#pragma comment(lib, "dxcore.lib")
 
@@ -235,7 +232,12 @@ void XPUInfo::initDXCore(bool updateOnly)
                     printf("\n");
 
                 DeviceType devType = isGraphics ? DEVICE_TYPE_GPU : (isNPU ? DEVICE_TYPE_NPU : DEVICE_TYPE_OTHER);
-                DevicePtr newDevice(new Device((UI32)m_Devices.size(), &desc1, devType, API_TYPE_DXCORE, driverVersion64));
+                APIType newDeviceAPI = APIType::API_TYPE_DXCORE;
+                if (m_InitAPIs & APIType::API_TYPE_D3D12)
+                {
+                    newDeviceAPI |= APIType::API_TYPE_D3D12;
+                }
+                DevicePtr newDevice(new Device((UI32)m_Devices.size(), &desc1, devType, newDeviceAPI, driverVersion64));
                 if (!!newDevice)
                 {
                     bool isHighPerf = luidHighPerf && (newDevice->getLUID() == luidHighPerf);
@@ -263,7 +265,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                         }
 
                         newIt->second->initDXCoreDevice(currAdapter, isHighPerf, isMinPower);
-                        m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
+                        m_UsedAPIs |= newIt->second->getCurrentAPIs();
                     }
                     else if (!updateOnly)
                     {
@@ -272,7 +274,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                         if (insertResult.second)
                         {
                             insertResult.first->second->initDXCoreDevice(currAdapter, isHighPerf, isMinPower);
-                            m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
+                            m_UsedAPIs |= insertResult.first->second->getCurrentAPIs();
                         }
                     }
                 } // newDevice valid        
@@ -303,7 +305,7 @@ void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHig
     bool isIntegratedValid = SUCCEEDED(hr);
     THROW_IF_FAILED(pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsDetachable, &isDetachable));
 
-    validAPIs = validAPIs | API_TYPE_DXCORE;
+    m_validAPIs = m_validAPIs | API_TYPE_DXCORE;
     if (isIntegratedValid)
     {
         updateIfDstVal(m_props.UMA, UMA_UNKNOWN,
@@ -313,45 +315,13 @@ void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHig
     updateIfDstNotSet(m_props.IsMinimumPower, I8(bMinPower));
     updateIfDstNotSet(m_props.IsDetachable, I8(isDetachable));
 
-#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
-    if (getType() == DEVICE_TYPE_GPU)
+#ifdef XPUINFO_USE_D3D12
+    if ((m_requestedAPIs & API_TYPE_D3D12))
     {
-        initD3D12Architecture(pDXCoreAdapter.get());
+        initD3D12Device(pDXCoreAdapter.get());
     }
 #endif
 }
-
-#ifdef XPUINFO_DEV_D3D12_ARCHITECTURE
-void Device::initD3D12Architecture(IUnknown* pAdapter)
-{
-    // d3d12.dll is loaded at runtime to avoid a link-time dependency; intentionally not freed.
-    HMODULE hD3D12 = LoadLibraryExW(L"d3d12.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-    if (!hD3D12)
-    {
-        return;
-    }
-    auto pfnCreateDevice = reinterpret_cast<decltype(&D3D12CreateDevice)>(GetProcAddress(hD3D12, "D3D12CreateDevice"));
-    if (!pfnCreateDevice)
-    {
-        return;
-    }
-
-    com_ptr<ID3D12Device> d3d12Device;
-    if (SUCCEEDED(pfnCreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(d3d12Device.put()))))
-    {
-        D3D12_FEATURE_DATA_ARCHITECTURE arch{}; // NodeIndex 0
-        if (SUCCEEDED(d3d12Device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE, &arch, sizeof(arch))))
-        {
-            XPUINFO_REQUIRE_MSG((m_props.UMA != UMAType::UMA_INTEGRATED) ^ (!!arch.UMA), "UMA mismatch between DXCore and D3D12");
-            m_props.UMA |= UMAType::CACHE_COHERENT_UMA_KNOWN;
-            if (arch.CacheCoherentUMA)
-            {
-                m_props.UMA |= UMAType::CACHE_COHERENT_UMA;
-            }
-        }
-    }
-}
-#endif // XPUINFO_DEV_D3D12_ARCHITECTURE
 
 DXCoreAdapterMemoryBudget Device::getMemUsage_DXCORE() const
 {

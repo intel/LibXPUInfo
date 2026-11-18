@@ -290,7 +290,7 @@ namespace XI
                 m_props.DeviceGenerationAPI = API_TYPE_AGS;
                 m_props.DeviceGenerationID = agsDevice.asicFamily;
             }
-            validAPIs = validAPIs | API_TYPE_AGS;
+            m_validAPIs = m_validAPIs | API_TYPE_AGS;
         }
     }
     void XPUInfo::initAGS()
