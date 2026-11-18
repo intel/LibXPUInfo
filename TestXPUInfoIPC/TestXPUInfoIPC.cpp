@@ -339,7 +339,7 @@ int main(int argc, char* argv[])
         {
             std::string arg(argv[a]);
 #ifdef XPUINFO_USE_RAPIDJSON
-            // Usage: -write_json outfileName apiMask
+            // Usage: [-apis apiMask] [-runtimes runtimesCommaSeparatedList] -write_json outfileName
             if (arg == "-write_json")
             {
                 XPUINFO_REQUIRE(a + 1 < argc);
