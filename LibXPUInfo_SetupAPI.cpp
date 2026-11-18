@@ -172,6 +172,8 @@ namespace
 		outPciAddr.function = addr.FunctionNumber;
 		return true;
 	}
+    // Other potentially useful D3DKMT query types:
+	// - Memory size, similar to DXGI DXGI_ADAPTER_DESC1: KMTQAITYPE_GETSEGMENTSIZE --> D3DKMT_SEGMENTSIZEINFO
 #endif // XPUINFO_USE_D3DKMT
 
 	bool QueryDevicePciAddress(HDEVINFO devInfo, SP_DEVINFO_DATA* devData, XI::PCIAddressType& outAddr) {
