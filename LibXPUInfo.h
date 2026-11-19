@@ -690,7 +690,7 @@ namespace XI
         {
             WString Name;
             WString Manufacturer;
-            WString SerialNumber;
+            WString SerialNumber; // Do not serialize
             WString Version;
             WString ReleaseDate;
         };

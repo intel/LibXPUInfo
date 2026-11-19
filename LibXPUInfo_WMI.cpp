@@ -663,7 +663,7 @@ std::ostream& operator<<(std::ostream& os, const SystemInfo& si)
 
     if (si.BIOS.SerialNumber.length() && (si.BIOS.SerialNumber != L"System Serial Number"))
     {
-        os << std::left << std::setw(colW) << "\tSerialNumber:" << convert(si.BIOS.SerialNumber) << endl;
+        os << std::left << std::setw(colW) << "\tBIOS SerialNumber:" << convert(si.BIOS.SerialNumber) << endl;
     }
     if (si.BIOS.Name.length())
     {

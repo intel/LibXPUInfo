@@ -528,6 +528,8 @@ SystemInfo::SystemInfo(const rapidjson::Value& val)
 {
     Manufacturer = JSON::safeGetWString(val, "Manufacturer");
     Model = JSON::safeGetWString(val, "Model");
+    SystemFamily = JSON::safeGetWString(val, "SystemFamily");
+    SystemSKUNumber = JSON::safeGetWString(val, "SystemSKUNumber");
     NumberOfLogicalProcessors = JSON::safeGetI32(val, "NumberOfLogicalProcessors").value_or(0);
     NumberOfProcessors = JSON::safeGetI32(val, "NumberOfProcessors").value_or(0);
     TotalPhysicalMemory = JSON::safeGetI64(val, "TotalPhysicalMemory").value_or(0);
@@ -569,6 +571,8 @@ rapidjson::Value SystemInfo::serialize(JSON::AllocatorType& a) const
 
     curSI.AddMember("Manufacturer", convert(Manufacturer), a);
     curSI.AddMember("Model", convert(Model), a);
+    curSI.AddMember("SystemFamily", convert(SystemFamily), a);
+    curSI.AddMember("SystemSKUNumber", convert(SystemSKUNumber), a);
     curSI.AddMember("NumberOfLogicalProcessors", NumberOfLogicalProcessors, a);
     curSI.AddMember("NumberOfProcessors", NumberOfProcessors, a);
     //
