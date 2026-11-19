@@ -1056,11 +1056,14 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	// Verify class size matches between internal lib and clients
 	const size_t libClassSize = sizeof(XPUInfo);
 	XPUINFO_REQUIRE(libClassSize == clientClassSize);
-	if (!(initMask & API_TYPE_DESERIALIZED))
+	if (initMask & API_TYPE_DESERIALIZED)
 	{
-		// Skip if this will be deserialized
-		m_pCPU.reset(new DeviceCPU);
+        // This means XPUInfo::deserialize() will be called, so don't do any initialization here.
+		return;
 	}
+
+	// Skip if this will be deserialized
+	m_pCPU.reset(new DeviceCPU);
 
 #if defined(_WIN32) && defined(XPUINFO_USE_WMI)
 	std::unique_ptr<std::thread> wmiThreadPtr;
@@ -1251,10 +1254,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 
 #ifdef XPUINFO_USE_RUNTIMEVERSIONINFO
-	if (!(initMask & API_TYPE_DESERIALIZED))
-	{
-		getRuntimeVersions(runtimeNamesToTrack);
-	}
+	getRuntimeVersions(runtimeNamesToTrack);
 #endif
 
 #if defined(_WIN32) && defined(XPUINFO_USE_WMI)
