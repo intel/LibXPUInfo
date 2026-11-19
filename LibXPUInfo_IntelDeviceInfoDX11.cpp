@@ -362,14 +362,14 @@ void Device::initDXIntelPerfCounter(IDXGIAdapter1*
 			{
 				dStr << __FUNCTION__ << ": NOTE: DeviceInfoHeader.Version > 2, check for updated fields\n";
 			}
-			m_validAPIs = m_validAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
+			m_validAPIs |= API_TYPE_DX11_INTEL_PERF_COUNTER;
 		}
 		else if (intelDeviceInfoHeader.Version == 1)
 		{
 			IntelDeviceInfoV1* pIntelDeviceInfo = (IntelDeviceInfoV1*)intelDeviceInfoBuffer;
 			updateIfDstNotSet(m_props.FreqMaxMHz, (I32)pIntelDeviceInfo->GPUMaxFreq);
 			updateIfDstNotSet(m_props.FreqMinMHz, (I32)pIntelDeviceInfo->GPUMinFreq);
-			m_validAPIs = m_validAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
+			m_validAPIs |= API_TYPE_DX11_INTEL_PERF_COUNTER;
 		}
 		else
 		{

@@ -165,7 +165,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
     }
 #endif
 
-    m_validAPIs = m_validAPIs | API_TYPE_NVML;
+    m_validAPIs |= API_TYPE_NVML;
     m_nvmlDevice = device;
 }
 

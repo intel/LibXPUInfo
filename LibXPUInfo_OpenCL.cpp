@@ -101,7 +101,7 @@ void Device::initOpenCLDevice(cl_platform_id inPlatform, cl_device_id inDevice, 
 			}
 		}
 	}
-	m_validAPIs = m_validAPIs | API_TYPE_OPENCL;
+	m_validAPIs |= API_TYPE_OPENCL;
 }
 
 void XPUInfo::initOpenCL()

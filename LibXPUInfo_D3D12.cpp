@@ -19,16 +19,10 @@ void Device::initD3D12Device(IUnknown* pAdapter)
     }
 
     // d3d12.dll is loaded at runtime to avoid a link-time dependency; intentionally not freed.
-    HMODULE hD3D12 = LoadLibraryExW(L"d3d12.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-    if (!hD3D12)
-    {
-        return;
-    }
-    auto pfnCreateDevice = reinterpret_cast<decltype(&D3D12CreateDevice)>(GetProcAddress(hD3D12, "D3D12CreateDevice"));
-    if (!pfnCreateDevice)
-    {
-        return;
-    }
+    static HMODULE hD3D12 = LoadLibraryExW(L"d3d12.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+    XPUINFO_REQUIRE_MSG(hD3D12, "Failed to load d3d12.dll");
+    static auto pfnCreateDevice = reinterpret_cast<decltype(&D3D12CreateDevice)>(GetProcAddress(hD3D12, "D3D12CreateDevice"));
+    XPUINFO_REQUIRE_MSG(pfnCreateDevice, "Failed to get D3D12CreateDevice proc address");
 
     com_ptr<ID3D12Device> d3d12Device;
     if (SUCCEEDED(pfnCreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(d3d12Device.put()))))
@@ -47,7 +41,7 @@ void Device::initD3D12Device(IUnknown* pAdapter)
             {
                 m_props.UMA |= UMAType::CACHE_COHERENT_UMA;
             }
-            m_validAPIs = m_validAPIs | API_TYPE_D3D12;
+            m_validAPIs |= API_TYPE_D3D12;
         }
     }
 }

@@ -305,7 +305,7 @@ void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHig
     bool isIntegratedValid = SUCCEEDED(hr);
     THROW_IF_FAILED(pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsDetachable, &isDetachable));
 
-    m_validAPIs = m_validAPIs | API_TYPE_DXCORE;
+    m_validAPIs |= API_TYPE_DXCORE;
     if (isIntegratedValid)
     {
         updateIfDstVal(m_props.UMA, UMA_UNKNOWN,

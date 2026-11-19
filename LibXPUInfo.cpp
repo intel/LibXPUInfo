@@ -1163,7 +1163,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 				if (!device->m_props.pDriverInfo)
 				{
 					device->m_props.pDriverInfo = pSDI;
-					device->m_validAPIs = device->m_validAPIs | API_TYPE_SETUPAPI;
+					device->m_validAPIs |= API_TYPE_SETUPAPI;
 					bSDIMatchFound = true;
 					if (device->m_pDriverVersion && !device->m_pDriverVersion->Valid())
 					{
