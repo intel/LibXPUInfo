@@ -38,6 +38,10 @@ void Device::initD3D12Device(IUnknown* pAdapter)
         {
             XPUINFO_REQUIRE_MSG((m_props.UMA == UMAType::UMA_UNKNOWN) ||
                 ((m_props.UMA != UMAType::UMA_INTEGRATED) ^ (!!arch.UMA)), "UMA mismatch between DXCore and D3D12");
+            if (m_props.UMA == UMAType::UMA_UNKNOWN)
+            {
+                m_props.UMA = arch.UMA ? UMAType::UMA_INTEGRATED : UMAType::NONUMA_DISCRETE;
+            }
             m_props.UMA |= UMAType::CACHE_COHERENT_UMA_KNOWN;
             if (arch.CacheCoherentUMA)
             {
