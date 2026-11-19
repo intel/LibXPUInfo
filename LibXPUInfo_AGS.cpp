@@ -308,7 +308,7 @@ namespace XI
                     if (strcmp(device.adapterString, convert(dev->name()).c_str()) == 0)
                     {
                         dev->initAGSDevice(gpuIndex, gpuInfoPtr);
-                        m_UsedAPIs = m_UsedAPIs | API_TYPE_AGS;
+                        m_UsedAPIs |= API_TYPE_AGS;
                         break;
                     }
                 }

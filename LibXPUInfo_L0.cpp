@@ -706,7 +706,7 @@ void XPUInfo::initL0()
 				}
 				else if ((m_UsedAPIs & API_TYPE_LEVELZERO) == 0)
 				{
-					m_UsedAPIs = m_UsedAPIs | API_TYPE_LEVELZERO;
+					m_UsedAPIs |= API_TYPE_LEVELZERO;
 				}
 			}
 			else

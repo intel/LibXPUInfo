@@ -182,7 +182,7 @@ void XPUInfo::initOpenCL()
 		}
 		if (clDevsFound)
 		{
-			m_UsedAPIs = m_UsedAPIs | API_TYPE_OPENCL;
+			m_UsedAPIs |= API_TYPE_OPENCL;
 		}
 	}
 }

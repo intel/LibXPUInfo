@@ -221,7 +221,7 @@ void XPUInfo::initMetal()
             m_Devices.insert(std::make_pair(deviceId, newDevice));
             if (!(m_UsedAPIs & API_TYPE_METAL))
             {
-                m_UsedAPIs = m_UsedAPIs | API_TYPE_METAL;
+                m_UsedAPIs |= API_TYPE_METAL;
             }
         }
     }

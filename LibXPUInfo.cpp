@@ -1199,7 +1199,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 		} // devices
 		if (bSDIMatchFound)
 		{
-			m_UsedAPIs = m_UsedAPIs | API_TYPE_SETUPAPI;
+			m_UsedAPIs |= API_TYPE_SETUPAPI;
 		}
 	}
 #endif // XPUINFO_USE_SETUPAPI
