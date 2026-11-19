@@ -214,7 +214,7 @@ void XPUInfo::initMetal()
             I64 bw = [device maxTransferRate];
             newDevice->m_props.MemoryBandWidthMax = (bw > 0) ? bw : -1LL;
             newDevice->m_props.UMA = [device hasUnifiedMemory] ? UMA_INTEGRATED : NONUMA_DISCRETE;
-            newDevice->validAPIs = API_TYPE_METAL;
+            newDevice->m_validAPIs = API_TYPE_METAL;
             newDevice->m_props.IsDetachable = isRemovable;
             newDevice->m_props.IsHighPerformance = isHighPerformance;
             
