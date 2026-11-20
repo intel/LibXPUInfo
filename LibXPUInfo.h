@@ -13,7 +13,7 @@
 
 /* These macros need to be set the same for both LibXPUInfo and clients:
 *  XPUINFO_USE_RAPIDJSON, XPUINFO_USE_RUNTIMEVERSIONINFO,
-*  XPUINFO_USE_SYSTEMEMORYINFO, 
+*  XPUINFO_USE_SYSTEMEMORYINFO, and others
 *  
 *  These do not have a direct impact on behavior of class LibXPUInfo, but should still be set the same:
 *  XPUINFO_USE_TELEMETRYTRACKER, XPUINFO_USE_IPC
@@ -216,11 +216,6 @@ namespace XI
         I32 MemoryFreqMaxMHz = -1;
         I32 MemoryFreqMinMHz = -1;
 
-        // TDP: ctl_power_properties_t, ctl_power_peak_limit_t
-        // 
-        
-        // ctl_mem_properties_t
-        // - type (GDDR6...), bus width, channels
         union
         {
             struct
@@ -333,7 +328,7 @@ namespace XI
         const DeviceDriverVersion& driverVersion() const;
         friend class XPUInfo;
         const DeviceProperties& getProperties() const { return m_props; };
-        APIType getCurrentAPIs() const { return validAPIs; }
+        APIType getCurrentAPIs() const { return m_validAPIs; }
         ze_device_handle_t getHandle_L0() const { return m_L0Device; }
 #ifdef XPUINFO_USE_NVML
         nvmlDevice_t getHandle_NVML() const { return m_nvmlDevice; }
@@ -360,7 +355,8 @@ namespace XI
         static std::string getIntelGfxArchitectureName(IntelGfxArchitecture arch);
         static std::string getIntelNPUArchitectureName(IntelNPUArchitecture arch);
     protected:
-        APIType validAPIs = API_TYPE_UNKNOWN;
+        APIType m_validAPIs = API_TYPE_UNKNOWN;
+        APIType m_requestedAPIs = API_TYPE_UNKNOWN;
         DeviceProperties m_props;
 
         // unique_ptr helps avoid unintentional copying, but not valid as member of vector
@@ -383,6 +379,10 @@ namespace XI
 #ifdef _WIN32
         void initDXCoreDevice(winrt::com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHighPerf, bool bMinPower);
         winrt::com_ptr<IDXCoreAdapter> m_pDXCoreAdapter;
+#ifdef XPUINFO_USE_D3D12
+        // Called from initDXGI or initDXCoreDevice
+        void initD3D12Device(IUnknown* pAdapter);
+#endif
 #endif
         DXCoreAdapterMemoryBudget getMemUsage_DXCORE() const;
         DXCoreAdapterMemoryBudget getMemUsage_Metal() const;
@@ -684,7 +684,7 @@ namespace XI
         {
             WString Name;
             WString Manufacturer;
-            WString SerialNumber;
+            WString SerialNumber; // Do not serialize
             WString Version;
             WString ReleaseDate;
         };
@@ -846,10 +846,10 @@ namespace XI
         DevicePtr getDeviceInternal(const char* inNameSubString);
         void initCPU();
 #ifdef _WIN32
-        void initDXGI(APIType initMask);
+        void initDXGI();
         void initOpenCL();
         void initAGS();
-        void initWMI();
+        std::shared_ptr<SystemInfo> initWMI() const;
 #elif __APPLE__
         void initMetal();
 #endif

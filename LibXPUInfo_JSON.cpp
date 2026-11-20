@@ -71,6 +71,7 @@ bool XPUInfo::serialize(rapidjson::Document& doc)
     doc.AddMember("ClientBuildTimestamp", m_clientBuildTimestamp, a);
     doc.AddMember("InternalBuildTimestamp", m_internalBuildTimestamp, a);
     doc.AddMember("UsedAPIsUI32", (UI32)m_UsedAPIs, a);
+    doc.AddMember("InitAPIsUI32", (UI32)m_InitAPIs, a);
 
     rapidjson::Value valDevices(rapidjson::kArrayType);
     for (const auto& [luid, dev] : getDeviceMap())
@@ -150,7 +151,8 @@ XPUInfoPtr XPUInfo::deserialize(const rapidjson::Document& val)
     {
         clientBuildTimestamp = val["ClientBuildTimestamp"].GetString();
     }
-    xiPtr = std::make_unique<XPUInfo>(XI::API_TYPE_DESERIALIZED, XI::RuntimeNames(), sizeof(XPUInfo), clientBuildTimestamp.c_str());
+    XI::APIType initAPIs = (XI::APIType)(XI::JSON::safeGetUI32(val, "InitAPIsUI32").value_or(0) | XI::API_TYPE_DESERIALIZED);
+    xiPtr = std::make_unique<XPUInfo>(initAPIs, XI::RuntimeNames(), sizeof(XPUInfo), clientBuildTimestamp.c_str());
 
     xiPtr->m_UsedAPIs = (XI::APIType)XI::JSON::safeGetUI32(val, "UsedAPIsUI32").value_or(0);
 
@@ -232,12 +234,14 @@ DevicePtr Device::deserialize(const rapidjson::Value& val)
     auto desc = deserializeDesc(val, name);
     auto type = safeGetUI32(val, "Type");
     auto apis = safeGetUI32(val, "validAPIs");
+    auto requestedApis = safeGetUI32(val, "requestedAPIs");
     auto rawDriverVersion = safeGetUI64(val, "DriverVersionRaw");
     if (index.has_value() && desc.has_value() && type.has_value() && apis.has_value()
         && rawDriverVersion.has_value())
     {
         DevicePtr newDev(new Device(index.value(), &desc.value(), DeviceType(type.value()),
-            APIType(apis.value() | API_TYPE_DESERIALIZED), rawDriverVersion.value()));
+            APIType(requestedApis.value_or(apis.value()) | API_TYPE_DESERIALIZED), rawDriverVersion.value()));
+        newDev->m_validAPIs = APIType(apis.value() | API_TYPE_DESERIALIZED);
                 
         if (val.HasMember("DriverInfo"))
         {
@@ -368,6 +372,7 @@ rapidjson::Value Device::serialize(AllocatorType& a)
     curDev.AddMember("PackageTDP", getProperties().PackageTDP, a);
 
     curDev.AddMember("validAPIs", getCurrentAPIs(), a);
+    curDev.AddMember("requestedAPIs", (UI32)m_requestedAPIs, a);
     curDev.AddMember("UMA", getProperties().UMA, a);
     curDev.AddMember("PCIAddress", getProperties().PCIAddress.serialize(a), a);
 
@@ -523,6 +528,8 @@ SystemInfo::SystemInfo(const rapidjson::Value& val)
 {
     Manufacturer = JSON::safeGetWString(val, "Manufacturer");
     Model = JSON::safeGetWString(val, "Model");
+    SystemFamily = JSON::safeGetWString(val, "SystemFamily");
+    SystemSKUNumber = JSON::safeGetWString(val, "SystemSKUNumber");
     NumberOfLogicalProcessors = JSON::safeGetI32(val, "NumberOfLogicalProcessors").value_or(0);
     NumberOfProcessors = JSON::safeGetI32(val, "NumberOfProcessors").value_or(0);
     TotalPhysicalMemory = JSON::safeGetI64(val, "TotalPhysicalMemory").value_or(0);
@@ -564,6 +571,8 @@ rapidjson::Value SystemInfo::serialize(JSON::AllocatorType& a) const
 
     curSI.AddMember("Manufacturer", convert(Manufacturer), a);
     curSI.AddMember("Model", convert(Model), a);
+    curSI.AddMember("SystemFamily", convert(SystemFamily), a);
+    curSI.AddMember("SystemSKUNumber", convert(SystemSKUNumber), a);
     curSI.AddMember("NumberOfLogicalProcessors", NumberOfLogicalProcessors, a);
     curSI.AddMember("NumberOfProcessors", NumberOfProcessors, a);
     //
@@ -698,7 +707,7 @@ bool Device::operator==(const Device& dev) const
 {
 	if ((m_type == dev.m_type)
 		&& (m_adapterIndex == dev.m_adapterIndex)
-		&& (validAPIs == (dev.validAPIs & ~API_TYPE_DESERIALIZED))
+		&& (m_validAPIs == (dev.m_validAPIs & ~API_TYPE_DESERIALIZED))
 		&& (m_pDriverVersion && dev.m_pDriverVersion && 
 			(m_pDriverVersion->GetAsUI64()==dev.m_pDriverVersion->GetAsUI64()))
 		&& (m_props == dev.m_props)

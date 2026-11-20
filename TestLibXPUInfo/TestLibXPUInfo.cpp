@@ -268,101 +268,129 @@ int printXPUInfo(int argc, char* argv[])
     bool testIndividual = false;
     bool bRunTelemetry = false;
     bool peakOnly = false;
+    bool exitAfterArgLoop = false;
+    bool argLoopExceptionTriggered = false;
     XI::UI32 telemInterval_ms = 0;
     XI::UI32 telem_gpu_idx = 0;
     APIType additionalAPIs = APIType(0);
     APIType apiMask = APIType(0);
 
-    for (int a = 1; a < argc; ++a)
+    try
     {
-        String arg(argv[a]);
-        if (arg == "-nopause")
+        for (int a = 1; a < argc; ++a)
         {
-            pauseOnExit = false;
-        }
-        else
-#ifdef _WIN32
-        if (arg == "-1")
-        {
-            testIndividual = true;
-        }
-        else
-#endif
-        if (arg == "-telemetry") // -telemetry <ms> [<gpuIndex>]
-        {
-            if ((a + 1 < argc))
+            String arg(argv[a]);
+            if (arg == "-nopause")
             {
-                std::istringstream istr(argv[++a]);
-                XI::UI32 msInterval = 0;
-                istr >> msInterval;
-                if (!istr.bad())
-                {
-                    telemInterval_ms = msInterval;
-                    bRunTelemetry = true;
-                }
-            }
-            if ((a + 1 < argc) && (strlen(argv[a+1]) > 0) && (argv[a+1][0] != '-'))
-            {
-                std::istringstream istr(argv[++a]);
-                XI::UI32 gpuIdx;
-                istr >> gpuIdx;
-                if (!istr.bad())
-                {
-                    telem_gpu_idx = gpuIdx;
-                }
-            }
-        }
-        else if (arg == "-peak_only")
-        {
-            peakOnly = true;
-        }
-        // If specified, this takes precedence over additionalAPIs
-        else if ((arg == "-apis") && (a+1 < argc))
-        {
-            std::underlying_type_t<APIType> inMask;
-            std::istringstream istr(argv[++a]);
-            istr >> std::hex >> inMask;
-            if (!istr.bad())
-            {
-                apiMask = static_cast<APIType>(inMask & ~XI::API_TYPE_DESERIALIZED); // Don't allow deserialized flag to be set
-            }
-        }
-#ifdef _WIN32
-        // -inflate_gpu_mem 10.5 Arc
-        else if ((arg == "-inflate_gpu_mem") && (a + 2 < argc))
-        {
-            double sizeInGB;
-            std::istringstream istr(argv[++a]);
-            std::string devName(argv[++a]);
-            istr >> sizeInGB;
-            if (!istr.fail())
-            {
-                return testInflateGPUMem(sizeInGB, devName);
+                pauseOnExit = false;
             }
             else
-            {
-                std::cout << "Argument error - Invalid size: " << istr.str() << std::endl;
-                return -1;
-            }
-            return -1;
-        }
+#ifdef _WIN32
+                if (arg == "-1")
+                {
+                    testIndividual = true;
+                }
+                else
+#endif
+                    if (arg == "-telemetry") // -telemetry <ms> [<gpuIndex>]
+                    {
+                        if ((a + 1 < argc))
+                        {
+                            std::istringstream istr(argv[++a]);
+                            XI::UI32 msInterval = 0;
+                            istr >> msInterval;
+                            if (!istr.bad())
+                            {
+                                telemInterval_ms = msInterval;
+                                bRunTelemetry = true;
+                            }
+                        }
+                        if ((a + 1 < argc) && (strlen(argv[a + 1]) > 0) && (argv[a + 1][0] != '-'))
+                        {
+                            std::istringstream istr(argv[++a]);
+                            XI::UI32 gpuIdx;
+                            istr >> gpuIdx;
+                            if (!istr.bad())
+                            {
+                                telem_gpu_idx = gpuIdx;
+                            }
+                        }
+                    }
+                    else if (arg == "-peak_only")
+                    {
+                        peakOnly = true;
+                    }
+            // If specified, this takes precedence over additionalAPIs
+                    else if ((arg == "-apis") && (a + 1 < argc))
+                    {
+                        std::underlying_type_t<APIType> inMask;
+                        std::istringstream istr(argv[++a]);
+                        istr >> std::hex >> inMask;
+                        if (!istr.bad())
+                        {
+                            apiMask = static_cast<APIType>(inMask & ~XI::API_TYPE_DESERIALIZED); // Don't allow deserialized flag to be set
+                        }
+                    }
+#ifdef _WIN32
+            // -inflate_gpu_mem 10.5 Arc
+                    else if ((arg == "-inflate_gpu_mem") && (a + 2 < argc))
+                    {
+                        double sizeInGB;
+                        std::istringstream istr(argv[++a]);
+                        std::string devName(argv[++a]);
+                        istr >> sizeInGB;
+                        if (!istr.fail())
+                        {
+                            return testInflateGPUMem(sizeInGB, devName);
+                        }
+                        else
+                        {
+                            std::cout << "Argument error - Invalid size: " << istr.str() << std::endl;
+                            return -1;
+                        }
+                    }
 #endif
 #ifdef XPUINFO_USE_RAPIDJSON
-        if ((arg == "-write_json") && (a + 1 < argc))
-        {
-            bool bRet = testWriteJSON(argv[++a]);
-            return bRet ? 0 : -1;
-        }
-        else if (arg == "-verify_json")
-        {
-            testVerifyJSON();
-        }
-        else if ((arg == "-from_json") && (a + 1 < argc))
-        {
-            bool bRet = testReadJSON(argv[++a]);
-            return bRet ? 0 : -1;
-        }
+            /* Validation:
+            *   "-verify_json": Partial comparison of fields that should not change between inits
+            *   "-nopause -write_json test1.json -from_json test1.json -write_json test2.json":
+            *     Manually diff test1.json vs. test2.json to check that all fields match except
+            *       "AvailablePhysicalMemoryAtInit"
+            */
+            if ((arg == "-write_json") && (a + 1 < argc))
+            {
+                bool bRet = testWriteJSON(argv[++a]);
+                XPUINFO_REQUIRE_MSG(bRet, "testWriteJSON failed");
+                exitAfterArgLoop = true;
+            }
+            else if (arg == "-verify_json")
+            {
+                bool bRet = testVerifyJSON();
+                XPUINFO_REQUIRE_MSG(bRet, "testVerifyJSON failed");
+                exitAfterArgLoop = true;
+            }
+            else if ((arg == "-from_json") && (a + 1 < argc))
+            {
+                bool bRet = testReadJSON(argv[++a]);
+                XPUINFO_REQUIRE_MSG(bRet, "testReadJSON failed");
+                exitAfterArgLoop = true;
+            }
 #endif
+        }
+    } // try
+    catch (const std::exception& e)
+    {
+        argLoopExceptionTriggered = true;
+        std::cerr << "Exception during argument loop: " << e.what() << std::endl;
+    }
+    catch (...)
+    {
+        argLoopExceptionTriggered = true;
+        std::cerr << "Exception during argument loop\n";
+    }
+    if (exitAfterArgLoop || argLoopExceptionTriggered)
+    {
+        return argLoopExceptionTriggered ? -1 : 0;
     }
 
     try

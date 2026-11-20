@@ -165,7 +165,7 @@ void Device::initNVMLDevice(nvmlDevice_t device)
     }
 #endif
 
-    validAPIs = validAPIs | API_TYPE_NVML;
+    m_validAPIs |= API_TYPE_NVML;
     m_nvmlDevice = device;
 }
 
@@ -333,7 +333,7 @@ void XPUInfo::initNVML()
 							if (insertResult.second)
 							{
 								insertResult.first->second->initNVMLDevice(device);
-								m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
+								m_UsedAPIs |= API_TYPE_NVML;
 							}
 						}
 #else
@@ -345,10 +345,10 @@ void XPUInfo::initNVML()
                             {
                                 ++numnVidiaDevices;
 
-                                if (dev->getProperties().PCIAddress == pciAddr)
+                                if (dev->getProperties().PCIAddress == pciAddr || dev->getProperties().UMA == UMA_INTEGRATED)
                                 {
                                     dev->initNVMLDevice(device);
-                                    m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
+                                    m_UsedAPIs |= API_TYPE_NVML;
                                     break;
                                 }
                             }
@@ -363,7 +363,7 @@ void XPUInfo::initNVML()
                                 if (dev->IsVendor(kVendorId_nVidia))
                                 {
                                     dev->initNVMLDevice(device);
-                                    m_UsedAPIs = m_UsedAPIs | API_TYPE_NVML;
+                                    m_UsedAPIs |= API_TYPE_NVML;
                                     break;
                                 }
                             }

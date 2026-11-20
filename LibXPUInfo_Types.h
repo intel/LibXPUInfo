@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <type_traits>
 
 #ifdef XPUINFO_USE_RAPIDJSON
 #include "rapidjson/document.h"
@@ -121,16 +122,26 @@ namespace XI
         API_TYPE_DESERIALIZED =             1 << 10,
         API_TYPE_AGS =                      1 << 12,
         API_TYPE_CUDA =                     1 << 13,
-        API_TYPE_LAST =                     1 << 14,
+        API_TYPE_D3D12 =                    1 << 14,
+        API_TYPE_LAST =                     1 << 15,
 
-        // Removed:
+        // Removed - avoid reuse:
         //API_TYPE_IGCL =                     1 << 2,
         //API_TYPE_IGCL_L0 =                  1 << 11, // Allow IGCL to use L0.  Once L0 issue with ZE_INIT_FLAG_VPU_ONLY is resolved, this can be removed.
     };
-    inline APIType operator|=(APIType& a, APIType b) {
-        a = static_cast<APIType>(a | b);
+    inline APIType operator|(APIType l, APIType r)
+    {
+        return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
+    }
+    inline APIType& operator|=(APIType& a, APIType b) {
+        a = a | b;
         return a;
     }
+    inline APIType operator&(APIType l, APIType r)
+    {
+        return static_cast<APIType>(static_cast<UI32>(l) & static_cast<UI32>(r));
+    }
+    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
 
 #ifdef _WIN32
     // WMI takes more time to initialize than others, 
@@ -144,10 +155,11 @@ namespace XI
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
     | XI::API_TYPE_DX11_INTEL_PERF_COUNTER | XI::API_TYPE_OPENCL \
     | XI::API_TYPE_LEVELZERO \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS | XI::API_TYPE_CUDA)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_AGS | XI::API_TYPE_CUDA \
+    | XI::API_TYPE_D3D12)
 #else
 #define XPUINFO_INIT_ALL_APIS (XI::API_TYPE_DXGI | XI::API_TYPE_SETUPAPI \
-    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_CUDA)
+    | XI::API_TYPE_DXCORE | XI::API_TYPE_NVML | XI::API_TYPE_CUDA | XI::API_TYPE_D3D12)
 #endif
 #elif defined(__linux__)
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_NVML
@@ -155,19 +167,47 @@ namespace XI
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_METAL
 #endif
 
-    inline APIType operator|(APIType l, APIType r)
-    {
-        return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
-    }
-    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
-
     enum UMAType : UI32
     {
         UMA_UNKNOWN =       0,
         UMA_INTEGRATED =    1,
-        NONUMA_DISCRETE =   1 << 1
+        NONUMA_DISCRETE =   1 << 1,
+        UMATYPE_COMPARISON_MASK = 0x3,
+        // For testing additional bits, use getUMAType* functions
+        CACHE_COHERENT_UMA_KNOWN = 1 << 2,
+        CACHE_COHERENT_UMA = 1 << 3
     };
-
+    // Restrict (in)equality comparisons to first 2 bits for backward compatibility with existing code that uses UMAType as a 2-bit enum
+    inline constexpr bool operator==(UMAType l, UMAType r)
+    {
+        return static_cast<UI32>(l&UMATYPE_COMPARISON_MASK) == static_cast<UI32>(r&UMATYPE_COMPARISON_MASK);
+    }
+    inline constexpr bool operator!=(UMAType l, UMAType r)
+    {
+        return static_cast<UI32>(l & UMATYPE_COMPARISON_MASK) != static_cast<UI32>(r & UMATYPE_COMPARISON_MASK);
+    }
+    inline constexpr UMAType operator|(UMAType l, UMAType r)
+    {
+        return static_cast<UMAType>(static_cast<UI32>(l) | static_cast<UI32>(r));
+    }
+    inline constexpr UMAType& operator|=(UMAType& l, UMAType r)
+    {
+        l = l | r;
+        return l;
+    }
+    inline constexpr I8 getUMATypeCacheCoherent(UMAType uma)
+    {
+        // Cast needed to avoid operator==() for UMAType which only compares lowest 2 bits
+        constexpr std::underlying_type_t<UMAType> mask = 
+            static_cast<std::underlying_type_t<UMAType>>(UMA_INTEGRATED | CACHE_COHERENT_UMA);
+        return ((uma & CACHE_COHERENT_UMA_KNOWN) ? 
+            (uma & mask) == mask : I8(-1));
+    }
+    inline void setUMATypeMasked(UMAType& uma, UMAType newValue, UMAType mask=UMATYPE_COMPARISON_MASK)
+    {
+        uma = static_cast<UMAType>((static_cast<UI32>(uma) & ~static_cast<UI32>(mask)) | 
+            (static_cast<UI32>(newValue) & static_cast<UI32>(mask)));
+    }
     template <typename T>
     inline double BtoGB(T n)
     {

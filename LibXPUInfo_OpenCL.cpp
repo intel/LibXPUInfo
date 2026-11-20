@@ -97,11 +97,11 @@ void Device::initOpenCLDevice(cl_platform_id inPlatform, cl_device_id inDevice, 
 			if ((m_props.UMA == UMA_UNKNOWN) || (isUMA && (m_props.UMA == NONUMA_DISCRETE)) ||
 				(!isUMA && (m_props.UMA == UMA_INTEGRATED)))
 			{
-				m_props.UMA = isUMA ? UMA_INTEGRATED : NONUMA_DISCRETE;
+				setUMATypeMasked(m_props.UMA, isUMA ? UMA_INTEGRATED : NONUMA_DISCRETE);
 			}
 		}
 	}
-	validAPIs = validAPIs | API_TYPE_OPENCL;
+	m_validAPIs |= API_TYPE_OPENCL;
 }
 
 void XPUInfo::initOpenCL()
@@ -182,7 +182,7 @@ void XPUInfo::initOpenCL()
 		}
 		if (clDevsFound)
 		{
-			m_UsedAPIs = m_UsedAPIs | API_TYPE_OPENCL;
+			m_UsedAPIs |= API_TYPE_OPENCL;
 		}
 	}
 }

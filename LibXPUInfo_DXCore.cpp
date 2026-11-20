@@ -232,7 +232,12 @@ void XPUInfo::initDXCore(bool updateOnly)
                     printf("\n");
 
                 DeviceType devType = isGraphics ? DEVICE_TYPE_GPU : (isNPU ? DEVICE_TYPE_NPU : DEVICE_TYPE_OTHER);
-                DevicePtr newDevice(new Device((UI32)m_Devices.size(), &desc1, devType, API_TYPE_DXCORE, driverVersion64));
+                APIType newDeviceAPI = APIType::API_TYPE_DXCORE;
+                if (m_InitAPIs & APIType::API_TYPE_D3D12)
+                {
+                    newDeviceAPI |= APIType::API_TYPE_D3D12;
+                }
+                DevicePtr newDevice(new Device((UI32)m_Devices.size(), &desc1, devType, newDeviceAPI, driverVersion64));
                 if (!!newDevice)
                 {
                     bool isHighPerf = luidHighPerf && (newDevice->getLUID() == luidHighPerf);
@@ -260,7 +265,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                         }
 
                         newIt->second->initDXCoreDevice(currAdapter, isHighPerf, isMinPower);
-                        m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
+                        m_UsedAPIs |= newIt->second->getCurrentAPIs();
                     }
                     else if (!updateOnly)
                     {
@@ -269,7 +274,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                         if (insertResult.second)
                         {
                             insertResult.first->second->initDXCoreDevice(currAdapter, isHighPerf, isMinPower);
-                            m_UsedAPIs = m_UsedAPIs | API_TYPE_DXCORE;
+                            m_UsedAPIs |= insertResult.first->second->getCurrentAPIs();
                         }
                     }
                 } // newDevice valid        
@@ -291,24 +296,35 @@ void XPUInfo::initDXCore(bool updateOnly)
 
 void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHighPerf, bool bMinPower)
 {
-    m_pDXCoreAdapter = pDXCoreAdapter;
+    m_pDXCoreAdapter = pDXCoreAdapter; // Set even for deserialized path to enable memory query
 
-    // HighPerformance, MinimumPower
-    bool isIntegrated;
-    bool isDetachable;
-    HRESULT hr = pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsIntegrated, &isIntegrated);
-    bool isIntegratedValid = SUCCEEDED(hr);
-    THROW_IF_FAILED(pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsDetachable, &isDetachable));
-
-    validAPIs = validAPIs | API_TYPE_DXCORE;
-    if (isIntegratedValid)
+    // No further initialization needed for deserialized path
+    if (!(m_requestedAPIs & API_TYPE_DESERIALIZED))
     {
-        updateIfDstVal(m_props.UMA, UMA_UNKNOWN,
-            isIntegrated ? UMA_INTEGRATED : NONUMA_DISCRETE);
+        // HighPerformance, MinimumPower
+        bool isIntegrated;
+        bool isDetachable;
+        HRESULT hr = pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsIntegrated, &isIntegrated);
+        bool isIntegratedValid = SUCCEEDED(hr);
+        THROW_IF_FAILED(pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsDetachable, &isDetachable));
+
+        m_validAPIs |= API_TYPE_DXCORE;
+        if (isIntegratedValid)
+        {
+            updateIfDstVal(m_props.UMA, UMA_UNKNOWN,
+                isIntegrated ? UMA_INTEGRATED : NONUMA_DISCRETE);
+        }
+        updateIfDstNotSet(m_props.IsHighPerformance, I8(bHighPerf));
+        updateIfDstNotSet(m_props.IsMinimumPower, I8(bMinPower));
+        updateIfDstNotSet(m_props.IsDetachable, I8(isDetachable));
+
+#ifdef XPUINFO_USE_D3D12
+        if (m_requestedAPIs & API_TYPE_D3D12)
+        {
+            initD3D12Device(pDXCoreAdapter.get());
+        }
+#endif
     }
-    updateIfDstNotSet(m_props.IsHighPerformance, I8(bHighPerf));
-    updateIfDstNotSet(m_props.IsMinimumPower, I8(bMinPower));
-    updateIfDstNotSet(m_props.IsDetachable, I8(isDetachable));
 }
 
 DXCoreAdapterMemoryBudget Device::getMemUsage_DXCORE() const

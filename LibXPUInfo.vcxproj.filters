@@ -92,6 +92,9 @@
     <ClCompile Include="LibXPUInfo_CUDA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LibXPUInfo_D3D12.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />

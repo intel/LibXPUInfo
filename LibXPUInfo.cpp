@@ -16,6 +16,7 @@
 #include <exception>
 #include <iomanip>
 #include <unordered_map>
+#include <future>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -411,6 +412,11 @@ namespace XI
 				apiNames.push_back("WMI");
 				break;
 #endif
+#ifdef XPUINFO_USE_D3D12
+            case API_TYPE_D3D12:
+                apiNames.push_back("D3D12");
+                break;
+#endif
 			case API_TYPE_DESERIALIZED:
 				apiNames.push_back("Deserialized");
 				break;
@@ -766,11 +772,7 @@ bool RuntimeVersion::operator==(const RuntimeVersion& l) const
 }
 
 #if defined(_WIN32)
-void XPUInfo::initDXGI(APIType 
-#if defined(_M_AMD64) || defined(_M_IX86)
-	initMask
-#endif
-)
+void XPUInfo::initDXGI()
 {
     DWORD dxgiFactoryFlags = 0;
 #ifdef _DEBUG
@@ -810,27 +812,28 @@ void XPUInfo::initDXGI(APIType
 					dStr << L"DXGI Adapter " << adapterIndex << L": " << desc.Description << L", Vendor = " << std::hex << desc.VendorId << std::dec << std::endl;
 				}
 
-				DevicePtr newDevice(new Device(adapterIndex, &desc));
+				APIType newDeviceAPIs = m_InitAPIs & (API_TYPE_DXGI | API_TYPE_D3D12);
+				DevicePtr newDevice(new Device(adapterIndex, &desc, DEVICE_TYPE_GPU, newDeviceAPIs));
 				if (!!newDevice && newDevice->driverVersion().Valid())
 				{
 					UI64 uiLuid = newDevice->getLUID();
 					auto newIt = m_Devices.insert(std::make_pair(uiLuid, newDevice));
-					if (!(m_UsedAPIs & API_TYPE_DXGI))
-						m_UsedAPIs = m_UsedAPIs | API_TYPE_DXGI;
+
+#ifdef XPUINFO_USE_D3D12
+					if (m_InitAPIs & API_TYPE_D3D12)
+					{
+						newIt.first->second->initD3D12Device(adapter.Get());
+					}
+#endif
 
 #if defined(_M_AMD64) || defined(_M_IX86)
-					if ((initMask & API_TYPE_DX11_INTEL_PERF_COUNTER) && 
+					if ((m_InitAPIs & API_TYPE_DX11_INTEL_PERF_COUNTER) &&
 						newDevice->IsVendor(kVendorId_Intel)) // Early-out for non-Intel devices
 					{
 						newIt.first->second->initDXIntelPerfCounter(adapter.Get());
-
-						if (!(m_UsedAPIs & API_TYPE_DX11_INTEL_PERF_COUNTER)
-							&& (newIt.first->second->getCurrentAPIs() & API_TYPE_DX11_INTEL_PERF_COUNTER))
-						{
-							m_UsedAPIs = m_UsedAPIs | API_TYPE_DX11_INTEL_PERF_COUNTER;
-						}
 					}
 #endif
+					m_UsedAPIs |= newIt.first->second->getCurrentAPIs();
 				}
             }
         }
@@ -895,11 +898,11 @@ void XPUInfo::finalInitDXGI()
 				(it.second->m_props.dxgiDesc.SharedSystemMemory >= k2GB))
 			{
 				// For example, if DXCore's DXCoreAdapterProperty::IsIntegrated is not supported for NPU, this will mark it as integrated
-				it.second->m_props.UMA = UMA_INTEGRATED;
+				setUMATypeMasked(it.second->m_props.UMA, UMA_INTEGRATED);
 			}
 			else if (it.second->m_props.dxgiDesc.DedicatedVideoMemory >= k2GB)
 			{
-				it.second->m_props.UMA = NONUMA_DISCRETE;
+				setUMATypeMasked(it.second->m_props.UMA, NONUMA_DISCRETE);
 			}
 		}
 	}
@@ -948,11 +951,15 @@ WString DeviceCPU::name() const
 Device::Device(UI32 inIndex, DXGI_ADAPTER_DESC1* pDesc, DeviceType inType, APIType inAPI,
 	XI::UI64 rawDriverVerion) : DeviceBase(inIndex)
 {
+	m_type = inType;
+	m_requestedAPIs = inAPI;
 	if (pDesc)
 	{
 		m_props.dxgiDesc = *pDesc; // copy
-		m_type = inType;
-		validAPIs = validAPIs | inAPI;
+        if (inAPI & API_TYPE_DXGI) // different init pattern, no initDXGIDevice() call, so set valid here
+        {
+            m_validAPIs |= API_TYPE_DXGI;
+        }
 
 		if (!rawDriverVerion)
 		{
@@ -1050,24 +1057,27 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	// Verify class size matches between internal lib and clients
 	const size_t libClassSize = sizeof(XPUInfo);
 	XPUINFO_REQUIRE(libClassSize == clientClassSize);
-	if (!(initMask & API_TYPE_DESERIALIZED))
+	if (initMask & API_TYPE_DESERIALIZED)
 	{
-		// Skip if this will be deserialized
-		m_pCPU.reset(new DeviceCPU);
+        // This means XPUInfo::deserialize() will be called, so don't do any initialization here.
+		return;
 	}
 
+	// Skip if this will be deserialized
+	m_pCPU.reset(new DeviceCPU);
+
 #if defined(_WIN32) && defined(XPUINFO_USE_WMI)
-	std::unique_ptr<std::thread> wmiThreadPtr;
+	std::future<std::shared_ptr<SystemInfo>> wmiFuture;
 	if (initMask & API_TYPE_WMI)
 	{
-		wmiThreadPtr.reset(new std::thread([&]() { initWMI(); }));
+		wmiFuture = std::async(std::launch::async, [this] { return initWMI(); });
 	}
 #endif
 
 #if defined(_WIN32)
 	if (initMask & (API_TYPE_DXGI | API_TYPE_DX11_INTEL_PERF_COUNTER))
 	{
-		initDXGI(initMask); // Must be first
+		initDXGI(); // Must be first
 	}
 #endif
 
@@ -1150,7 +1160,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 				if (!device->m_props.pDriverInfo)
 				{
 					device->m_props.pDriverInfo = pSDI;
-					device->validAPIs = device->validAPIs | API_TYPE_SETUPAPI;
+					device->m_validAPIs |= API_TYPE_SETUPAPI;
 					bSDIMatchFound = true;
 					if (device->m_pDriverVersion && !device->m_pDriverVersion->Valid())
 					{
@@ -1186,7 +1196,7 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 		} // devices
 		if (bSDIMatchFound)
 		{
-			m_UsedAPIs = m_UsedAPIs | API_TYPE_SETUPAPI;
+			m_UsedAPIs |= API_TYPE_SETUPAPI;
 		}
 	}
 #endif // XPUINFO_USE_SETUPAPI
@@ -1241,16 +1251,17 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	}
 
 #ifdef XPUINFO_USE_RUNTIMEVERSIONINFO
-	if (!(initMask & API_TYPE_DESERIALIZED))
-	{
-		getRuntimeVersions(runtimeNamesToTrack);
-	}
+	getRuntimeVersions(runtimeNamesToTrack);
 #endif
 
 #if defined(_WIN32) && defined(XPUINFO_USE_WMI)
-	if (wmiThreadPtr.get())
+	if (wmiFuture.valid())
 	{
-		wmiThreadPtr->join();
+		m_pSystemInfo = wmiFuture.get();
+		if (m_pSystemInfo)
+		{
+			m_UsedAPIs |= API_TYPE_WMI;
+		}
 	}
 #endif
 #ifdef XPUINFO_USE_SYSTEMEMORYINFO
@@ -1469,7 +1480,28 @@ std::ostream& operator<<(std::ostream& ostr, const Device& xiDev)
 	ostr << "\tType: " << xiDev.getType();
 	if (devProps.UMA != XI::UMA_UNKNOWN)
 	{
-		ostr << ", " << ((devProps.UMA == XI::UMA_INTEGRATED) ? "Integrated" : "Discrete");
+#ifdef XPUINFO_USE_D3D12
+		if (devProps.UMA == XI::UMA_INTEGRATED)
+		{
+            I8 cacheCoherent = XI::getUMATypeCacheCoherent(devProps.UMA);
+			if (cacheCoherent >= 0)
+			{
+				ostr << ", Integrated, " << ((cacheCoherent == 1) ? "CacheCoherentUMA" : "NonCacheCoherentUMA");
+            }
+			else
+			{
+				ostr << ", Integrated, UMA";
+			}
+		}
+		else
+		{
+			ostr << ", Discrete";
+		}
+#else
+		{
+			ostr << ", " << ((devProps.UMA == XI::UMA_INTEGRATED) ? "Integrated, UMA" : "Discrete");
+		}
+#endif
 	}
 	if (devProps.IsHighPerformance > 0)
 	{
@@ -2200,6 +2232,19 @@ SystemMemoryInfo::SystemMemoryInfo()
 	}
 }
 #endif // XPUINFO_USE_SYSTEMEMORYINFO
+
+// Type tests
+namespace {
+	constexpr UMAType testIntegrated = UMA_INTEGRATED;
+	constexpr UMAType testIntegratedCacheCoherent = UMA_INTEGRATED | CACHE_COHERENT_UMA_KNOWN | CACHE_COHERENT_UMA;
+	constexpr UMAType testIntegratedNonCacheCoherent = UMA_INTEGRATED | CACHE_COHERENT_UMA_KNOWN;
+	static_assert((testIntegratedCacheCoherent == testIntegratedNonCacheCoherent) 
+		&& (testIntegratedCacheCoherent == testIntegrated), "Test equality");
+	static_assert(!(testIntegratedCacheCoherent != testIntegratedNonCacheCoherent), "Test inequality");
+	static_assert(getUMATypeCacheCoherent(testIntegratedCacheCoherent) == I8(1));
+	static_assert(getUMATypeCacheCoherent(testIntegratedNonCacheCoherent) == I8(0));
+	static_assert(getUMATypeCacheCoherent(testIntegrated) == I8(-1));
+}
 
 } // XI
 

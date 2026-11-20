@@ -110,7 +110,7 @@ void XPUInfo::initCUDA()
                     (devPciAddr.domain == cudaPciAddr.domain))
                 {
                     updateIfDstNotSet(dev->m_props.VendorSpecific.nVidia.cudaOrdinal, ordinal);
-                    m_UsedAPIs = m_UsedAPIs | API_TYPE_CUDA;
+                    m_UsedAPIs |= API_TYPE_CUDA;
                     break;
                 }
             }

@@ -290,7 +290,7 @@ namespace XI
                 m_props.DeviceGenerationAPI = API_TYPE_AGS;
                 m_props.DeviceGenerationID = agsDevice.asicFamily;
             }
-            validAPIs = validAPIs | API_TYPE_AGS;
+            m_validAPIs |= API_TYPE_AGS;
         }
     }
     void XPUInfo::initAGS()
@@ -308,7 +308,7 @@ namespace XI
                     if (strcmp(device.adapterString, convert(dev->name()).c_str()) == 0)
                     {
                         dev->initAGSDevice(gpuIndex, gpuInfoPtr);
-                        m_UsedAPIs = m_UsedAPIs | API_TYPE_AGS;
+                        m_UsedAPIs |= API_TYPE_AGS;
                         break;
                     }
                 }
