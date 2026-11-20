@@ -511,7 +511,7 @@ SystemInfo::SystemInfo()
 #endif
 }
 
-// Called asynchronousely, so don't set any member variables here, just return the data to the caller
+// Called asynchronously, so don't set any member variables here, just return the data to the caller
 std::shared_ptr<SystemInfo> XPUInfo::initWMI() const
 {
     std::shared_ptr<SystemInfo> pSystemInfo;
