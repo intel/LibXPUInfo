@@ -190,7 +190,7 @@ namespace XI
     {
         return static_cast<UMAType>(static_cast<UI32>(l) | static_cast<UI32>(r));
     }
-    inline constexpr UMAType operator|=(UMAType& l, UMAType r)
+    inline constexpr UMAType& operator|=(UMAType& l, UMAType r)
     {
         l = l | r;
         return l;
