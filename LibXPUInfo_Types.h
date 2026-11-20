@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <type_traits>
 
 #ifdef XPUINFO_USE_RAPIDJSON
 #include "rapidjson/document.h"
@@ -197,7 +198,9 @@ namespace XI
     }
     inline constexpr I8 getUMATypeCacheCoherent(UMAType uma)
     {
-        constexpr UMAType mask = (UMA_INTEGRATED | CACHE_COHERENT_UMA);
+        // Cast needed to avoid operator==() for UMAType which only compares lowest 2 bits
+        constexpr std::underlying_type_t<UMAType> mask = 
+            static_cast<std::underlying_type_t<UMAType>>(UMA_INTEGRATED | CACHE_COHERENT_UMA);
         return ((uma & CACHE_COHERENT_UMA_KNOWN) ? 
             (uma & mask) == mask : I8(-1));
     }
