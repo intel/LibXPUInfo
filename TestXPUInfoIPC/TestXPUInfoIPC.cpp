@@ -448,7 +448,7 @@ int main(int argc, char* argv[])
     catch (std::logic_error& e)
     {
         std::cout << "Caught exception: " << e.what() << std::endl;
-        procRetVal = 0;
+        // return error (nonzero)
     }
 #endif // _WIN32
     return procRetVal;
