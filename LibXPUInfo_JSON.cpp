@@ -289,8 +289,11 @@ DevicePtr Device::deserialize(const rapidjson::Value& val)
                 safeGetI32(val, "cudaComputeCapability_Major").value_or(-1);
             newDev->m_props.VendorSpecific.nVidia.cudaComputeCapability_Minor =
                 safeGetI32(val, "cudaComputeCapability_Minor").value_or(-1);
+            newDev->m_props.VendorSpecific.nVidia.cudaOrdinal =
+                safeGetI32(val, "cudaOrdinal").value_or(-1);
         }
         newDev->m_props.MemoryBandWidthMax = safeGetI64(val, "MemoryBandWidthMax").value_or(-1);
+        newDev->m_props.IsMultiGPUDevice = (I8)safeGetI32(val, "IsMultiGPUDevice").value_or(-1);
 
         return newDev;
     }
@@ -385,11 +388,14 @@ rapidjson::Value Device::serialize(AllocatorType& a)
             getProperties().VendorSpecific.nVidia.cudaComputeCapability_Major, a);
         curDev.AddMember("cudaComputeCapability_Minor",
             getProperties().VendorSpecific.nVidia.cudaComputeCapability_Minor, a);
+        curDev.AddMember("cudaOrdinal",
+            getProperties().VendorSpecific.nVidia.cudaOrdinal, a);
     }
 
     curDev.AddMember("IsHighPerformance", getProperties().IsHighPerformance, a);
     curDev.AddMember("IsMinimumPower", getProperties().IsMinimumPower, a);
     curDev.AddMember("IsDetachable", getProperties().IsDetachable, a);
+    curDev.AddMember("IsMultiGPUDevice", getProperties().IsMultiGPUDevice, a);
 
     return curDev;
 }

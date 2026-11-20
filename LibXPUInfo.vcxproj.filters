@@ -89,5 +89,11 @@
     <ClCompile Include="LibXPUInfo_AGS.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LibXPUInfo_CUDA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".github\copilot-instructions.md" />
   </ItemGroup>
 </Project>

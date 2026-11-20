@@ -155,7 +155,7 @@ void XPUInfo::initDXCore(bool updateOnly)
             }
 
             bool isGraphics = currAdapter->IsAttributeSupported(DXCORE_ADAPTER_ATTRIBUTE_D3D12_GRAPHICS);
-            //bool isNPU = currAdapter->IsAttributeSupported(LIBXPUINFO_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU); // Unused, works
+            bool isNPU = currAdapter->IsAttributeSupported(LIBXPUINFO_DXCORE_HARDWARE_TYPE_ATTRIBUTE_NPU);
 
             uint64_t DedicatedAdapterMemory;
             THROW_IF_FAILED(currAdapter->GetProperty(DXCoreAdapterProperty::DedicatedAdapterMemory, &DedicatedAdapterMemory));
@@ -231,7 +231,7 @@ void XPUInfo::initDXCore(bool updateOnly)
                 if (bPrintInfo)
                     printf("\n");
 
-                DeviceType devType = isGraphics ? DEVICE_TYPE_GPU : DEVICE_TYPE_NPU;
+                DeviceType devType = isGraphics ? DEVICE_TYPE_GPU : (isNPU ? DEVICE_TYPE_NPU : DEVICE_TYPE_OTHER);
                 DevicePtr newDevice(new Device((UI32)m_Devices.size(), &desc1, devType, API_TYPE_DXCORE, driverVersion64));
                 if (!!newDevice)
                 {

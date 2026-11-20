@@ -100,7 +100,21 @@ void Device::initL0Device(ze_device_handle_t inL0Device, const ze_device_propert
 		updateIfDstNotSet(m_props.ComputeUnitSIMDWidth, (I32)device_properties.physicalEUSimdWidth);
 		I32 numEUs = device_properties.numSlices * device_properties.numSubslicesPerSlice * device_properties.numEUsPerSubslice;
 		updateIfDstNotSet(m_props.NumComputeUnits, numEUs);
-		updateIfDstNotSet(m_props.FreqMaxMHz, (I32)device_properties.coreClockRate);
+
+		// The Intel NPU seems to report frequency in Hz, not MHz, so we need to divide by 1e6 to get MHz.
+		// If the reported frequency is greater than 100 GHz (100,000 MHz), we assume it's in Hz and convert it to MHz.
+		constexpr uint64_t kHzPerMHz = 1000000ULL;
+		constexpr uint64_t kMaxReasonableMHz = 100000ULL;
+		constexpr uint64_t kI32Max = 0x7fffffffULL;
+
+		const uint64_t coreClockRateRaw = static_cast<uint64_t>(device_properties.coreClockRate);
+		const uint64_t coreFreqMHz64 = (coreClockRateRaw > kMaxReasonableMHz) ? (coreClockRateRaw / kHzPerMHz) : coreClockRateRaw;
+
+		// Keep as unknown if getting zero or out-of-range value
+		if (coreFreqMHz64 > 0 && coreFreqMHz64 <= kI32Max)
+		{
+			updateIfDstNotSet(m_props.FreqMaxMHz, static_cast<I32>(coreFreqMHz64));
+		}
 
 		// zeDeviceGetModuleProperties, see https://github.com/intel/compute-runtime/blob/fb838afe42185d7270fcfb57383187f2b601cc2a/level_zero/doc/experimental_extensions/MODULE_DP_SUPPORT.md?plain=1#L66
 		if (exts.find("ZE_intel_experimental_device_module_dp_properties"))

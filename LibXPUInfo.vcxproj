@@ -382,7 +382,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -416,7 +416,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -450,16 +450,16 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>ze_loader.dll;nvml.dll;nvcuda.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
       <AdditionalDependencies>dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\CUDA\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -487,16 +487,16 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>
       </SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>ze_loader.dll;nvml.dll;nvcuda.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
       <AdditionalDependencies>dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\CUDA\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -526,7 +526,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -565,7 +565,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -604,7 +604,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -644,7 +644,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -684,7 +684,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -694,8 +694,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(OutDir)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>ze_loader.dll;nvml.dll;nvcuda.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\CUDA\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(OutDir)</AdditionalLibraryDirectories>
       <AdditionalDependencies>dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
@@ -726,7 +726,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)external\level-zero\include;$(ProjectDir)external\IGCL\Include;$(ProjectDir)external\OpenCL-Headers;$(ProjectDir)external\OpenCL-CLHPP\include;$(ProjectDir)external\rapidjson\include;$(ProjectDir)external\nvml\include;$(ProjectDir)external\CUDA\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -736,8 +736,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <DelayLoadDLLs>ze_loader.dll;nvml.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(OutDir)</AdditionalLibraryDirectories>
+      <DelayLoadDLLs>ze_loader.dll;nvml.dll;nvcuda.dll;dxcore.dll;opencl.dll</DelayLoadDLLs>
+      <AdditionalLibraryDirectories>$(SolutionDir)external\AGS_SDK\ags_lib\lib;$(SolutionDir)external\OpenCL-ICD-Loader-install\lib;$(SolutionDir)external\NVML\lib\x64;$(SolutionDir)external\CUDA\lib\x64;$(SolutionDir)external\level-zero-build\install\lib;$(SolutionDir)..\external\level-zero\lib\RelWithDebInfo;$(OutDir)</AdditionalLibraryDirectories>
       <AdditionalDependencies>dxcore.lib;d3d11.lib;opencl.lib;ze_loader.lib;dxgi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
@@ -785,6 +785,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDynamic|ARM64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="LibXPUInfo.cpp" />
+    <ClCompile Include="LibXPUInfo_CUDA.cpp" />
     <ClCompile Include="LibXPUInfo_IPC.cpp" />
     <ClCompile Include="LibXPUInfo_JSON.cpp" />
     <ClCompile Include="LibXPUInfo_L0.cpp" />
@@ -795,6 +796,9 @@
     <ClCompile Include="LibXPUInfo_Util.cpp" />
     <ClCompile Include="LibXPUInfo_DXCore.cpp" />
     <ClCompile Include="LibXPUInfo_WMI.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".github\copilot-instructions.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
