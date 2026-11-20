@@ -366,7 +366,8 @@ int printXPUInfo(int argc, char* argv[])
             }
             else if (arg == "-verify_json")
             {
-                testVerifyJSON();
+                bool bRet = testVerifyJSON();
+                XPUINFO_REQUIRE_MSG(bRet, "testVerifyJSON failed");
                 exitAfterArgLoop = true;
             }
             else if ((arg == "-from_json") && (a + 1 < argc))
