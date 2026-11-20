@@ -296,31 +296,35 @@ void XPUInfo::initDXCore(bool updateOnly)
 
 void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHighPerf, bool bMinPower)
 {
-    m_pDXCoreAdapter = pDXCoreAdapter;
+    m_pDXCoreAdapter = pDXCoreAdapter; // Set even for deserialized path to enable memory query
 
-    // HighPerformance, MinimumPower
-    bool isIntegrated;
-    bool isDetachable;
-    HRESULT hr = pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsIntegrated, &isIntegrated);
-    bool isIntegratedValid = SUCCEEDED(hr);
-    THROW_IF_FAILED(pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsDetachable, &isDetachable));
-
-    m_validAPIs |= API_TYPE_DXCORE;
-    if (isIntegratedValid)
+    // No further initialization needed for deserialized path
+    if (m_requestedAPIs & ~API_TYPE_DESERIALIZED)
     {
-        updateIfDstVal(m_props.UMA, UMA_UNKNOWN,
-            isIntegrated ? UMA_INTEGRATED : NONUMA_DISCRETE);
-    }
-    updateIfDstNotSet(m_props.IsHighPerformance, I8(bHighPerf));
-    updateIfDstNotSet(m_props.IsMinimumPower, I8(bMinPower));
-    updateIfDstNotSet(m_props.IsDetachable, I8(isDetachable));
+        // HighPerformance, MinimumPower
+        bool isIntegrated;
+        bool isDetachable;
+        HRESULT hr = pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsIntegrated, &isIntegrated);
+        bool isIntegratedValid = SUCCEEDED(hr);
+        THROW_IF_FAILED(pDXCoreAdapter->GetProperty(DXCoreAdapterProperty::IsDetachable, &isDetachable));
+
+        m_validAPIs |= API_TYPE_DXCORE;
+        if (isIntegratedValid)
+        {
+            updateIfDstVal(m_props.UMA, UMA_UNKNOWN,
+                isIntegrated ? UMA_INTEGRATED : NONUMA_DISCRETE);
+        }
+        updateIfDstNotSet(m_props.IsHighPerformance, I8(bHighPerf));
+        updateIfDstNotSet(m_props.IsMinimumPower, I8(bMinPower));
+        updateIfDstNotSet(m_props.IsDetachable, I8(isDetachable));
 
 #ifdef XPUINFO_USE_D3D12
-    if ((m_requestedAPIs & API_TYPE_D3D12))
-    {
-        initD3D12Device(pDXCoreAdapter.get());
-    }
+        if (m_requestedAPIs & API_TYPE_D3D12)
+        {
+            initD3D12Device(pDXCoreAdapter.get());
+        }
 #endif
+    }
 }
 
 DXCoreAdapterMemoryBudget Device::getMemUsage_DXCORE() const
