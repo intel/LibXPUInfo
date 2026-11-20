@@ -4,6 +4,7 @@
 #ifdef XPUINFO_USE_D3D12
 
 #include "LibXPUInfo.h"
+#include "DebugStream.h"
 #include <d3d12.h>
 using namespace winrt;
 
@@ -17,12 +18,29 @@ void Device::initD3D12Device(IUnknown* pAdapter)
         // Only query so far - early-out if already done
         return;
     }
+    constexpr bool printToConsole = 
+#ifdef _DEBUG
+        true
+#else
+        false
+#endif
+        ;
+    DebugStream dStr(printToConsole);
 
     // d3d12.dll is loaded at runtime to avoid a link-time dependency; intentionally not freed.
     static HMODULE hD3D12 = LoadLibraryExW(L"d3d12.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
-    XPUINFO_REQUIRE_MSG(hD3D12, "Failed to load d3d12.dll");
+    // Failures here should not prevent the rest of the system from working, so just return if we can't load the library.
+    if (!hD3D12)
+    {
+        dStr << __FUNCTION__ << ": Failed to load d3d12.dll";
+        return;
+    }
     static auto pfnCreateDevice = reinterpret_cast<decltype(&D3D12CreateDevice)>(GetProcAddress(hD3D12, "D3D12CreateDevice"));
-    XPUINFO_REQUIRE_MSG(pfnCreateDevice, "Failed to get D3D12CreateDevice proc address");
+    if (!pfnCreateDevice)
+    {
+        dStr << __FUNCTION__ << ": Failed to get D3D12CreateDevice proc address";
+        return;
+    }
 
     com_ptr<ID3D12Device> d3d12Device;
     if (SUCCEEDED(pfnCreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(d3d12Device.put()))))
