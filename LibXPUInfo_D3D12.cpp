@@ -43,7 +43,8 @@ void Device::initD3D12Device(IUnknown* pAdapter)
     }
 
     com_ptr<ID3D12Device> d3d12Device;
-    if (SUCCEEDED(pfnCreateDevice(pAdapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(d3d12Device.put()))))
+    D3D_FEATURE_LEVEL minFeatureLevel = (getType() == DEVICE_TYPE_GPU) ? D3D_FEATURE_LEVEL_11_0 : D3D_FEATURE_LEVEL_1_0_CORE;
+    if (SUCCEEDED(pfnCreateDevice(pAdapter, minFeatureLevel, IID_PPV_ARGS(d3d12Device.put()))))
     {
         D3D12_FEATURE_DATA_ARCHITECTURE arch{}; // NodeIndex 0
         if (SUCCEEDED(d3d12Device->CheckFeatureSupport(D3D12_FEATURE_ARCHITECTURE, &arch, sizeof(arch))))
