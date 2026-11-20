@@ -201,7 +201,6 @@ namespace XI
 
         // Implementation characteristics
         UMAType UMA = UMA_UNKNOWN;
-        // From D3D12_FEATURE_DATA_ARCHITECTURE (requires DXCore path). -1 unknown, 0 false, 1 true
         I32 FreqMaxMHz = -1;
         I32 FreqMinMHz = -1;
         I32 DeviceGenerationID = -1;
@@ -217,11 +216,6 @@ namespace XI
         I32 MemoryFreqMaxMHz = -1;
         I32 MemoryFreqMinMHz = -1;
 
-        // TDP: ctl_power_properties_t, ctl_power_peak_limit_t
-        // 
-        
-        // ctl_mem_properties_t
-        // - type (GDDR6...), bus width, channels
         union
         {
             struct
