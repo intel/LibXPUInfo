@@ -348,7 +348,6 @@ int printXPUInfo(int argc, char* argv[])
                             std::cout << "Argument error - Invalid size: " << istr.str() << std::endl;
                             return -1;
                         }
-                        return -1;
                     }
 #endif
 #ifdef XPUINFO_USE_RAPIDJSON
