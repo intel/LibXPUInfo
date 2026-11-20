@@ -16,6 +16,7 @@
 #include <exception>
 #include <iomanip>
 #include <unordered_map>
+#include <future>
 
 #if defined(__APPLE__)
 #include <sys/sysctl.h>
@@ -1066,14 +1067,10 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 	m_pCPU.reset(new DeviceCPU);
 
 #if defined(_WIN32) && defined(XPUINFO_USE_WMI)
-	std::unique_ptr<std::thread> wmiThreadPtr;
-	std::shared_ptr<SystemInfo> pSystemInfo;
+	std::future<std::shared_ptr<SystemInfo>> wmiFuture;
 	if (initMask & API_TYPE_WMI)
 	{
-		wmiThreadPtr.reset(new std::thread([this, &pSystemInfo]() 
-			{ 
-				pSystemInfo = initWMI(); 
-			}));
+		wmiFuture = std::async(std::launch::async, [this] { return initWMI(); });
 	}
 #endif
 
@@ -1258,14 +1255,13 @@ XPUInfo::XPUInfo(APIType initMask, const RuntimeNames& runtimeNamesToTrack, size
 #endif
 
 #if defined(_WIN32) && defined(XPUINFO_USE_WMI)
-	if (wmiThreadPtr.get())
+	if (wmiFuture.valid())
 	{
-		wmiThreadPtr->join();
-        m_pSystemInfo = std::move(pSystemInfo);
-        if (m_pSystemInfo)
-        {
-            m_UsedAPIs |= API_TYPE_WMI;
-        }
+		m_pSystemInfo = wmiFuture.get();
+		if (m_pSystemInfo)
+		{
+			m_UsedAPIs |= API_TYPE_WMI;
+		}
 	}
 #endif
 #ifdef XPUINFO_USE_SYSTEMEMORYINFO
