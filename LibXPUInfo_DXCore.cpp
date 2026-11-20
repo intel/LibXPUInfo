@@ -299,7 +299,7 @@ void Device::initDXCoreDevice(com_ptr<IDXCoreAdapter>& pDXCoreAdapter, bool bHig
     m_pDXCoreAdapter = pDXCoreAdapter; // Set even for deserialized path to enable memory query
 
     // No further initialization needed for deserialized path
-    if (m_requestedAPIs & ~API_TYPE_DESERIALIZED)
+    if (!(m_requestedAPIs & API_TYPE_DESERIALIZED))
     {
         // HighPerformance, MinimumPower
         bool isIntegrated;
