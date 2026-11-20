@@ -129,10 +129,19 @@ namespace XI
         //API_TYPE_IGCL =                     1 << 2,
         //API_TYPE_IGCL_L0 =                  1 << 11, // Allow IGCL to use L0.  Once L0 issue with ZE_INIT_FLAG_VPU_ONLY is resolved, this can be removed.
     };
-    inline APIType operator|=(APIType& a, APIType b) {
-        a = static_cast<APIType>(a | b);
+    inline APIType operator|(APIType l, APIType r)
+    {
+        return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
+    }
+    inline APIType& operator|=(APIType& a, APIType b) {
+        a = a | b;
         return a;
     }
+    inline APIType operator&(APIType l, APIType r)
+    {
+        return static_cast<APIType>(static_cast<UI32>(l) & static_cast<UI32>(r));
+    }
+    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
 
 #ifdef _WIN32
     // WMI takes more time to initialize than others, 
@@ -157,16 +166,6 @@ namespace XI
 #else
 #define XPUINFO_INIT_ALL_APIS XI::API_TYPE_METAL
 #endif
-
-    inline APIType operator|(APIType l, APIType r)
-    {
-        return static_cast<APIType>(static_cast<UI32>(l) | static_cast<UI32>(r));
-    }
-    inline APIType operator&(APIType l, APIType r)
-    {
-        return static_cast<APIType>(static_cast<UI32>(l) & static_cast<UI32>(r));
-    }
-    XPUINFO_EXPORT std::ostream& operator<<(std::ostream& s, APIType t);
 
     enum UMAType : UI32
     {
