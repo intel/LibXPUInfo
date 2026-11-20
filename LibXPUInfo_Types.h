@@ -203,7 +203,11 @@ namespace XI
         return ((uma & CACHE_COHERENT_UMA_KNOWN) ? 
             (uma & mask) == mask : I8(-1));
     }
-
+    inline void setUMATypeMasked(UMAType& uma, UMAType newValue, UMAType mask=UMATYPE_COMPARISON_MASK)
+    {
+        uma = static_cast<UMAType>((static_cast<UI32>(uma) & ~static_cast<UI32>(mask)) | 
+            (static_cast<UI32>(newValue) & static_cast<UI32>(mask)));
+    }
     template <typename T>
     inline double BtoGB(T n)
     {

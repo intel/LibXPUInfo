@@ -898,11 +898,11 @@ void XPUInfo::finalInitDXGI()
 				(it.second->m_props.dxgiDesc.SharedSystemMemory >= k2GB))
 			{
 				// For example, if DXCore's DXCoreAdapterProperty::IsIntegrated is not supported for NPU, this will mark it as integrated
-				it.second->m_props.UMA = UMA_INTEGRATED;
+				setUMATypeMasked(it.second->m_props.UMA, UMA_INTEGRATED);
 			}
 			else if (it.second->m_props.dxgiDesc.DedicatedVideoMemory >= k2GB)
 			{
-				it.second->m_props.UMA = NONUMA_DISCRETE;
+				setUMATypeMasked(it.second->m_props.UMA, NONUMA_DISCRETE);
 			}
 		}
 	}
